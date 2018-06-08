@@ -1,0 +1,25 @@
+#topDiv{
+    width:100%;
+    text-align: center;
+}
+#topDiv .portrait{
+     width:120px;
+}
+.mui-badge-row{
+  position:relative;
+  width:4.5rem;
+  margin:0px auto;
+}
+.main-image{
+    width: 4.5rem;
+    height: 4.5rem;
+}
+.mui-row-text{
+    text-align: center;
+    font-size: 1.05rem;
+}
+.mui-badge-danger{
+    position: absolute;
+    right: 0px;
+    top:0px;
+}

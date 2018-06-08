@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport"
+          content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>确认单现场确认底部</title>
+    <link rel="stylesheet" type="text/css" href="../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../css/common-mui.css"/>
+    <style>
+        html, body {
+            background-color: transparent;
+        }
+
+        .mui-badge {
+            border-radius: 1px;
+        }
+
+        .mui-height-100 {
+            height: 100px;
+        }
+
+        .mui-line-height-25 {
+            line-height: 27px;
+        }
+
+        .mui-line-height-80 {
+            line-height: 80px;
+        }
+
+        .mui-table-view:after {
+            background-color: transparent;
+        }
+
+        .mui-table-view .mui-media-object {
+            line-height: 78px;
+            max-width: 100px;
+            min-width: 100px;
+            height: 78px;
+        }
+    </style>
+</head>
+<body>
+<div id="slider" class="mui-slider">
+    <div class="mui-slider-group" id="group">
+
+    </div>
+</div>
+</body>
+<script type="text/template" id="template">
+    {{~it:risk:index}}
+        <div class="mui-slider-item mui-slider-item-duplicate" id="item{{=risk.id}}">
+            <ul class="mui-table-view">
+                <input type="hidden" name="id" value="{{=risk.id}}">
+                <li class="mui-table-view-cell mui-media mui-height-100">
+                    <a href="javascript:fnOpenRegisterWin('{{=risk.id}}');">
+                        <img class="mui-media-object mui-pull-left" urls="{{=risk.photos}}" src="../../../image/nopicture.png">
+                        <div class="mui-media-body mui-line-height-25">
+                            <p class='mui-ellipsis'>
+                                <span class="mui-icon iconfont icon-bills"></span>
+                                异常描述：
+                                <b class="mui-color-black">{{=risk.description}}</b>
+                            </p>
+                            <p class='mui-ellipsis'>
+                                <span class="mui-icon iconfont icon-alarm-clock"></span>
+                                创建时间：
+                                {{=risk.createTime}}
+                            </p>
+                            <p class='mui-ellipsis'>
+                                <span class="mui-icon iconfont icon-localization"></span>
+                                地理位置：
+                                {{=risk.location}}
+                                <span class="mui-pull-right mui-badge mui-badge-danger">{{=risk.unusualLevel.name}}</span>
+                            </p>
+                        </div>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    {{~}}
+</script>
+<script type="text/template" id="emptyTemplate">
+    <li class="mui-table-view-cell mui-align-center mui-height-100 mui-line-height-80">
+        暂无数据
+    </li>
+</script>
+<script type="text/javascript" src="../../../script/api.js"></script>
+<script type="text/javascript" src="../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../script/transform.js"></script>
+<script type="text/javascript" src="../../../script/common.js"></script>
+<script type="text/javascript">
+    mui.init();
+    var data,slider;
+    var dataInited = false;
+    apiready = function () {
+        fnInitData();
+        setTimeout(function(){
+            api.addEventListener({//地图点击监听
+                name:'point-click'
+            }, function(ret, err){
+                var index = ret.value.index;
+                slider = mui('#slider').slider();
+                slider.gotoItem(index);
+            });
+        },500)
+        document.querySelector('.mui-slider').addEventListener('slide', function (e) {
+            var i = e.detail.slideNumber;
+            var id = $('.mui-slider-item').eq(i).find('input[name=id]').val();
+            api.sendEvent({
+                name: 'bottom-slide',
+                extra: {id: id}
+            });
+        });
+
+        //打开页面显示地图
+        api.addEventListener({
+            name:'viewappear'
+        }, function(ret, err){
+            fnInitData();
+            if(!dataInited){
+                fnInitData();
+            }
+        });
+
+        //关闭页面显示地图
+        api.addEventListener({
+            name:'viewdisappear'
+        }, function(ret, err){
+            dataInited = false;
+        });
+
+    };
+
+    function fnInitData(){
+        var current_location = fnGetCurrentLocation();
+        api.ajax({
+            url: fnGetServerAddr() + '/subway/riskSituation.do?todo=ajaxByParam',
+            method: 'get',
+            data: {
+                values: {
+                    state: 0,
+                    executeUserId: getUserId()
+                }
+            }
+        }, function (ret, err) {
+            dataInited = true;
+            if(ret){
+                if(ret.success){
+                    data = ret.data;
+                    if(data && data.length > 0){
+                        var distances = [];
+                        for (var i = 0 ; i < data.length; i++){
+                            var risk = data[i];
+                            var id = risk.id;
+                            var latLng = risk.latLng ? risk.latLng.split(',') : [];
+                            var point = {};
+                            if(latLng.length > 0){
+                                var lon = parseFloat(latLng[0]);
+                                var lat = parseFloat(latLng[1]);
+                                var distance = parseFloat(fnDistance(current_location.lat,current_location.lon,lat,lon));
+                                point = {
+                                    id:id,
+                                    distance:distance
+                                }
+                                distances.push(point);
+                            }
+                        }
+                        $('#group').html(fnTemplate('template',data));
+                        setTimeout(function(){
+                            slider = mui('#slider').slider();
+                            slider.gotoItem(distances.min());
+                        },500)
+                        fnCacheImage('.mui-media-object');
+                        mui("#slider").slider({interval: 0});
+                    }else{
+                        api.closeFrame({
+                            name: api.frameName
+                        });
+                    }
+                }
+            }
+        })
+
+    }
+    //打开窗口
+    function fnOpenRegisterWin(id) {
+        api.openFrame({
+            name: 'unusual-confirm-option',
+            url: './unusual-confirm-option.html',
+            rect: {
+                x: 0,
+                y: 0,
+                w: 'auto',
+                h: 'auto'
+            },
+            pageParam: {
+                id: id
+            },
+            bounces: false
+        });
+    }
+
+    //返回最小值
+    Array.prototype.min = function() {
+        var min = this[0].distance;
+        var len = this.length;
+        var index = 0;
+        for (var i = 1; i < len; i++){
+            if (this[i].distance < min){
+                min = this[i].distance;
+                index = i;
+            }
+        }
+        return index;
+    }
+</script>
+</html>

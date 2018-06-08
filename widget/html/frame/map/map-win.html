@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>电子地图窗口</title>
+    <link rel="stylesheet" type="text/css" href="../../../css/api.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../css/common-win.css"/>
+</head>
+<body>
+<div id="wrap">
+    <div id="header">
+        <div class="left-btn">
+            <span class="iconfont iconfont-large icon-arrow-left event-back" id="left" tapmode="active" onclick="fnCloseWin()"></span>
+        </div>
+        <div class="title">电子地图</div>
+        <div class="right-btn">
+
+        </div>
+    </div>
+    <div id="main">
+
+    </div>
+</div>
+</body>
+<script type="text/javascript" src="../../../script/api.js"></script>
+<script type="text/javascript" src="../../../script/map.js"></script>
+<script type="text/javascript" src="../../../script/common.js"></script>
+<script type="text/javascript">
+    apiready = function () {
+        fnInitFrame();
+        fnReadyHeader();
+    }
+
+    //调整状态栏
+    function fnReadyHeader() {
+        var header = $api.byId('header');
+        if (header) {
+            $api.fixStatusBar(header);
+            var headerHeight = $api.offset(header).h;
+            $api.setStorage('headerHeight', headerHeight);
+        }
+    };
+
+    //初始化页面
+    function fnInitFrame(){
+
+        api.ajax({
+            url: fnGetServerAddr() + '/subway/lineAndStation.do?todo=queryLine',
+            method: 'get',
+            timeout: 6,
+        }, function (ret, err) {
+            if(ret){
+
+                //地图frame
+                api.openFrame({
+                    name: 'map-main',
+                    url: './map-main.html',
+                    rect: {
+                        x: 0,
+                        y: getHeaderHeight(),
+                        w: 'auto',
+                        h: 'auto'
+                    },
+                    pageParam: {
+                        lines: ret,
+                        lineIds: ret.properties('id')
+                    },
+                    bounces: false
+                });
+
+                //底部frame
+                api.openFrame({
+                    name: 'map-bottom',
+                    url: './map-bottom.html',
+                    rect: {
+                        x: 0,
+                        y: api.winHeight - 65,
+                        w: api.winWidth,
+                        h: 65
+                    },
+                    pageParam: {
+                        lines: ret
+                    },
+                    bounces: false,
+                    bgColor: 'rgba(0,0,0,0)',
+                });
+
+                //右侧frame
+                api.openFrame({
+                    name: 'map-toolbar',
+                    url: 'widget://html/frame/map/map-toolbar.html',
+                    rect: {
+                        x: api.winWidth - 37,
+                        y: getHeaderHeight() + 30,
+                        w: 35,
+                        h: 250
+                    },
+                    pageParam: {
+                        parentName: 'map-main'
+                    },
+                    bounces: false
+                });
+
+                //定位frame
+                api.openFrame({
+                    name: 'map-location',
+                    url: 'widget://html/frame/map/map-location.html',
+                    rect: {
+                        x: api.winWidth-35,
+                        y: api.winHeight - 120,
+                        w: 30,
+                        h: 30
+                    },
+                    pageParam: {
+                        parentName: 'map-main'
+                    },
+                    bounces: false
+                });
+                $api.setStorage('selectedLines',ret.properties('id'));
+            }else{
+                fnShowMessage("数据异常")
+            }
+        });
+
+    }
+    //关闭窗口
+    function fnCloseWin(){
+        api.closeWin({
+            name: api.winName
+        });
+    }
+
+    /*
+     获取数组指定的元素
+   */
+    Array.prototype.properties = function(propertyName){
+        var len = this.length;
+        var tempArr = [];
+        for (var i = 0; i < len; i++) {
+            if(this[i].hasOwnProperty(propertyName)){
+                tempArr.push(this[i][propertyName]);
+            }
+        }
+        return tempArr;
+    }
+</script>
+</html>

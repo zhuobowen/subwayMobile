@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>地图测距图标</title>
+    <link rel="stylesheet" type="text/css" href="../../../css/api.css" />
+    <link rel="stylesheet" type="text/css" href="../../../css/mui.min.css" />
+    <link rel="stylesheet" type="text/css" href="../../../css/iconfont.css" />
+    <link rel="stylesheet" type="text/css" href="../../../css/common.css" />
+    <style>
+        html,body{
+            background-color: transparent;
+            font-size: 12px;
+            margin: 0px;padding:0px;
+        }
+        .mui-card{
+            height: 3rem;
+            width: 3rem;
+            margin: 0px;
+            background-color: #fff;
+        }
+        .iconfont{
+            font-size: 1.5rem;
+            color: #333333;
+        }
+        .icon-question,.icon-train{
+            position: relative;
+            left: 0.80rem;
+            top: .2rem
+        }
+        .text{
+            font-size: 1rem;
+            position: relative;
+            top: -0.3rem;
+            left: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="mui-card" tapmode="icon-active" isShow="false" onclick="fnShowLine()">
+        <span class="mui-icon iconfont icon-train"></span>
+        <span class="text legend" tapmode="mui-active">线路</span>
+    </div>
+    <div class="mui-card" tapmode="icon-active" isShow="false" onclick="fnUnusualRegister()" style="margin-top: 1rem">
+        <span class="mui-icon iconfont icon-question"></span>
+        <span class="text legend mui-color-red" tapmode="mui-active">测距</span>
+    </div>
+</body>
+<script type="text/javascript" src="../../../script/api.js"></script>
+<script type="text/javascript" src="../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../script/common.js"></script>
+<script type="text/javascript">
+    apiready = function(){
+        
+    };
+</script>
+</html>

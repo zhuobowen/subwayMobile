@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>非异常页面</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/common-mui.css"/>
+    <style>
+        html,body{
+            height: 100%;
+            overflow:auto;
+            background-color: #ffffff;
+        }
+        .mui-segmented-control.mui-scroll-wrapper .mui-control-item{
+            padding: 0px;
+        }
+        .mui-segmented-control.mui-scroll-wrapper .mui-control-item {
+            padding: 0px;
+            height: 74px;
+            width: 74px;
+            position: relative;
+            margin-right: 10px;
+        }
+        .image-up{
+            position: relative;
+            margin-top: -1px;
+            height: 76px;
+            width: 76px;
+            -moz-background-size: 80px 80px;
+            -webkit-background-size: 80px 80px;
+            -o-background-size: 80px 80px;
+            background-size: 80px 80px;
+        }
+        .mui-media-image {
+            width: 74px;
+            height: 74px;
+            margin: 0px;
+            min-width: 74px;
+        }
+        .mui-delete-btn{
+            right: 0px;
+            width:16px;
+            height:16px;
+            position: absolute;
+
+        }
+        .mui-row{
+            margin-bottom: 5px;
+        }
+        textarea{
+            font-size: 14px;
+        }
+        .icon-trash{
+            position: relative;
+            top: 3px;
+        }
+    </style>
+</head>
+<body>
+    <ul class="mui-table-view">
+        <form id="myform">
+            <li class="mui-table-view-cell">
+                <div class="mui-row">
+                    现场确认描述（文字）
+                </div>
+                <div class="mui-input-row">
+                    <textarea name="confirmDesc" id="confirmDesc" rows="1" placeholder="请输入描述" style="margin-bottom: 0px;"></textarea>
+                </div>
+            </li>
+            <li class="mui-table-view-cell">
+                现场确认描述（语音）
+                <span tapmode class="mui-record" onclick="fnStartRecord();">
+                    <span class="mui-icon iconfont icon-voice"></span>
+                    <span class="mui-color-gray record-text">点击录音</span>
+                </span>
+                <span class="mui-icon iconfont icon-trash mui-pull-right mui-color-red" style="display: none;" tapmode onclick="fnDeleteRecord(this)"></span>
+            </li>
+            <li class="mui-table-view-cell">
+                <div class="mui-row mui-margin-bottom-5">
+                    现场确认照片
+                </div>
+                <div class="mui-scroll-wrapper mui-slider-indicator mui-segmented-control mui-segmented-control-inverted" style="height: 74px;">
+                    <div class="mui-scroll">
+                        <div class="mui-control-item" id="photo-btn" tapmode onclick="fnOpenCamera()">
+                            <img class="image-up" src="../../../../image/iconfont-tianjia.png" alt="">
+                        </div>
+                    </div>
+                </div>
+            </li>
+            <li class="mui-table-view-cell">
+                <div class="mui-row mui-margin-bottom-5">
+                    现场小视频
+                </div>
+                <div class="mui-scroll-wrapper mui-slider-indicator mui-segmented-control mui-segmented-control-inverted" style="height: 74px;w">
+                    <div class="mui-scroll">
+                        <div class="mui-control-item" id="video-btn" tapmode onclick="fnOpenVideo()">
+                            <img class="image-up" src="../../../../image/iconfont-video.png" alt="">
+                        </div>
+                    </div>
+                </div>
+            </li>
+        </form>
+    </ul>
+</body>
+<script type="text/template" id="photoTemplate">
+    <div class="mui-control-item">
+        <img class="mui-media-image" onclick="fnShowPhotos(this)" src="{{=it.url}}" alt=""/>
+        <img class="mui-delete-btn" tapmode onclick="fnDelPhoto(this)" src="../../../../image/delete-btn.png"/>
+    </div>
+</script>
+<script type="text/template" id="videoTemplate">
+    <div class="mui-control-item">
+        <img class="mui-media-image" onclick="fnShowVideo(this)" data-url="{{=it.url}}" src="../../../../image/video-btn.png" alt=""/>
+        <img class="mui-delete-btn" tapmode onclick="fnDelVideo(this)" src="../../../../image/delete-btn.png"/>
+    </div>
+</script>
+<script type="text/template" id="start_record">
+    <span tapmode class="mui-record" onclick="fnStartRecord();">
+        <span class="mui-icon iconfont icon-voice"></span>
+        <span class="mui-color-gray record-text">点击录音</span>
+        </span>
+    </span>
+</script>
+<script type="text/template" id="stop_record">
+    <span tapmode class="mui-record" onclick="fnStopRecord();">
+        <span class="mui-icon iconfont icon-stop mui-color-red"></span>
+        <span class="mui-color-gray record-text">录音中...</span>
+        </span>
+    </span>
+</script>
+<script type="text/template" id="play_record">
+    <span tapmode class="mui-record" onclick="fnPlayRecord();">
+        <span class="mui-icon iconfont icon-play-voice  mui-color-blue"></span>
+        <span class="mui-color-gray record-text">播放录音</span>
+        </span>
+    </span>
+</script>
+<script type="text/template" id="play_stop_record">
+    <span tapmode class="mui-record" onclick="fnStopPlayRecord();">
+        <span class="mui-icon iconfont icon-stop mui-color-red"></span>
+        <span class="mui-color-gray record-text">播放中</span>
+        </span>
+    </span>
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript">
+    var fs;
+    var photos = [];
+    var videos = [];
+    var records = [];
+    var imageBrowser;
+    apiready = function(){
+        fnInitPhotos();
+        api.parseTapmode();
+        fs = api.require('fs');
+        imageBrowser = api.require('imageBrowser');
+
+        //新增保存监听
+        api.addEventListener({
+            name: 'save1'
+        }, function (ret, err) {
+            fnSave();
+        });
+    };
+
+    //初始化照片
+    function fnInitPhotos(){
+        var imgUrls = api.pageParam.imgUrls;
+        if (imgUrls && imgUrls.length > 0) {
+            for (var i = 0 ; i < imgUrls.length ; i++){
+                var url = imgUrls[i].url;
+                photos.push(url);
+                $('#photo-btn').before(fnTemplate('photoTemplate',{url:url}));
+            }
+            api.parseTapmode();
+        }
+    }
+
+    //开始录音
+    function fnStartRecord(){
+        api.startRecord();
+        setTimeout(function(){
+            $('.icon-trash').hide();
+            $('.mui-record').replaceWith(fnTemplate('stop_record'));
+        },300)
+    }
+
+    //结束录音
+    function fnStopRecord(){
+        api.stopRecord(function(ret, err) {
+            if (ret) {
+                var path = ret.path;
+                records = [];
+                records.push(path);
+                $('.mui-record').replaceWith(fnTemplate('play_record'));
+                $('.icon-trash').show();
+            }
+        });
+    }
+
+    //播放录音
+    function fnPlayRecord(){
+        $('.mui-record').replaceWith(fnTemplate('play_stop_record'));
+        api.startPlay({
+            path: records[0]
+        }, function(ret, err) {
+            $('.mui-record').replaceWith(fnTemplate('play_record'));
+        });
+    }
+
+    //结束播放
+    function fnStopPlayRecord(){
+        api.stopPlay();
+        $('.mui-record').replaceWith(fnTemplate('play_record'));
+    }
+
+
+    //删除录音
+    function fnDeleteRecord(_this){
+        api.stopPlay();
+        var url = records[0];
+        if(url && url.indexOf('annex') == -1){ //本地文件
+            fs.remove({
+                path: url
+            }, function(ret, err) {
+                if (ret.status) {
+                    $(_this).hide();
+                    $('.mui-record').replaceWith(fnTemplate('start_record'));
+                }
+            });
+        }
+    }
+
+    //打开照相机
+    function fnOpenCamera(){
+        api.closeWin({
+            name: 'camera-main-win'
+        });
+        api.openWin({
+            name: 'camera-main-win',
+            url: 'widget://html/frame/common/media/camera-win.html',
+            slidBackEnabled:false,
+            pageParam: {
+                cameraType: 5,
+                frontWin: api.winName,
+                frontFrame: api.frameName
+            }
+        });
+    }
+
+    //拍照的回调函数
+    function fnTakePhotoCallBack(url){
+        photos.push(url);
+        $('#photo-btn').before(fnTemplate('photoTemplate',{url:url}));
+        api.parseTapmode();
+    }
+
+    //查看照片
+    function fnShowPhotos(_this){
+        var index = 0;
+        var imgUrls = [];
+        $(_this).parents('.mui-scroll').find('.mui-media-image').each(function(i,ele){
+            var imgUrl = $(ele).attr('src');
+            var thisUrl = $(_this).attr('src');
+            if (thisUrl == imgUrl) {
+                index = i;
+            }
+            if(imgUrl && imgUrl.indexOf('smallImage=true') != -1){
+                imgUrl = imgUrl.replace('smallImage=true','smallImage=false');
+            }
+            imgUrls.push(imgUrl);
+        });
+        imageBrowser.openImages({
+            imageUrls: imgUrls,
+            showList: false,
+            activeIndex: index
+        });
+    }
+
+    //删除本地照片
+    function fnDelPhoto(_this) {
+        var imagePath = $(_this).prev().attr('src');
+        for (var i = 0; i < photos.length; i++) {
+            if (imagePath == photos[i]) {
+                photos.splice(i, 1);
+            }
+        }
+        if (imagePath) {//删除本地缓存照片
+            fs.remove({
+                path: imagePath
+            }, function(ret, err) {
+                $(_this).parent().remove();
+                api.toast({
+                    msg: '删除成功',
+                    duration: 1000,
+                    location: 'bottom'
+                });
+            });
+        }
+    }
+
+    //获取视频
+    function fnOpenVideo(){
+        api.getPicture({
+            sourceType:'camera',
+            encodingType: 'jpg',
+            mediaValue:'video',
+            destinationType: 'url',
+            videoQuality: 'high', //high
+            saveToPhotoAlbum: false
+        },function(ret,err){
+            if (ret) {
+                if(ret.data!=''){
+                    var url = ret.data;
+                    videos.push(url);
+                    $('#video-btn').before(fnTemplate('videoTemplate',{url:url}));
+                    api.parseTapmode();
+                }
+            }
+            //禁止屏幕休眠
+            api.setKeepScreenOn({ keepOn: true });
+        });
+    }
+
+    //播放视频
+    function fnShowVideo(_this){
+        var url = $(_this).attr('data-url');
+        if(url && url.indexOf('annexId') > -1){
+            api.showProgress({
+                style: 'default',
+                animationType: 'fade',
+                title: '努力加载中...',
+                modal: true
+            });
+            api.download({
+                url: url,
+                report: false,
+                cache: true,
+                allowResume: false
+            }, function(ret, err) {
+                if (ret.state == 1) {
+                    api.hideProgress();
+                    api.openVideo({
+                        url: ret.savePath
+                    });
+                }
+            });
+        }else if (url) {
+            api.openVideo({
+                url: url
+            });
+        }
+    }
+
+    //删除视频
+    function fnDelVideo(_this){
+        var url = $(_this).prev().attr('data-url');
+        for (var i = 0; i < videos.length; i++) {
+            if (url == videos[i]) {
+                videos.splice(i, 1);
+            }
+        }
+        if (url) {
+            fs.remove({//删除本地缓存照片
+                path: url
+            }, function(ret, err) {
+                $(_this).parent().remove();
+                api.toast({
+                    msg: '删除成功',
+                    duration: 1000,
+                    location: 'bottom'
+                });
+            });
+        }
+    }
+
+    //保存表单
+    function fnSave(){
+
+        var confirmDesc = $('#confirmDesc').val();
+        if(!confirmDesc){
+            fnShowMessage("请输入现场确认描述");
+            return;
+        }
+
+        var files = {};
+        if (photos && photos.length > 0) {
+            for (var i = 0; i < photos.length; i++) {
+                var ret = fs.existSync({
+                    path: photos[i]
+                });
+                if(ret.exist){
+                    files['photoFile[' + i + ']'] = photos[i];
+                }else{
+                    fnShowMessage('找不到图片：'+ photos[i]);
+                    return false;
+                }
+            }
+        }
+
+        if (videos && videos.length > 0) {
+            for (var i = 0; i < videos.length; i++) {
+                var ret = fs.existSync({
+                    path: videos[i]
+                });
+                if(ret.exist){
+                    files['videoFile[' + i + ']'] = videos[i];
+                }else{
+                    fnShowMessage('找不到视频：'+ videos[i]);
+                    return false;
+                }
+            }
+        }
+
+        if (records && records.length > 0) {
+            for (var i = 0; i < records.length; i++) {
+                var ret = fs.existSync({
+                    path: records[i]
+                });
+                if(ret.exist){
+                    files['recordFile[' + i + ']'] = records[i];
+                }else{
+                    fnShowMessage('找不到音频：'+ records[i]);
+                    return false;
+                }
+            }
+        }
+
+        fnShowProgress("正在保存");
+        var id = api.pageParam.id;  //疑似异常点id
+        if(id){
+            api.ajax({
+                url: fnGetServerAddr() + '/apicloud/riskSituation.do?todo=ajaxSave',
+                method: 'post',
+                data: {
+                    values: {
+                        id: id,
+                        state: 1,
+                        confirmDesc: confirmDesc
+                    },
+                    files:files
+                }
+            }, function (ret, err) {
+                fnHideProgress();
+                if(ret){
+                    if(ret.success){
+                        for (var i = 0; i < photos.length; i++) {
+                            fs.removeSync({ path: photos[i]});
+                        }
+                        for (var i = 0; i < videos.length; i++) {
+                            fs.removeSync({ path: videos[i]});
+                        }
+                        for (var i = 0; i < records.length; i++) {
+                            fs.removeSync({ path: records[i]});
+                        }
+                        api.closeWin();
+                    }else{
+                        fnShowMessage(ret.msg || "数据异常");
+                    }
+                }else{
+                    fnShowMessage("网络异常")
+                }
+            });
+        }
+    }
+</script>
+</html>

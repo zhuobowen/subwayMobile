@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>定位图标</title>
+    <link rel="stylesheet" type="text/css" href="../../../css/api.css" />
+    <link rel="stylesheet" type="text/css" href="../../../css/mui.min.css" />
+    <link rel="stylesheet" type="text/css" href="../../../css/iconfont.css" />
+    <style>
+        html,body{
+            background-color: transparent;
+            margin: 0px;padding:0px;
+        }
+        .mui-card{
+            height: 30px;
+            width: 30px;
+            margin: 0px 0px;
+            background-color: #fff;
+        }
+        .mui-card-active{
+            background-color: #cccccc;
+        }
+        .icon-localization{
+            font-size: 20px;
+            color: #333333;
+            position: relative;
+            left: 5px;
+            top: 6px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="mui-card" tapmode="mui-card-active" onclick="fnGoCenter();">
+        <span class="mui-icon iconfont icon-localization"></span>
+    </div>
+</body>
+<script type="text/javascript" src="../../../script/api.js"></script>
+<script type="text/javascript" src="../../../script/mui.min.js"></script>
+<script type="text/javascript">
+    apiready = function(){
+        api.parseTapmode();
+    };
+    //定位中心点
+    function fnGoCenter(_this){
+        api.execScript({
+            name: api.winName,
+            frameName: api.pageParam.parentName,
+            script: 'fnGoCenter();'
+        });
+    }
+</script>
+</html>

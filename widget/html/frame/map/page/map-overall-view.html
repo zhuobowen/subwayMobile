@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>总图</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/common-mui.css"/>
+    <style>
+        html,body{
+            height: 100%;
+            overflow: auto;
+        }
+        .mui-card-header{
+            font-size: 14px;
+        }
+        .mui-card-title:first-child{
+            margin-top: 10px;
+        }
+        .mui-card-title{
+            font-size: 17px;
+            line-height: 25px;
+            text-align: center;
+        }
+        .iconfont{
+            margin-right: 10px;
+            font-size: 20px;
+            color: #FC8E54;
+        }
+        .mui-fixed{
+            width: 100%;
+        }
+        .mui-fixed-item{
+            -webkit-box-flex:1;
+            -webkit-flex:1;
+            flex:1;
+        }
+        .mui-fixed-item-1{
+            width: 100px;
+            height: 100px;
+        }
+        .mui-navigate-right{
+            height: 125%;
+        }
+        .mui-padding-right-25{
+            padding-right: 25px;
+        }
+        .mui-table-view-cell>a:not(.mui-btn){
+            color: #000000;
+        }
+        .mui-row{
+            line-height: 39px;
+        }
+        /*.mui-table-view-cell>a:not(.mui-btn).mui-active{
+            background-color: transparent;
+        }*/
+    </style>
+</head>
+<body>
+    <div class="mui-content">
+        <div class="mui-card-title">
+            巡查
+        </div>
+        <div class="mui-card">
+            <div class="mui-card-header">
+                <span class="mui-pull-left">
+                    <span class="mui-icon iconfont icon-unusual"></span>异常问题
+                </span>
+                <span class="mui-pull-right">截止当前</span>
+            </div>
+            <div class="mui-card-content mui-card-media">
+                <div class="mui-fixed">
+                    <div class="mui-fixed-item-1" id="chart_1"></div>
+                    <div class="mui-fixed-item">
+                        <ul class="mui-table-view" style="height: 100%;">
+                            <li class="mui-table-view-cell" style="height: 100%;">
+                                <a href="javascript:fnOpenWin('巡查情况总览',5)" tapmode="mui-active" class="mui-navigate-right">
+                                    <div class="mui-row">
+                                        <div class="mui-pull-left">
+                                            异常问题
+                                        </div>
+                                        <div class="mui-pull-right mui-color-blue mui-padding-right-25" id="isemphasis0Count">
+
+                                        </div>
+                                    </div>
+                                    <div class="mui-row">
+                                        <div class="mui-pull-left">
+                                            重点路段
+                                        </div>
+                                        <div class="mui-pull-right mui-color-blue mui-padding-right-25" id="isemphasis1Count">
+
+                                        </div>
+                                    </div>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="mui-card">
+            <div class="mui-card-header">
+                <span class="mui-pull-left">
+                    <span class="mui-icon iconfont icon-progress"></span>准确率
+                </span>
+                <span class="mui-pull-right">截止当前</span>
+            </div>
+            <div class="mui-card-content mui-card-media">
+                <div class="mui-fixed">
+                    <div class="mui-fixed-item-1" id="chart_2"></div>
+                    <div class="mui-fixed-item">
+                        <ul class="mui-table-view" style="height: 100%;">
+                            <li class="mui-table-view-cell" style="height: 100%;">
+                                <a href="javascript:fnOpenWin('巡查情况总览',5)" tapmode class="mui-navigate-right">
+                                    <div class="mui-row">
+                                        <div class="mui-pull-left">
+                                            巡查发现
+                                        </div>
+                                        <div class="mui-pull-right mui-color-blue mui-padding-right-25" id="subwayProtectCount">
+
+                                        </div>
+                                    </div>
+                                    <div class="mui-row">
+                                        <div class="mui-pull-left">
+                                            地保办发现
+                                        </div>
+                                        <div class="mui-pull-right mui-color-blue mui-padding-right-25" id="patrolCount">
+
+                                        </div>
+                                    </div>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="mui-card-title">
+            监护
+        </div>
+        <div class="mui-card">
+            <div class="mui-card-header">
+                <span class="mui-pull-left">
+                    <span class="mui-icon iconfont icon-chart1"></span>报备监护工点
+                </span>
+                <span class="mui-pull-right">截止当前</span>
+            </div>
+            <div class="mui-card-content mui-card-media">
+                <div class="mui-fixed">
+                    <div class="mui-fixed-item-1" id="chart_3"></div>
+                    <div class="mui-fixed-item">
+                        <ul class="mui-table-view" style="height: 100%;">
+                            <li class="mui-table-view-cell" style="height: 100%;">
+                                <a href="javascript:fnOpenWin('监护情况总览',6)" tapmode class="mui-navigate-right">
+                                    <div class="mui-row">
+                                        <div class="mui-pull-left">
+                                            监护中
+                                        </div>
+                                        <div class="mui-pull-right mui-color-blue mui-padding-right-25" id="worksiteCount_0_1">
+
+                                        </div>
+                                    </div>
+                                    <div class="mui-row">
+                                        <div class="mui-pull-left">
+                                            结束
+                                        </div>
+                                        <div class="mui-pull-right mui-color-blue mui-padding-right-25" id="worksiteCount2">
+
+                                        </div>
+                                    </div>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/echarts.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript">
+    var chart_1,chart_2,chart_3,option;
+    apiready = function(){
+        api.parseTapmode();
+        fnInitChart();
+        fnInitData();
+    };
+    function fnInitChart(){
+        chart_1 = echarts.init(document.getElementById('chart_1'));
+        chart_2 = echarts.init(document.getElementById('chart_2'));
+        chart_3 = echarts.init(document.getElementById('chart_3'));
+    }
+    //初始化数据
+    function fnInitData(){
+        fnShowProgress("",true);
+        api.ajax({
+            url: fnGetServerAddr() + '/subway/unusualSituation.do?todo=queryUnusualTrackByLineId',
+            method: 'get',
+            data: {
+                values: {}
+            }
+        }, function (ret, err) {
+            fnHideProgress();
+            if(ret){
+                $('#patrolCount').html((ret.patrolCount || 0) + '处');
+                $('#worksiteCount2').html((ret.worksiteCount2 || 0) + '处');
+                $('#isemphasis0Count').html((ret.isemphasis0Count || 0) + '处');
+                $('#isemphasis1Count').html((ret.isemphasis1Count || 0) + '处');
+                $('#subwayProtectCount').html((ret.subwayProtectCount || 0) + '处');
+                $('#worksiteCount_0_1').html(((ret.worksiteCount0 + ret.worksiteCount1) || 0) + '处');
+                fnInitChartData(ret);
+            }else{
+                fnShowMessage("网络异常")
+            }
+        });
+    }
+
+    //初始化图表
+    function fnInitChartData(ret){
+        //第1个图
+        option = {
+            series : [
+                {
+                    type: 'pie',
+                    radius : '87%',
+                    center: ['50%', '50%'],
+                    data:[
+                        {value:ret.isemphasis1Count || 0, name:'重点路段',itemStyle:{color:'#48CFAE'}},
+                        {value:ret.isemphasis0Count || 0, name:'常规异常',itemStyle:{color:'#FB6E52'}}
+                    ],
+                    startAngle:140,
+                    hoverAnimation:false,
+                    labelLine :{
+                        show:false
+                    }
+                }
+            ]
+        };
+        chart_1.setOption(option);
+
+        option = {
+            series : [
+                {
+                    type: 'pie',
+                    radius : ['75%','87%'],
+                    center: ['50%', '50%'],
+                    label: {
+                        verticalAlign:'middle',
+                        normal: {
+                            position: 'center'
+                        }
+                    },
+                    data:[
+                        {value:ret.subwayProtectCount || 0,itemStyle:{color:'#43C8DB'},
+                            label: {
+                                verticalAlign:'middle',
+                                normal: {
+                                    formatter: '{d} %',
+                                    textStyle: {
+                                        fontSize: 15
+                                    }
+                                }
+                            }
+                        },
+                        {value:ret.patrolCount || 0, name:'准确率',itemStyle:{color:'#DDDDDD'}}
+                    ],
+                    startAngle:40,
+                    hoverAnimation:false,
+                    labelLine :{
+                        show:false
+                    }
+                }
+            ]
+        };
+
+        chart_2.setOption(option);
+
+        option = {
+            series : [
+                {
+                    type: 'pie',
+                    radius : '87%',
+                    center: ['50%', '50%'],
+                    data:[
+                        {value:ret.worksiteCount2 || 0, name:'已结束',itemStyle:{color:'#48CFAE'}},
+                        {value:(ret.worksiteCount0 + ret.worksiteCount1) || 0, name:'正在跟踪',itemStyle:{color:'#FB6E52'}}
+                    ],
+                    startAngle:140,
+                    hoverAnimation:false,
+                    labelLine :{
+                        show:false
+                    }
+                }
+            ]
+        };
+        chart_3.setOption(option);
+    }
+
+    //打开窗口
+    function fnOpenWin(title,index){
+        var pageName = 'map-common-page';
+        var pageObj = {
+            title: title,
+            frameName:pageName,
+            frameUrl:'widget://html/frame/map/page/'+ pageName + '.html',
+            leftIcons:'icon-arrow-left,event-back',
+            index:index,
+            bounces:false,
+            lines: api.pageParam.lines
+        };
+        fnOpenCommonWin(pageName,pageObj);
+    }
+</script>
+</html>

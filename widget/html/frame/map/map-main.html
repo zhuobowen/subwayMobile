@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>电子地图</title>
+    <link rel="stylesheet" type="text/css" href="../../../css/api.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../css/common-win.css"/>
+</head>
+<body>
+
+</body>
+<script type="text/javascript" src="../../../script/api.js"></script>
+<script type="text/javascript" src="../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../script/common.js"></script>
+<script type="text/javascript" src="../../../script/transform.js"></script>
+<script type="text/javascript" src="../../../script/map.js"></script>
+<!--<script type="text/javascript" src="../../../script/frame/electronic-map.js"></script>-->
+<script type="text/javascript">
+    var overlay = 1;             //覆盖物id
+    var lineIds = [];
+    var allLines = [];
+    var mapOpened = false;
+    var car_lst = [];
+    var unusual_lst = [];
+    var emphasis_lst = [];
+    var monitor_lst = [];
+    var worksite_lst = [];
+    var worksite_area_lst = [];
+    var lineFrameOpened = false;
+    var legendFrameOpened = false;
+    var showUnusual = true;
+    var showEmphasis = true;
+    var showWorksite = true;
+    var showMonitor = true;
+    var billboard_bg = 'widget://image/map/2.png';
+    var icon_work = 'widget://image/map/icon-work.png';
+    var icon_monitor = 'widget://image/map/icon-monitor.png';
+    var icon_red = 'widget://image/map/location-red-large.png';
+    var icon_orange = 'widget://image/map/location-orange-large.png';
+    apiready = function () {
+        fnInitMap();
+        allLines = api.pageParam.lines;
+        lineIds = api.pageParam.lineIds;
+        var center = $api.getStorage('current_location');
+        if(!center){
+            fnShowMessage('请开启定位');
+            return;
+        }
+        setTimeout(function(){
+            aMap.open({
+                rect: {
+                    x: 0,
+                    y: 0,
+                    w: api.frameWidth,
+                    h: api.frameHeight
+                },
+                center:{
+                    lon: center.lon,
+                    lat: center.lat
+                },
+                zoomLevel: 10.5,
+                showUserLocation: true,
+                fixedOn: api.frameName,
+                fixed: true
+            },
+            function(ret, err) {
+                if(ret){
+                    fnInitMapAttr();
+                    fnInitMapAttr();    //初始化属性
+                    fnInitUnusual();    //异常点描点
+                    fnInitEmphasis();   //重点路段描点
+                    fnInitWorkstie();   //监护工点描点
+                    fnInitMonitor();    //监测工程描点
+                    fnInitPoints();     //初始化轨道线路
+
+                    fnShowCar();
+
+                    setInterval(function(){//实时显示车辆位置
+                        fnShowCar();
+                    },10000)
+
+                }else{
+                    alert('打开地图失败');
+                    api.closeWin();
+                }
+            });
+        },300);
+
+        //显示地图
+        api.addEventListener({
+            name:'viewappear'
+        }, function(ret, err){
+            if(!mapOpened){
+                aMap.show();
+                mapOpened = true;
+            }
+        });
+
+        api.addEventListener({
+            name:'viewdisappear'
+        }, function(ret, err){
+            if(mapOpened){
+                aMap.hide();
+                mapOpened = false;
+            }
+        });
+
+        //异常点开关
+        api.addEventListener({
+            name:'unusual'
+        }, function(ret, err){
+            if(ret.value.show){
+                fnInitUnusual();
+                showUnusual = true;
+            }else{
+                if(unusual_lst.length > 0){
+                    aMap.removeAnnotations({
+                        ids: unusual_lst
+                    });
+                }
+                unusual_lst = [];
+                showUnusual = false;
+            }
+        });
+
+        //重点路段开关
+        api.addEventListener({
+            name:'emphasis'
+        }, function(ret, err){
+            if(ret.value.show){
+                fnInitEmphasis();
+                showEmphasis = true;
+            }else{
+                if(emphasis_lst.length > 0){
+                    aMap.removeAnnotations({
+                        ids: emphasis_lst
+                    });
+                }
+                emphasis_lst = [];
+                showEmphasis = false;
+            }
+        });
+
+        //监护工点开关
+        api.addEventListener({
+            name:'worksite'
+        }, function(ret, err){
+            if(ret.value.show){
+                fnInitWorkstie();
+                showWorksite = true;
+            }else{
+                if(worksite_lst.length > 0){
+                    aMap.removeAnnotations({
+                        ids: worksite_lst
+                    });
+                }
+                if(worksite_area_lst.length > 0){
+                    aMap.removeOverlay({
+                        ids: worksite_area_lst
+                    });
+
+                }
+                worksite_lst = [];
+                worksite_area_lst = [];
+                showWorksite = false;
+            }
+        });
+
+        //监测工程开关
+        api.addEventListener({
+            name:'monitor'
+        }, function(ret, err){
+            if(ret.value.show){
+                fnInitMonitor();
+                showMonitor = true;
+            }else{
+                if(monitor_lst.length > 0){
+                    aMap.removeAnnotations({
+                        ids: monitor_lst
+                    });
+                }
+                monitor_lst = [];
+                showMonitor = false;
+            }
+        });
+
+
+        //监听打开图例
+        api.addEventListener({
+            name:'legend'
+        }, function(ret, err){
+            if(ret.value.show){
+                api.openFrame({
+                    name: 'map-legend',
+                    url: 'widget://html/frame/map/map-legend.html',
+                    rect: {
+                        x: api.winWidth/2,
+                        y: api.winHeight/2,
+                        w: api.winWidth / 2,
+                        h: api.winHeight/2
+                    },
+                    animation:{
+                        type:"movein",
+                        subType:"from_right",
+                        duration:300
+                    },
+                    bounces: false
+                });
+
+                legendFrameOpened = true;
+
+                if(lineFrameOpened){
+                    api.closeFrame({
+                        name: 'map-main-line'
+                    });
+                }
+                //去掉线路icon的border
+                api.execScript({
+                    name: api.winName,
+                    frameName: 'map-toolbar',
+                    script: 'fnRemoveBorder(\'line\')'
+                });
+            }else{
+                legendFrameOpened = false;
+                api.closeFrame({
+                    name: 'map-legend'
+                });
+            }
+        });
+
+        //监听打开线路frame
+        api.addEventListener({
+            name:'line'
+        }, function(ret, err){
+            if(ret.value.show){
+                api.openFrame({
+                    name: 'map-main-line',
+                    url: 'widget://html/frame/map/map-main-line.html',
+                    rect: {
+                        x: api.winWidth/2 + 30,
+                        y: api.winHeight - 350,
+                        w: api.winWidth / 2 - 30,
+                        h: 260
+                    },
+                    bgColor:'rgba(0,0,0,0)',
+                    animation:{
+                        type:"movein",
+                        subType:"from_right",
+                        duration:300
+                    },
+                    pageParam:{
+                        lineIds: lineIds,
+                        allLines: allLines
+                    },
+                    bounces: false
+                });
+
+                lineFrameOpened = true;
+
+                if(legendFrameOpened){
+                    api.closeFrame({
+                        name: 'map-legend'
+                    });
+                }
+
+                //去掉图例icon的border
+                api.execScript({
+                    name: api.winName,
+                    frameName: 'map-toolbar',
+                    script: 'fnRemoveBorder(\'legend\')'
+                });
+
+            }else{
+                lineFrameOpened = false;
+                api.closeFrame({
+                    name: 'map-main-line'
+                });
+            }
+        });
+
+        //监听线路是否改变
+        api.addEventListener({
+            name:'line-has-changed'
+        }, function(ret, err){
+            var ids = ret.value.lineIds;
+
+            aMap.removeAnnotations({
+                ids: unusual_lst
+            });
+            aMap.removeAnnotations({
+                ids: emphasis_lst
+            });
+            aMap.removeAnnotations({
+                ids: worksite_lst
+            });
+            aMap.removeOverlay({
+                ids: worksite_area_lst
+            });
+            unusual_lst = [];
+            emphasis_lst = [];
+            worksite_lst = [];
+            worksite_lst = [];
+            worksite_area_lst = [];
+            if(ids && ids.length > 0){
+                lineIds = ids;
+                if(showUnusual)
+                    fnInitUnusual();    //异常点描点
+                if(showEmphasis)
+                    fnInitEmphasis();   //重点路段描点
+                if(showWorksite)
+                    fnInitWorkstie();   //监护工点描点
+            }
+            $api.setStorage('selectedLines', ids);
+            setTimeout(function(){
+                fnInitPoints();
+            },500)
+        });
+
+    }
+
+    //初始化异常点位
+    function fnInitUnusual(){
+        api.ajax({
+            url: fnGetServerAddr() + '/subway/unusualSituation.do?todo=queryUnusualSituationForGis',
+            method: 'get',
+            data: {
+                body: {lineIds: lineIds || [] , isEmphasis : 0}
+            }
+        }, function (ret, err) {
+            if(ret){
+                if(ret.success){
+                    var latLng,illus;
+                    $.each(ret.data,function(i,unusual){
+                        var id = unusual.id;
+                        latLngs = unusual.latLng ? unusual.latLng.split(','):[];
+
+                        overlay++
+                        unusual_lst.push(overlay);
+
+                        aMap.addAnnotations({
+                            annotations: [{
+                                id:overlay,
+                                lon: latLngs[0],
+                                lat: latLngs[1]
+                            }],
+                            icons: [icon_orange]
+                        }, function(ret) {
+                            if (ret.eventType == 'click') {
+                                //fnOpenWin(id,'异常情况跟踪','map-unusual-view');
+                            }
+                        });
+
+                        illus = unusual.unusualPic ?
+                                        fnGetImageUrl(unusual.unusualPic.split(',')[0],true,200,200) : nopicture;
+
+                        overlay++
+                        unusual_lst.push(overlay);
+
+                        aMap.addBillboard({
+                            id: overlay,
+                            draggable: false,
+                            coords: {
+                                lon: latLngs[0],
+                                lat: latLngs[1]
+                            },
+                            bgImg:billboard_bg,
+                            content: {
+                                illus:illus
+                            },
+                            styles: {
+                                size: {
+                                    width: 50,
+                                    height: 80
+                                },
+                                illusRect: {
+                                    x: 3,
+                                    y: 3,
+                                    w: 44,
+                                    h: 44
+                                },
+                                marginT: 100
+                            }
+                        }, function(ret) {
+                            if (ret) {
+                                if(ret.eventType == 'click'){
+                                   fnOpenWin(id,'异常情况跟踪','map-unusual-view');
+                                }
+                            }
+                        });
+                    });
+                }
+            }else{
+                fnShowMessage("数据异常")
+            }
+        });
+    }
+
+    //初始重点路段
+    function fnInitEmphasis(){
+        api.ajax({
+            url: fnGetServerAddr() + '/subway/unusualSituation.do?todo=queryUnusualSituationForGis',
+            method: 'get',
+            data: {
+                body: {lineIds: lineIds || [] , isEmphasis : 1}
+            }
+        }, function (ret, err) {
+            if(ret){
+                if(ret.success){
+                    var latLng,illus;
+                    $.each(ret.data,function(i,unusual){
+                        var id = unusual.id;
+                        latLngs = unusual.latLng ? unusual.latLng.split(','):[];
+
+                        overlay++;
+                        emphasis_lst.push(overlay);
+
+                        aMap.addAnnotations({
+                            annotations: [{
+                                id:overlay,
+                                lon: latLngs[0],
+                                lat: latLngs[1]
+                            }],
+                            icons: [icon_red]
+                        }, function(ret) {
+                            if (ret.eventType == 'click') {
+                                //fnOpenWin(id,'异常情况跟踪','map-unusual-view');
+                            }
+                        });
+
+                        illus = unusual.unusualPic ?
+                            fnGetImageUrl(unusual.unusualPic.split(',')[0],true,200,200) : nopicture;
+
+                        overlay++;
+                        emphasis_lst.push(overlay);
+
+                        aMap.addBillboard({
+                            id: overlay,
+                            draggable: false,
+                            coords: {
+                                lon: latLngs[0],
+                                lat: latLngs[1]
+                            },
+                            bgImg:billboard_bg,
+                            content: {
+                                illus:illus
+                            },
+                            styles: {
+                                size: {
+                                    width: 50,
+                                    height: 80
+                                },
+                                illusRect: {
+                                    x: 3,
+                                    y: 3,
+                                    w: 44,
+                                    h: 44
+                                },
+                                marginT: 100
+                            }
+                        }, function(ret) {
+                            if (ret) {
+                                if(ret.eventType == 'click'){
+                                    fnOpenWin(id,'异常情况跟踪','map-unusual-view');
+                                }
+                            }
+                        });
+                    });
+                }
+            }else{
+                fnShowMessage("数据异常")
+            }
+        });
+    }
+
+
+    //初始化工点信息
+    function fnInitWorkstie(){
+        api.ajax({
+            url: fnGetServerAddr() + '/subway/worksite.do?todo=queryWorksiteForGis',
+            method: 'get',
+            data: {
+                body: {lineIds: lineIds || []}
+            }
+        }, function (ret, err) {
+            if(ret){
+                if(ret.success){
+                    var latLng,points,lonSum,latSum,lngLats;
+                    $.each(ret.data,function(i,worksite){
+                        var id = worksite.id;
+                        latLng = worksite.latLng;
+                        points = [];
+                        lonSum = 0;
+                        latSum = 0;
+                        latLngs = latLng ? latLng.split(';') : [];
+                        $.each(latLngs,function(j,point){
+                            var lon = parseFloat(point.split(',')[0]);
+                            var lat = parseFloat(point.split(',')[1]);
+                            points.push({
+                                lon: lon,
+                                lat: lat
+                            });
+                            lonSum += lon;
+                            latSum += lat;
+                        });
+
+                        overlay++;
+                        worksite_lst.push(overlay);
+
+                        aMap.addAnnotations({
+                            annotations: [{
+                                id: overlay,
+                                lon: lonSum / points.length,
+                                lat: latSum / points.length
+                            }],
+                            icons: [icon_work],
+                            draggable: false
+                        }, function(ret) {
+                            if (ret.eventType == 'click') {
+                                fnOpenWin(id,'工点监护跟踪','map-worksite-view');
+                            }
+                        });
+
+                        overlay++;
+                        worksite_area_lst.push(overlay);
+
+                        aMap.addPolygon({
+                            id: overlay,
+                            styles: {
+                                borderColor: '#0A78D0',
+                                borderWidth: api.systemType == 'ios' ? 1 : 5,
+                                lineDash: true,
+                                fillColor: 'rgba(74, 134, 232, 0.3 )'
+                            },
+                            points: points
+                        });
+
+                    });
+                }
+            }else{
+                fnShowMessage("数据异常")
+            }
+        });
+    }
+
+    //初始化监测工程信息
+    function fnInitMonitor(){
+        api.ajax({
+            url: fnGetServerAddr() + '/monitor/monitorPorject.do?todo=queryMonitorPorjectForGis',
+            method: 'get',
+            data: {
+                body: {lineIds: lineIds || []}
+            }
+        }, function (ret, err) {
+            if(ret){
+                if(ret.success) {
+
+                    var latLng, illus;
+                    $.each(ret.data, function (i, monitor) {
+                        overlay++;
+                        monitor_lst.push(overlay);
+                        var id = monitor.id;
+                        latLngs = monitor.latLng ? monitor.latLng.split(','):[];
+                        if(latLngs && latLngs.length > 0){
+                            aMap.addAnnotations({
+                                annotations: [{
+                                    id:overlay,
+                                    lon: latLngs[0],
+                                    lat: latLngs[1]
+                                }],
+                                icons: [icon_monitor]
+                            }, function(ret) {
+                                if (ret.eventType == 'click') {
+                                    fnOpenWin(id,'监测工程信息','map-monitor-view');
+                                }
+                            });
+                        }
+                    })
+                }
+            }else{
+                fnShowMessage("网络异常")
+            }
+        })
+    }
+
+    //实时显示车辆
+    function fnShowCar(){
+
+        if(car_lst && car_lst.length > 0){
+            aMap.removeAnnotations({
+                ids: car_lst
+            });
+        }
+
+        api.ajax({
+            url: fnGetServerAddr() + '/subway/car.do?todo=inspectionSituation',
+            method: 'get'
+        }, function (ret, err) {
+            if(ret){
+                var car,type,currentCarGps,driveState,point,title,subTitle,id;
+                for(var i = 0 ; i < ret.length; i++){
+                    car = ret[i];
+                    type =car.type;
+                    if(type == 1){
+                        driveState = car.driveState;
+                        currentCarGps = car.currentCarGps;
+                        if(currentCarGps){
+                            overlay++;
+                            car_lst.push(overlay);
+                            aMap.addAnnotations({
+                                annotations: [{
+                                    id:overlay,
+                                    lon: currentCarGps.longitude,
+                                    lat: currentCarGps.latitude
+                                }],
+                                icons: ['widget://image/map/car.png']
+                            }, function(ret) {
+
+                            });
+                            point = {
+                                lon:currentCarGps.longitude,
+                                lat:currentCarGps.latitude
+                            };
+                            title = '车辆：' + car.carNo + '（'+ (car.inspectUser ? car.inspectUser.userName : '无')  +'）';
+                            subTitle = '速度：' + car.currentCarGps.speed + 'km/h（ ' + ( driveState && driveState != '0' ? '行驶中' : '未启动') + ' ）';
+                            addBillboard(point , title , subTitle);
+                        }
+                    }else if(type == 2){//单兵巡查人员
+                        driveState = car.driveState;
+                        currentCarGps = car.currentCarGps;
+                        if(currentCarGps){
+                            overlay++;
+                            car_lst.push(overlay);
+                            aMap.addAnnotations({
+                                annotations: [{
+                                    id: overlay,
+                                    lon: currentCarGps.longitude,
+                                    lat: currentCarGps.latitude
+                                }],
+                                icons: ['widget://image/map/user.png']
+                            }, function(ret) {
+
+                            });
+                            point = {
+                                lon:currentCarGps.longitude,
+                                lat:currentCarGps.latitude
+                            };
+                            title = car.policeName;
+                            subTitle = currentCarGps.dateup;
+                            addBillboard(point , title , subTitle);
+                        }
+                    }
+                }
+            }else{
+                fnShowMessage("网络异常")
+            }
+        });
+    }
+
+
+    //添加布告牌
+    function addBillboard(coords,title,subTitle){
+        var id = Math.random();
+        car_lst.push(id);
+        aMap.addBillboard({
+            id: id,
+            draggable: true,
+            coords: coords,
+            content: {
+                title: title,
+                subTitle: subTitle
+            },
+            bgImg:'widget://image/map/empty.png',
+            styles: {
+                size: {
+                    width: 200,
+                    height: 48
+                },
+                alignment: api.systemType == 'ios' ? 'center' : 'left',
+                titleColor: '#707070',
+                titleSize: 10,
+                subTitleColor: '#707070',
+                subTitleSize: 10
+            }
+        }, function(ret) {
+            if (ret) {
+
+            }
+        });
+    }
+    //打开窗口
+    function fnOpenWin(id,title,pageName){
+        var leftIcons = 'icon-arrow-left,event-back';
+        var pageObj = {
+            id:id,
+            title:title,
+            frameName:pageName,
+            frameUrl:'widget://html/frame/map/page/'+pageName+'.html',
+            leftIcons:leftIcons,
+            bounces:false
+        };
+        fnOpenCommonWin(pageName,pageObj);
+    }
+</script>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>地图右侧</title>
+    <link rel="stylesheet" type="text/css" href="../../../css/api.css" />
+    <link rel="stylesheet" type="text/css" href="../../../css/mui.min.css" />
+    <link rel="stylesheet" type="text/css" href="../../../css/iconfont.css" />
+    <style>
+        
+    </style>
+</head>
+<body>
+    <div class="mui-content">
+        <ul class="mui-table-view">
+            <li class="mui-table-view-cell title" style="">
+                <a href="javascript:;">
+                    图例
+                </a>
+            </li>
+            <li class="mui-table-view-cell mui-media">
+                <a href="javascript:;">
+                    <img class="mui-media-object mui-pull-left" src="../../../image/map/legend-line-blue.png">
+                    <div class="mui-media-body">
+                        地铁轨道及地铁站
+                    </div>
+                </a>
+            </li>
+            <li class="mui-table-view-cell mui-media">
+                <a href="javascript:;">
+                    <img class="mui-media-object mui-pull-left" src="../../../image/map/legend-line-red.png">
+                    <div class="mui-media-body">
+                        地铁保护区
+                    </div>
+                </a>
+            </li>
+            <li class="mui-table-view-cell mui-media">
+                <a href="javascript:;">
+                    <img class="mui-media-object mui-pull-left" src="../../../image/map/legend-imaginary-line.png">
+                    <div class="mui-media-body">
+                        预设巡查路线
+                    </div>
+                </a>
+            </li>
+            <li class="mui-table-view-cell mui-media">
+                <a href="javascript:;">
+                    <img class="mui-media-object mui-pull-left" src="../../../image/map/legend-rectangle-white.png">
+                    <div class="mui-media-body">
+                        工点区域
+                    </div>
+                </a>
+            </li>
+            <li class="mui-table-view-cell mui-media">
+                <a href="javascript:;">
+                    <img class="mui-media-object mui-pull-left" src="../../../image/map/legend-rectangle-green.png">
+                    <div class="mui-media-body">
+                        巡查盲区
+                    </div>
+                </a>
+            </li>
+            <li class="mui-table-view-cell mui-media">
+                <a href="javascript:;">
+                    <img class="mui-media-object mui-pull-left" src="../../../image/map/location-red.png">
+                    <div class="mui-media-body">
+                        正在跟踪异常
+                    </div>
+                </a>
+            </li>
+            <li class="mui-table-view-cell mui-media">
+                <a href="javascript:;">
+                    <img class="mui-media-object mui-pull-left" src="../../../image/map/location-green.png">
+                    <div class="mui-media-body">
+                        已排除异常
+                    </div>
+                </a>
+            </li>
+        </ul>
+    </div>
+    <div class="mui-content">
+    <ul class="mui-table-view mui-grid-view">
+        <li class="mui-table-view-cell mui-media mui-col-xs-6">
+            <a href="#" onclick="fnChangeMapType(this,'standard')">
+                <img class="mui-media-object selected" src="../../../image/map/map-type1.png">
+                <div class="mui-media-body">2D地图</div>
+            </a>
+        </li>
+        <li class="mui-table-view-cell mui-media mui-col-xs-6">
+            <a href="#"  onclick="fnChangeMapType(this,'satellite')">
+                <img class="mui-media-object" src="../../../image/map/map-type2.png">
+                <div class="mui-media-body">卫星地图</div></a>
+            </li>
+        </ul>
+        <ul class="mui-table-view">
+            <li class="mui-table-view-cell">
+                已排除异题
+                <div class="mui-switch mui-switch-mini mui-active" ontoggle="fnChangeMarker(this,1)">
+                    <div class="mui-switch-handle"></div>
+                </div>
+            </li>
+            <li class="mui-table-view-cell">
+                监测工点区域
+                <div class="mui-switch mui-switch-mini mui-active" ontoggle="fnChangeMarker(this,2)">
+                    <div class="mui-switch-handle"></div>
+                </div>
+            </li>
+            <li class="mui-table-view-cell">
+                人工巡查盲区
+                <div class="mui-switch mui-switch-mini mui-active" ontoggle="fnChangeMarker(this,3)">
+                    <div class="mui-switch-handle"></div>
+                </div>
+            </li>
+            <li class="mui-table-view-cell">
+                预设巡查路线
+                <div class="mui-switch mui-switch-mini mui-active" ontoggle="fnChangeMarker(this,4)">
+                    <div class="mui-switch-handle"></div>
+                </div>
+            </li>
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../../../script/api.js"></script>
+<script type="text/javascript" src="../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../script/zepto.min.js"></script>
+<script type="text/javascript">
+    apiready = function(){
+
+    };
+    //
+    function fnChangeFrame(index){
+        $('.mui-content').hide();
+        $('.mui-content').eq(index).show();
+    }
+</script>
+</html>

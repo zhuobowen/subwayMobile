@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>地图-巡查监督</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.dtpicker.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../css/common-mui.css"/>
+    <style>
+        html,body{
+            color: #0877D0;
+        }
+        .mui-content>.mui-table-view:first-child{
+            margin-top: 0px;
+        }
+        .mui-table-view{
+            background-color: transparent;
+        }
+        .mui-table-view:after{
+            height: 2px;
+            background-color: #0877D0;
+        }
+        .mui-table-view:before{
+            background-color: transparent;
+        }
+        .mui-icon{
+            margin-right: 10px;
+        }
+        .icon-calendar{
+            font-size: 20px;
+        }
+        #inspectTime{
+            font-size: 17px;
+            font-weight: bolder;
+        }
+        .mui-group{
+            border: 1px solid #0877D0;
+            height: 32px;
+            line-height: 32px;
+            display: inline;
+            padding: 5px 8px;
+            margin:15px 5px;
+            background-color: #ffffff;
+        }
+        .mui-table-view-cell.mui-active{
+            background-color: transparent;
+        }
+        .mui-row{
+            margin: 5px auto;
+        }
+        .startTime,.endTime,.mui-large-font{
+            font-size: 17px;
+            font-weight: bolder;
+        }
+        .startTime,.endTime{
+            line-height: 35px;
+        }
+        .mui-row-text{
+            padding-left: 15px;
+            line-height: 30px;
+        }
+        #chart_1{
+            height: 80px;
+            width: 80px;
+            position: absolute;
+            right: 0px;
+            bottom: -5px;
+        }
+        #chart_2{
+            height: 200px;
+            width: 100%;
+        }
+
+        .circle{
+            margin: 0px auto;
+            color: #ffffff;
+            height: 60px;
+            width: 60px;
+            text-align: center;
+            border-radius: 50%;
+            background-color: #0A78D0;
+        }
+        .circle .iconfont{
+            top: 6px;
+            left: 5px;
+            font-size: 24px;
+            position: relative;
+        }
+        .mui-fixed-item{
+            text-align: center;
+        }
+        .mui-group-active,.mui-user-active{
+            color: #ffffff;
+            background-color: #0A78D0;
+        }
+    </style>
+</head>
+<body>
+    <div class="mui-content">
+        <ul class="mui-table-view">
+            <li class="mui-table-view-cell" tapmode onclick="fnDtPicker()">
+                <span class="mui-pull-left" id="inspectTime"></span>
+                <span class="mui-icon iconfont icon-calendar mui-pull-right" ></span>
+            </li>
+        </ul>
+        <div id="main">
+            <div id="group"></div>
+            <div id="content"></div>
+        </div>
+    </div>
+</body>
+<script type="text/template" id="emptyTemplate">
+    <ul class="mui-table-view">
+        <li class="mui-table-view-cell">
+            暂无数据
+        </li>
+    </ul>
+</script>
+<script type="text/template" id="groupTemplate">
+    <ul class="mui-table-view">
+        <li class="mui-table-view-cell mui-padding-bottom-5 mui-padding-top-5">
+            <div class="mui-scroll-wrapper mui-slider-indicator mui-segmented-control mui-segmented-control-inverted">
+                <div class="mui-scroll" id="groups" style="top: 2px">
+                    {{~it.data:group:index}}
+                        {{? group.inspectGroup}}
+                            <div class="mui-group {{? index == 0}} mui-group-active {{?}}" tapmode groupId="{{=group.inspectGroup.id}}" carId="{{=group.carId}}" onclick="fnChangeGroup('{{=index}}')">{{=group.inspectGroup.groupName}}</div>
+                        {{?}}
+                    {{~}}
+                </div>
+            </div>
+        </li>
+    </ul>
+</script>
+<script type="text/template" id="userTemplate">
+    <ul class="mui-table-view">
+        <li class="mui-table-view-cell mui-padding-bottom-5 mui-padding-top-5">
+            <div class="mui-scroll-wrapper mui-slider-indicator mui-segmented-control mui-segmented-control-inverted">
+                <div class="mui-scroll" id="groups" style="top: 2px">
+                    {{~it.data:group:index}}
+                        {{? group.inspectUser}}
+                            <div class="mui-group {{? index == 0}} mui-user-active {{?}}" tapmode carId="{{=group.carId}}" >{{=group.inspectUser}}</div>
+                        {{?}}
+                    {{~}}
+                </div>
+            </div>
+        </li>
+    </ul>
+</script>
+<script type="text/template" id="contentTemplate">
+    <ul class="mui-table-view">
+        <li class="mui-table-view-cell">
+            <div class="mui-row">
+                <span class="mui-icon iconfont icon-people"></span>
+                <span class="attendance">出勤人员：{{=it.inspectUser}}</span>
+            </div>
+            <div class="mui-row mui-fixed">
+                <div class="mui-fixed-item">
+                    <p>开始时间</p>
+                    <div class="startTime">{{=it.startTime || '未开始'}}</div>
+                </div>
+                <div class="mui-fixed-item">
+                    {{=it.timeDuration}}
+                </div>
+                <div class="mui-fixed-item">
+                    <p>结束时间</p>
+                    <div class="endTime">{{=it.endTime || '未结束'}}</div>
+                </div>
+            </div>
+            <div class="mui-row" style="margin-top: 20px;">
+                    <span class="mui-pull-left">
+                        <span class="mui-icon iconfont icon-progress"></span>巡查完成进度
+                    </span>
+                <div class="mui-pull-right mui-progress">
+                    <div id="chart_1"></div>
+                </div>
+            </div>
+        </li>
+    </ul>
+ <!--   <ul class="mui-table-view">
+        <li class="mui-table-view-cell">
+            <div class="mui-row">
+                    <span class="mui-pull-left">
+                        <span class="mui-icon iconfont icon-calendar2"></span>
+                        <span>今日计划巡查点位</span>
+                    </span>
+                <span class="mui-pull-right">
+                        <span class="mui-large-font">{{=it.allCount}}</span>处
+                    </span>
+            </div>
+            <div class="mui-row">
+                <div class="mui-row-text">1号线日常巡查站点 16 处，异常点巡查 14 处</div>
+                <div class="mui-row-text">1号线日常巡查站点 16 处，异常点巡查 14 处</div>
+                <div class="mui-row-text mui-color-red">尚余 5 个点位未巡查</div>
+            </div>
+            <div class="mui-row">
+                    <span class="mui-pull-left">
+                        <span class="mui-icon iconfont icon-progress"></span>巡查完成进度
+                    </span>
+                <div class="mui-pull-right mui-progress">
+                    <div id="chart_1"></div>
+                </div>
+            </div>
+        </li>
+    </ul>-->
+    <ul class="mui-table-view">
+        <li class="mui-table-view-cell">
+            <div class="mui-row">
+                    <span class="mui-pull-left">
+                        <span class="mui-icon iconfont icon-unusual"></span>
+                        <span>今日发现异常</span>
+                    </span>
+                <span class="mui-pull-right">
+                        <span class="mui-large-font">{{=it.todayUnusualCount}}</span>处
+                    </span>
+            </div>
+            <div class="mui-row">
+                <div id="chart_2"></div>
+            </div>
+        </li>
+    </ul>
+
+    <ul class="mui-table-view">
+        <li class="mui-table-view-cell">
+            <div class="mui-row mui-fixed">
+                <div class="mui-fixed-item" tapmode onclick="fnOpenDailyReport()">
+                    <div class="circle mui-vertical-fixed">
+                        <div class="mui-fixed-item">
+                            <span class="mui-icon iconfont icon-record2 mui-color-white"></span>
+                        </div>
+                        <div class="mui-fixed-item">日报</div>
+                    </div>
+                </div>
+                <div class="mui-fixed-item"  tapmode onclick="fnOpenInspectTrack()">
+                    <div class="circle mui-vertical-fixed">
+                        <div class="mui-fixed-item">
+                            <span class="mui-icon iconfont icon-share mui-color-white"></span>
+                        </div>
+                        <div class="mui-fixed-item">轨迹</div>
+                    </div>
+                </div>
+                <div class="mui-fixed-item" tapmode onclick="fnOpenInspectProgress();">
+                    <div class="circle mui-vertical-fixed">
+                        <div class="mui-fixed-item">
+                            <span class="mui-icon iconfont icon-news mui-color-white"></span>
+                        </div>
+                        <div class="mui-fixed-item">进度</div>
+                    </div>
+                </div>
+                <div class="mui-fixed-item">
+                    <div class="circle mui-vertical-fixed">
+                        <div class="mui-fixed-item">
+                            <span class="mui-icon iconfont icon-video-btn mui-color-white"></span>
+                        </div>
+                        <div class="mui-fixed-item">视频</div>
+                    </div>
+                </div>
+            </div>
+        </li>
+    </ul>
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/echarts.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript" src="../../../../script/mui.dtpicker.js"></script>
+<script type="text/javascript">
+    var groupMap = {};
+    apiready = function(){
+        api.parseTapmode();
+        var today = fnGetTodayStr('-');
+        $('#inspectTime').html(today);
+        fnInitData(today);
+    };
+
+    //初始化数据
+    function fnInitData(inspectTime){
+        api.ajax({
+            url: fnGetServerAddr() + '/subway/unusualSituation.do?todo=queryInspectSituationForApp',
+            method: 'get',
+            timeout: 6,
+            data: {
+                values: {
+                    inspectTime: inspectTime
+                }
+            }
+        }, function (ret, err) {
+            if(ret){
+                if(ret.success){
+                    if(ret.data && ret.data.length > 0){
+                        for (var i = 0; i < ret.data.length;i++){
+                            var inspectGroup = ret.data[i].inspectGroup;
+                            if(inspectGroup){
+                                groupMap[inspectGroup.id] = ret.data[i];
+                            }
+                        }
+                        var mapLength = Object.keys(groupMap).length;
+                        if(mapLength){
+                            $('#group').html(fnTemplate('groupTemplate',ret));
+                            fnInitContent();
+                        }else{
+                            $('#group').html(fnTemplate('userTemplate',ret));
+                            var data = ret.data[0];
+                            if(data){
+                                $('#content').html(fnTemplate('contentTemplate',data));
+                                fnInitChart(data);
+                            }
+                        }
+                    }
+                }else{
+                    fnShowMessage(ret.msg || "数据异常")
+                }
+            }else{
+                fnShowMessage("网络异常")
+            }
+        });
+    }
+
+    function fnInitContent(){
+        var groupId = $('.mui-group-active').eq(0).attr('groupId');
+        var data = groupMap[groupId];
+        if(data){
+            $('#content').html(fnTemplate('contentTemplate',data));
+            fnInitChart(data);
+        }
+    }
+
+    //初始化图表
+    function fnInitChart(data){
+        var chart_1 = echarts.init(document.getElementById('chart_1'));
+        var chart_2 = echarts.init(document.getElementById('chart_2'));
+        option1 = {
+            series : [
+                {
+                    type: 'pie',
+                    center: ['50%', '50%'],
+                    radius: ['50%','60%'],
+                    label: {
+                        verticalAlign:'middle',
+                        normal: {
+                            position: 'center'
+                        }
+                    },
+                    data:[
+                        {
+                            value:data.allCount - data.doneCount,
+                            itemStyle:{
+                                color:'#CCCCCC'
+                            }
+                        },{
+                            value:data.doneCount,
+                            itemStyle:{
+                                color:'#0877D0'
+                            },
+                            label: {
+                                verticalAlign:'middle',
+                                normal: {
+                                    formatter: '{d} %',
+                                    textStyle: {
+                                        fontSize: 10
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    startAngle:140,
+                    hoverAnimation:false,
+                    labelLine :{
+                        show:false
+                    }
+                }
+            ]
+        };
+
+        var pieData = [];
+        if(data.lines && data.lines.length){
+            for (var i = 0 ; i < data.lines.length;i++ ){
+                var line = data.lines[i];
+                if(line.hasOwnProperty("unusualCount")&& line.unusualCount){
+                    pieData.push({
+                        value:line.unusualCount,
+                        name: line.lineName
+                    })
+                }
+            }
+        }
+        if(pieData.length == 0){
+            pieData = [{
+                value:0,
+                name:''
+            }];
+        }
+        option2 = {
+            color:['#48CFAE','#FB6E52'],
+            series : [
+                {
+                    type: 'pie',
+                    radius : '87%',
+                    center: ['50%', '50%'],
+                    data:pieData,
+                    startAngle:140,
+                    hoverAnimation:false,
+                    labelLine :{
+                        show:true,
+                        length:4,
+                        length:2
+                    },
+                    label:{
+                        formatter:"{b}\n{c}处",
+                        align:'center'
+                    }
+                }
+            ]
+        };
+        chart_1.setOption(option1);
+        chart_2.setOption(option2);
+    }
+
+    //改变组
+    function fnChangeGroup(index){
+        $('.mui-group').removeClass('mui-group-active').eq(index).addClass('mui-group-active');
+        fnInitContent();
+    }
+
+    //选择日期
+    function fnDtPicker() {
+        var today = $('#inspectTime').html() || fnGetTodayStr('-');
+        var dtPicker = new mui.DtPicker({type: "date",value:today});
+        dtPicker.show(function(rs) {
+            $('#inspectTime').html(rs.text);
+            groupMap = {};
+            $('#group').empty();
+            $('#content').empty();
+            fnInitData(rs.text);
+            dtPicker.dispose();
+        });
+    }
+
+    //打开日报页面
+    function fnOpenDailyReport(){
+        var inspectTime = $('#inspectTime').html();
+        var groupName = $('.mui-group-active').eq(0).html();
+        var groupId = $('.mui-group-active').eq(0).attr('groupId');
+
+        if(!inspectTime){
+            fnShowMessage("请选择巡查时间");
+            return;
+        }
+
+        if(!groupName || !groupId){
+            fnShowMessage("用户已经移出巡查组");
+            return;
+        }
+
+        var frameUrl = 'http://117.29.161.2:58080/smartbi/vision/openresource.jsp?paramsInfo= ' +
+                '[{"name":"巡查组","value":"' + groupId + '","displayValue":"' + groupName + '"},{"name":"巡查时间","value":"' + inspectTime + '","displayValue":"' + inspectTime + '"}]' +
+                '&resid=I2c90bcb50161651765173b8a0162aa5d9e24279c&showtoolbar=false&refresh=true&hiddenParamPanel=true&user=cjzh&password=xmrbi@2018';
+
+        var title = '日报';
+        var pageName = 'daily-report';
+        var pageObj = {
+            title: title,
+            frameName:pageName,
+            frameUrl:frameUrl,
+            leftIcons:'icon-arrow-left,event-back',
+            bounces:false
+        };
+        fnOpenCommonWin(pageName,pageObj);
+    }
+
+    //打开巡查轨迹页面
+    function fnOpenInspectTrack(){
+        var inspectTime = $('#inspectTime').html();
+        var groupName = $('.mui-group-active').eq(0).html();
+        var carId = $('.mui-group-active').eq(0).attr('carId');
+        var groupId = $('.mui-group-active').eq(0).attr('groupId');
+
+        if(!inspectTime){
+            fnShowMessage("请选择巡查时间");
+            return;
+        }
+
+        if( !groupId || groupId == 'undefined'){
+            carId = $('.mui-user-active').eq(0).attr('carId');
+        }
+
+        if(!carId || carId == 'undefined'){
+            fnShowMessage("该巡查组无巡查车辆");
+            return;
+        }
+
+        var title = '巡查轨迹';
+        var pageName = 'map-track-view';
+        var pageObj = {
+            inspectTime: inspectTime,
+            carId: carId,
+            title: title,
+            frameName:pageName,
+            frameUrl:'widget://html/frame/map/page/map-track-view.html',
+            leftIcons:'icon-arrow-left,event-back',
+            bounces:false
+        };
+        fnOpenCommonWin(pageName,pageObj);
+    }
+
+    //巡查进度
+    function fnOpenInspectProgress(){
+        var inspectTime = $('#inspectTime').html();
+        var groupId = $('.mui-group-active').eq(0).attr('groupId');
+        if(!inspectTime){
+            fnShowMessage("请选择巡查时间");
+            return;
+        }
+        if(!groupId){
+            fnShowMessage("请选择巡查组");
+            return;
+        }
+        var executeUser = groupMap[groupId].userId;
+
+        var title = '巡查进度';
+        var pageName = 'map-inspect-progress';
+        var pageObj = {
+            inspectTime: inspectTime,
+            executeUser: executeUser,
+            title: title,
+            frameName:pageName,
+            frameUrl:'widget://html/frame/map/page/map-inspect-progress.html',
+            leftIcons:'icon-arrow-left,event-back',
+            bounces:false
+        };
+        fnOpenCommonWin(pageName,pageObj);
+    }
+</script>
+</html>

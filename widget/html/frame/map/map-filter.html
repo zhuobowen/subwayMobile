@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+	<title>电子地图筛选</title>
+	<link rel="stylesheet" type="text/css" href="../../../css/api.css" />
+	<link rel="stylesheet" type="text/css" href="../../../css/mui.min.css" />
+	<link rel="stylesheet" type="text/css" href="../../../css/iconfont.css" />
+	<link rel="stylesheet" type="text/css" href="../../../css/common.css" />
+	<style>
+	html,body{
+		background-color: transparent;
+		margin: 0px;padding:0px;
+	}
+	.mui-content>.mui-table-view:first-child{
+		margin-top:0px
+	}
+	.selected{
+		border: 2px solid yellow;
+	}
+</style>
+</head>
+<body>
+	<div class="mui-content">
+		<ul class="mui-table-view mui-grid-view">
+			<li class="mui-table-view-cell mui-media mui-col-xs-6">
+				<a href="#" onclick="fnChangeMapType(this,'standard')">
+					<img class="mui-media-object selected" src="../../../image/map/map-type1.png">
+					<div class="mui-media-body">2D地图</div>
+				</a>
+			</li>
+			<li class="mui-table-view-cell mui-media mui-col-xs-6">
+				<a href="#"  onclick="fnChangeMapType(this,'satellite')">
+					<img class="mui-media-object" src="../../../image/map/map-type2.png">
+					<div class="mui-media-body">卫星地图</div></a>
+				</li>
+			</ul>
+			<ul class="mui-table-view">
+				<li class="mui-table-view-cell">
+					已排除异题
+					<div class="mui-switch mui-switch-mini mui-active" ontoggle="fnChangeMarker(this,1)">
+						<div class="mui-switch-handle"></div>
+					</div>
+				</li>
+				<li class="mui-table-view-cell">
+					监测工点区域
+					<div class="mui-switch mui-switch-mini mui-active" ontoggle="fnChangeMarker(this,2)">
+						<div class="mui-switch-handle"></div>
+					</div>
+				</li>
+				<li class="mui-table-view-cell">
+					人工巡查盲区
+					<div class="mui-switch mui-switch-mini mui-switch-mini mui-active" ontoggle="fnChangeMarker(this,3)">
+						<div class="mui-switch-handle"></div>
+					</div>
+				</li>
+				<li class="mui-table-view-cell">
+					预设巡查路线
+					<div class="mui-switch mui-switch-mini mui-active" ontoggle="fnChangeMarker(this,4)">
+						<div class="mui-switch-handle"></div>
+					</div>
+				</li>
+			</ul>
+		</div>
+	</body>
+	<script type="text/javascript" src="../../../script/api.js"></script>
+	<script type="text/javascript" src="../../../script/mui.min.js"></script>
+	<script type="text/javascript" src="../../../script/zepto.min.js"></script>
+	<script type="text/javascript" src="../../../script/common.js"></script>
+	<script type="text/javascript">
+		apiready = function(){
+			api.addEventListener({
+				name:'swiperight'
+			}, function(ret, err){
+				api.setFrameGroupAttr({
+				    name: 'right-frames',
+				    hidden:true
+				});
+			});
+		};
+
+		//改变地图类型
+		function fnChangeMapType(_this,mapType){
+			$('.mui-media-object').each(function(index,ele){
+				$(ele).removeClass('selected')
+			})
+			$(_this).find('img').addClass('selected');
+			api.execScript({
+				name: api.winName,
+				frameName: api.pageParam.parentName,
+			    script: 'fnChangeMapType("'+mapType+'");'//打开过滤
+			});
+		}
+
+		function fnChangeMarker(_this,markerType){
+			var isShow = true;
+			var classes = $(_this).attr('class');
+			if(classes.indexOf('mui-active') == -1){
+				isShow = false;
+			}
+			api.execScript({
+				name: api.winName,
+				frameName: api.pageParam.parentName,
+			    script: 'fnChangeMarker("'+ markerType + '",' + isShow + ');'//打开过滤
+			});
+		}
+	</script>
+	</html>

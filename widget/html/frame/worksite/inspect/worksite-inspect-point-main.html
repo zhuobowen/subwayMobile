@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <title>今日监护工点地图</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../css/common-win.css" />
+    <style>
+        .icon-arrow-right{
+            position:relative;top:-10px;
+        }
+    </style>
+</head>
+
+<body>
+<div id="wrap">
+    <div id="header">
+        <div class="left-btn">
+            <span class="iconfont iconfont-large icon-arrow-left event-back" id="left" tapmode="active" onclick="fnCloseWin()"></span>
+        </div>
+        <div class="title">今日监护工点</div>
+        <div class="right-btn">
+            <span class="iconfont iconfont-large icon-result-order" id="right" tapmode="active" onclick="fnOpenInspectResult();"></span>
+        </div>
+    </div>
+    <div id="main">
+        <div id="headerInfo" tapmode class="mui-navigate-right" onclick="fnOpenRighter();">
+            <img src="../../../../image/loading_more.gif" class="mui-loading" />加载中...
+        </div>
+    </div>
+</div>
+</body>
+<script type="text/template" id="head">
+    <marquee tapmode {{? it.success}} onclick="fnOpenRighter()" {{??}} onclick="fnInitData()" {{?}}>
+        {{? it.success}}
+        今日待监护工点{{=it.worksiteCount}}个， 异常监护工点{{=it.unusualWorksiteCount}}个
+        {{??}}
+        重新加载
+        {{?}}
+    </marquee>
+    <span class="iconfont icon-arrow-right"></span>
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/map.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript" src="../../../../script/transform.js"></script>
+<script type="text/javascript">
+    var isInited = isFooter = false;
+    var headerInfo = '';
+    var isMapOpened = false;
+    var overlayId = 0;        //全局的覆盖物id
+    var nopicture = '';
+    var distances = [];
+    var worksiteMap = {};
+    var worksitePoints = [];
+    var icon_red,icon_green;
+    var worksite_danger_lst = []; //未监护工点列表
+    var worksite_success_lst = []; //已监护工点列表
+    var billboard_bg = 'widget://image/map/2.png';
+    var icon_location_red = 'widget://image/map/location-red.png';
+    var icon_location_green = 'widget://image/map/location-green.png';
+    var icon_location_red_large = 'widget://image/map/location-red-large.png';
+    var icon_location_green_large = 'widget://image/map/location-green-large.png';
+
+    apiready = function() {
+        fnInitModule(); //初始化模块
+        fnReadyHeader(); //修复状态栏样式
+        fnInitBasicData();
+        fnloadDataListener();
+        fnOpenMap({ //打开地图
+            x: 0,
+            y: getHeaderHeight() + 30,
+            w: api.frameWidth,
+            h: api.frameHeight
+        });
+    };
+
+
+
+    //页面数据加载监听
+    function fnloadDataListener() {
+
+        if (!isInited) { //校验是否初始化数据
+            fnInitData();
+        }
+        //监听线路改变
+        api.addEventListener({
+            name: 'line-changed'
+        }, function(ret, err) {
+            fnInitPoints();
+        });
+
+        // 监听页面显示，显示地图模块并初始化数据
+        api.addEventListener({
+            name: 'viewappear'
+        }, function(ret, err) {
+            aMap.show();
+        });
+
+        //监听页面关闭，关闭地图模块
+        api.addEventListener({
+            name: 'viewdisappear'
+        }, function(ret, err) {
+            aMap.hide();
+            isInited = false;
+        });
+
+        //监听工点状态的改变
+        api.addEventListener({
+            name: 'worksite-is-tracked'
+        }, function(ret, err) {
+            var index = 0;
+            var trackId = ret.value.trackId;
+            var worksiteId = ret.value.worksiteId;
+            for(var id in worksiteMap){
+                var worksite = worksiteMap[id];
+                if(worksite && worksite.worksiteId == worksiteId){
+                    index = id;
+                    break;
+                }
+            }
+            //改变map的trackId的值
+            if(index){
+                worksiteMap[index].trackId = trackId;
+                fnChangeFooter(worksiteMap[index]);
+                //重新画点
+                aMap.removeAnnotations({
+                    ids: [parseInt(index) + 1]
+                });
+                var worksite = worksiteMap[index];
+                worksite['id'] = parseInt(index) + 1;
+                aMap.addAnnotations({
+                    annotations: [worksite],
+                    icons: [icon_green],
+                    draggable: false
+                }, function(ret) {
+                    if (ret.eventType == 'click') {
+                        fnChangeFooter(worksiteMap[ ret.id]);
+                    }
+                });
+            }
+        });
+    }
+
+    //地图打开后的回调函数
+    function fnOpenMapCallBack() {
+        isMapOpened = true;
+        if (isInited) {
+            fnInitMapData();
+        }
+        fnOpenLineIconFrame({ //显示右上角定位图标
+            x: api.frameWidth - 40,
+            y: 120,
+            w: 40,
+            h: 43
+        });
+    }
+
+    //初始化数据
+    function fnInitData() {
+        fnShowProgress("正在加载数据");
+        api.ajax({
+            url: fnGetServerAddr() + '/apicloud/worksite.do?todo=getWorksiteTaskData',
+            method: 'get',
+            data: {
+                values: {userId: getUserId()}
+            }
+        }, function (ret, err) {
+            fnHideProgress();
+            if(ret){
+                $('#headerInfo').html(fnTemplate('head',ret));  //显示头部信息
+                if(ret.success){
+                    for (var i = 0 ; i < ret.lines.length ; i++){
+                        var line = ret.lines[i];
+                        var stations = line.stations;
+                        for (var j = 0 ; j < stations.length ; j++ ){
+                            var station = stations[j];
+                            var worksites = station.worksites;
+                            for (var k = 0 ; k < worksites.length ; k++){
+                                var worksite = worksites[k];
+                                var latLng = worksite.latLng;
+                                var points = [];
+                                var lonSum = latSum = 0;
+                                var lngLats = latLng ? latLng.split(';') : [];
+                                for (var m = 0; m < lngLats.length; m++) {
+                                    var lon = Number(lngLats[m].split(',')[0]);
+                                    var lat = Number(lngLats[m].split(',')[1]);
+                                    points.push({
+                                        lon: lon,
+                                        lat: lat
+                                    });
+                                    lonSum += lon;
+                                    latSum += lat;
+                                }
+                                worksite['latlng'] = points;
+                                worksite['worksiteId'] = worksite.id;
+                                worksite['lon'] = lonSum / points.length;
+                                worksite['lat'] = latSum / points.length;
+                                worksite['stationName'] = station.stationName;
+                                worksitePoints.push(worksite);
+                                isInited = true;
+                            }
+                        }
+                    }
+                    if (isMapOpened) {
+                        fnInitMapData();
+                    }
+                }else{
+                    fnShowMessage("数据异常")
+                }
+            }else{
+                fnShowMessage("网络异常")
+            }
+        });
+
+    }
+
+    function fnInitMapData(){
+        //初始化地图覆盖物
+        setTimeout(function(){
+            fnInitPoints();//地铁保护区
+        },3500);
+        fnAddWorksitePolygon();//工点定位
+        fnChangeFooter(worksiteMap[distances.min().id]); //显示底部信息
+    }
+
+
+    //添加多边形
+    function fnAddWorksitePolygon() {
+        for (var i = 0; i < worksitePoints.length; i++) {
+            overlayId++;
+            var worksite = worksitePoints[i];
+            var lat = worksite.lat;
+            var lon = worksite.lon;
+            var points = worksite.latlng;
+            var trackId = worksite.trackId;
+            var unusualCount = worksite.unusualCount;
+
+            //计算最近的距离
+            worksite['distance'] = fnCountDistance(worksite);
+            distances.push({
+                id: overlayId,
+                distance: worksite.distance
+            });
+
+            //描线
+            if (points.length > 0) {
+                aMap.addPolygon({
+                    id: overlayId,
+                    styles: {
+                        borderColor: '#cccccc',
+                        borderWidth: 3,
+                        lineDash: true,
+                        fillColor: 'rgba(153, 255, 204, 0.3 )'
+                    },
+                    points: points
+                });
+            }
+
+            worksiteMap[overlayId] = worksite;
+            overlayId++;
+            var center = {
+                id : overlayId,
+                lon: lon,
+                lat: lat
+            };
+            worksiteMap[overlayId] = worksite;
+            if(!trackId){
+                worksite_danger_lst.push(center); //未巡查列表
+            }else{
+                worksite_success_lst.push(center);//已巡查列表
+            }
+            //异常工点
+            if(unusualCount && unusualCount > 0){
+                //添加布告牌
+                overlayId++;
+                worksite['id'] = overlayId;
+                worksiteMap[overlayId] = worksite;
+                aMap.addBillboard({
+                    id: overlayId,
+                    draggable: false,
+                    coords: {
+                        lon: worksite.lon,
+                        lat: worksite.lat
+                    },
+                    bgImg:billboard_bg,
+                    content: {
+                        illus: worksite.picfile ? fnGetImageUrl(worksite.picfile.split(',')[0],true,200,200) : nopicture
+                    },
+                    styles: {
+                        size: {
+                            width: 50,
+                            height: 80
+                        },
+                        illusRect: {
+                            x: 3,
+                            y: 3,
+                            w: 44,
+                            h: 44
+                        },
+                        marginT: 100,
+                        titleColor: '#000',
+                        titleSize: 6
+                    }
+                }, function(ret) {
+                    if (ret) {
+                        if(ret.eventType == 'click'){
+                            fnChangeFooter(worksiteMap[ ret.id]);
+                        }
+                    }
+                });
+            }
+        }
+
+        //未巡查列表
+        aMap.addAnnotations({
+            annotations: worksite_danger_lst,
+            icons: [icon_red],
+            draggable: false
+        }, function(ret) {
+            if (ret.eventType == 'click') {
+                fnChangeFooter(worksiteMap[ ret.id]);
+            }
+        });
+
+        //已巡查列表
+        aMap.addAnnotations({
+            annotations: worksite_success_lst,
+            icons: [icon_green],
+            draggable: false
+        }, function(ret) {
+            if (ret.eventType == 'click') {
+                fnChangeFooter(worksiteMap[ ret.id]);
+            }
+        });
+    }
+
+
+    //改变底部信息
+    function fnChangeFooter(worksite){
+        if(!isFooter){
+            fnOpenFooter(worksite);
+        }
+        fnSetCenter({               //设置中心点
+            lon: worksite.lon,
+            lat: worksite.lat
+        });
+        api.sendEvent({
+            name: 'worksite-changed',
+            extra: {
+                worksite: worksite
+            }
+        });
+    }
+
+
+    //打开底部信息栏
+    function fnOpenFooter(worksite) {
+        api.openFrame({
+            name: 'worksite-inspect-point-foot',
+            url: 'widget://html/frame/worksite/inspect/worksite-inspect-point-foot.html',
+            rect: {
+                x: 0,
+                y: fnY(60),
+                w: api.frameWidth,
+                h: 132
+            },
+            scrollEnabled: false,
+            bgColor: 'rgba(0,0,0,0)',
+            pageParam: {
+                worksite: worksite
+            },
+            animation: {
+                type: "movein",
+                subType: "from_bottom",
+                duration: 300
+            }
+        });
+
+        //显示左下角定位图标
+        setTimeout(function(){
+            fnOpenLocationFrame({
+                x: 10,
+                y: api.winHeight - 190,
+                w: 30,
+                h: 30
+            });
+        },200);
+
+        //显示右下角导航图标
+        fnOpenNavigationFrame({
+            x: api.frameWidth - 90,
+            y: fnY(90),
+            w: 60,
+            h: 60
+        });
+        isFooter = true;
+    }
+
+    //打开监护窗口
+    function fnOpenInspectResult() {
+        var title = '今日监护报告';
+        var pageName = 'worksite-inspect-result',
+            leftIcons = 'icon-arrow-left,event-back';
+        var pageObj = {
+            title: title,
+            frameName: pageName,
+            frameUrl: 'widget://html/frame/worksite/result/' + pageName + '.html',
+            leftIcons: leftIcons,
+            scrollEnabled:false,
+            isFinish: false
+        };
+        api.openDrawerLayout({
+            name: 'worksite-inspect-restult-win',
+            url: 'widget://html/common-win.html',
+            animation: {
+                type: 'none'
+            },
+            slidBackEnabled: false,
+            pageParam: pageObj,
+            leftPane: {
+                edge: api.winWidth / 3,
+                name: 'worksite-inspect-result-right',
+                url: 'widget://html/frame/worksite/inspect/worksite-inspect-point-right.html',
+                rect: {
+                    x: 0,
+                    y: 0,
+                    w: api.winWidth,
+                    h: api.winHeight
+                }
+            },
+            animation: {
+                type: 'movein',
+                subType: 'from_right',
+                duration: 300
+            }
+        });
+    }
+
+
+    //打开右侧列表
+    function fnOpenRighter() {
+        api.openDrawerPane({
+            type: 'right'
+        });
+    }
+
+    //初始化模块
+    function fnInitModule() {
+        db = api.require("db");
+        aMap = api.require("aMap");
+    }
+
+    //调整状态栏
+    function fnReadyHeader() {
+        var header = $api.byId('header');
+        if (header) {
+            $api.fixStatusBar(header);
+            var headerHeight = $api.offset(header).h;
+            $api.setStorage('headerHeight', headerHeight);
+        }
+    };
+
+    //初始化基础数据
+    function fnInitBasicData(){
+        nopicture = fnGetServerAddr() + '/images/nopicture.png';
+        icon_red = api.systemType == 'ios' ? icon_location_red : icon_location_red_large;
+        icon_green = api.systemType == 'ios' ? icon_location_green : icon_location_green_large;
+    }
+
+    //关闭窗口
+    function fnCloseWin() {
+        api.closeWin({
+            name: api.winName
+        });
+    }
+
+
+    var circleId,lineId;
+    //添加大头针
+    function fnAddAnnotation(){
+        var cur_location = fnGetCurrentLocation();
+        aMap.addAnnotations({
+            annotations: [{
+                id: Math.random(),
+                lon: cur_location.lon - 0.0005,
+                lat: cur_location.lat - 0.0005
+            }],
+            icons: ['widget://image/map/pin.png'],
+            draggable: true,
+            timeInterval: 2.0
+        }, function(ret) {
+            if (ret.eventType == 'drag' && ret.dragState == 'ending') {
+                aMap.getAnnotationCoords({
+                    id: ret.id
+                }, function(rett) {
+                    if (rett) {
+                        var distance = fnDistance(cur_location.lat,cur_location.lon,rett.lat,rett.lon);
+                        aMap.removeOverlay({
+                            ids: [circleId,lineId]
+                        });
+                        circleId = Math.random();
+                        lineId = Math.random();
+                        aMap.addCircle({
+                            id: circleId,
+                            center: {
+                                lon: cur_location.lon,
+                                lat: cur_location.lat,
+                            },
+                            radius: distance,
+                            styles: {
+                                borderColor: '#cccccc',
+                                borderWidth: 3,
+                                lineDash: true,
+                                fillColor: 'rgba(153, 255, 204, 0.2 )'
+                            }
+                        });
+                        aMap.addLine({
+                            id: lineId,
+                            styles: {
+                                type: 'arrow',
+                                borderColor: '#FF0000',
+                                borderWidth: 5,
+                                lineDash: false
+                            },
+                            points: [{
+                                lon: cur_location.lon, lat: cur_location.lat
+                            },{
+                                lon: rett.lon, lat: rett.lat
+                            }]
+                        });
+                        aMap.closeBubble({
+                            id: ret.id
+                        });
+                        aMap.setBubble({
+                            id: ret.id,
+                            content: {
+                                title: '距离是' + Number(distance).toFixed(2) + '米',
+                            },
+                            styles: {
+                                titleColor: '#000',
+                                titleSize: 16,
+                                subTitleColor: '#999',
+                                subTitleSize: 12,
+                                illusAlign: 'left'
+                            }
+                        }, function(retttt) {
+                            if (retttt) {
+                                aMap.closeBubble({
+                                    id: ret.id
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    //返回数组最小值
+    Array.prototype.min = function() {
+        var min = this[0].distance;
+        var len = this.length;
+        var index = 0;
+        for (var i = 1; i < len; i++){
+            if (this[i].distance && this[i].distance < min){
+                min = this[i].distance;
+                index = i;
+            }
+        }
+        return this[index];
+    }
+
+    //计算frame y的距离
+    function fnY(y){
+        return api.systemType == 'ios' ? api.frameHeight - getHeaderHeight() - (y+5) : api.frameHeight - getHeaderHeight() - y
+    }
+
+</script>
+
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>电子地图图例</title>
+    <link rel="stylesheet" type="text/css" href="../../../css/api.css" />
+    <link rel="stylesheet" type="text/css" href="../../../css/mui.min.css" />
+    <link rel="stylesheet" type="text/css" href="../../../css/iconfont.css" />
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+        }
+        .mui-btn, button{padding:5px 5px 0px 5px;}
+        .button-border{border:1px solid #007aff;}
+        .btn-div{margin-bottom:5px;width:100%;}
+        .toolbar-main{width:100%;height:auto;overflow: hidden;}
+        .legend,.line{width: 34px;height: 34px;font-size: 12px;padding: 0px;line-height: 15px;}
+        .icon-train:before,.icon-legend:before{font-size: 16px;}
+    </style>
+</head>
+<body>
+<div class="toolbar-main">
+
+    <div class="btn-div">
+        <button type="button" class="mui-btn button-border" label="monitor">
+            <img src="../../../image/map/icon-monitor.png" width="22px"/>
+        </button>
+    </div>
+    <div class="btn-div">
+        <button type="button" class="mui-btn button-border" label="worksite">
+            <img src="../../../image/map/icon-work.png" width="22px"/>
+        </button>
+    </div>
+    <div class="btn-div">
+        <button type="button" class="mui-btn button-border" label="unusual">
+            <img src="../../../image/map/location-orange-large.png" width="22px"/>
+        </button>
+    </div>
+    <div class="btn-div">
+        <button type="button" class="mui-btn button-border" label="emphasis">
+            <img src="../../../image/map/location-red-large.png" width="22px"/>
+        </button>
+    </div>
+    <div class="btn-div">
+        <button type="button" class="mui-btn legend" label="legend">
+            <span class="mui-icon iconfont icon-legend"></span><br/>
+            图例
+        </button>
+    </div>
+    <div class="btn-div">
+        <button type="button" class="mui-btn line" label="line">
+            <span class="mui-icon iconfont icon-train"></span><br/>
+            线路
+        </button>
+    </div>
+</div>
+</body>
+<script type="text/javascript" src="../../../script/api.js"></script>
+<script type="text/javascript" src="../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../script/common.js"></script>
+<script type="text/javascript">
+    apiready = function(){
+        $('.toolbar-main').on('tap','button',function(){
+            if($(this).hasClass('button-border')){
+                $(this).removeClass('button-border');
+                //隐藏地图上指定标注
+                api.sendEvent({
+                    name: $(this).attr('label'),
+                    extra: {show:false}
+                });
+            }else{
+                $(this).addClass('button-border');
+                //显示地图上指定标注
+                api.sendEvent({
+                    name: $(this).attr('label'),
+                    extra: {show:true}
+                });
+            }
+        });
+    };
+
+    function fnRemoveBorder(labelName){
+        $('button[label='+labelName+']').removeClass('button-border');
+    }
+</script>
+</html>

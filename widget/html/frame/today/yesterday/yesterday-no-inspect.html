@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>昨日未巡查点位</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/common.css"/>
+    <style>
+    .mui-table-view{
+        margin-bottom: 20px;
+    }
+    .mui-table-view .mui-media-object {
+        line-height: 84px;
+        max-width: 100px;
+        height: 84px;
+        width: 100px;
+    }
+    .ow-img{
+            width: 40px!important;
+            height: 40px!important;
+            margin-left: 30px!important;
+            margin-right: 20px!important;
+    }
+</style>
+</head>
+<body>
+    <ul class="mui-table-view" id="box">
+        <li class="mui-table-view-cell">
+            <span id="road-line">线路：1号线</span>
+            <span class="mui-pull-right" style="color:#0066ff">异常点2处，站点2个</span>
+        </li>
+        <li class="mui-table-view-cell mui-media">
+            <a href="javascript:;">
+                <img class="mui-media-object mui-pull-left" onclick="fnShowImage(this)" src="../../../../image/camera-back-btn.png">
+                <div class="mui-media-body">
+                    <div> 异常描述：异常测试</div>
+                    <div> 发现时间：2017-08-02</div>
+                    <div> 异常点位置：中山公园站</div>
+                    <div> 异常类别：基坑工程 <span class="mui-pull-right mui-badge mui-badge-danger">一级</span></div>
+                </div>
+            </a>
+        </li>       
+        <li class="mui-table-view-cell mui-media">
+            <a href="javascript:;">
+                <img class="mui-media-object mui-pull-left" onclick="fnShowImage(this)" src="../../../../image/camera-back-btn.png">
+                <div class="mui-media-body">
+                    <div> 异常描述：异常测试</div>
+                    <div> 发现时间：2017-08-02</div>
+                    <div> 异常点位置：中山公园站</div>
+                    <div> 异常类别：基坑工程 <span class="mui-pull-right mui-badge mui-badge-danger">一级</span></div>
+                </div>
+            </a>
+        </li>                
+    </ul> 
+    <ul class="mui-table-view">
+        <li class="mui-table-view-cell mui-media">
+            <a href="javascript:;">
+                <img class="mui-media-object mui-pull-left ow-img" src="../../../../image/camera-back-btn.png">
+                <div class="mui-media-body" style="line-height: 40px;">将军祠站</div>
+            </a>
+        </li>   
+    </ul>
+    
+    <ul class="mui-table-view">
+        <li class="mui-table-view-cell">
+            <span id="road-line">线路：2号线</span>
+            <span class="mui-pull-right" style="color:#0066ff">异常点2处，站点2个</span>
+        </li>
+        <li class="mui-table-view-cell mui-media">
+            <a href="javascript:;">
+                <img class="mui-media-object mui-pull-left" onclick="fnShowImage(this)" src="../../../../image/camera-back-btn.png">
+                <div class="mui-media-body">
+                    <div> 异常描述：异常测试</div>
+                    <div> 发现时间：2017-08-02</div>
+                    <div> 异常点位置：中山公园站</div>
+                    <div> 异常类别：基坑工程 <span class="mui-pull-right mui-badge mui-badge-danger">一级</span></div>
+                </div>
+            </a>
+        </li>              
+    </ul> 
+    
+    <ul class="mui-table-view">
+        <li class="mui-table-view-cell mui-media">
+            <a href="javascript:;">
+                <img class="mui-media-object mui-pull-left ow-img" onclick="fnShowImage(this)" src="../../../../image/camera-back-btn.png">
+                <div class="mui-media-body" style="line-height: 40px;">长庚医院站</div>
+            </a>
+        </li>   
+    </ul>          
+</body>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript">
+    var line_autt_1 = {"DT" : [],"UT" : []},line_autt_2 = {"DT" : [],"UT" : []};
+    apiready = function(){
+        fnGetYesterdayTask();
+    };
+    
+    function fnGetYesterdayTask(){
+        $("body").empty();
+        api.showProgress({
+            title:'加载中',
+            text : '请稍后...'
+        });
+        api.ajax({
+            url: fnGetServerAddr() + '/apicloud/task.do?todo=queryTodayInspectTask',
+            method: 'get',
+            data: {
+                values: { 
+                    executeUser:$api.getStorage('user').userId,
+                    inspectTime: fnGetYesterdayStr('-')
+                }
+            }
+        },function(ret,err){
+//          alert(JSON.stringify(ret))
+            if(ret){
+                api.hideProgress();
+                for(var i=0;i<ret.length;i++){
+                    if(ret[i].lineId == 1){
+                        fnDTData(ret[i],1);
+                    }
+                    else if(ret[i].lineId == 31){
+                        fnDTData(ret[i],2);
+                    }
+                }
+            }
+        });
+    }
+    
+    function fnDTData(data,type){
+        var DailyTaskJson_1 = [],DailyTaskJson_2 = []; 
+        var UnTaskJson_1 = [],UnTaskJson_2 = [];        
+        if(type == 1){
+            for(var i=0;i<data.stations.length;i++){
+                if('unusualList' in data.stations[i]){
+                    for(var k=0;k<data.stations[i].unusualList.length;k++){
+                        UnTaskJson_1.push({
+                            type : 'UT',
+                            location : data.stations[i].unusualList[k].location,
+                            stationId : data.stations[i].stationId,
+                            sortNum : data.stations[i].sortNum,
+                            unusualPic :　data.stations[i].unusualList[k].pic,
+                            unusualLevel : data.stations[i].unusualList[k].unusualLevel,
+                            createTime : data.stations[i].unusualList[k].createTime,
+                            unusualDesc : data.stations[i].unusualList[k].unusualDesc,
+                            unusualTrackId : data.stations[i].unusualList[k].unusualTrackId,
+                            unusualType : data.stations[i].unusualList[k].unusualTypeName                       
+                        });                 
+                    }
+
+                }
+                else{
+                    DailyTaskJson_1.push({
+                        type :　'DT',
+                        stationName : data.stations[i].stationName,
+                        sortNum : data.stations[i].sortNum,
+                        dailyTaskDetailId : data.stations[i].taskId
+                    });                 
+                }
+            }
+            if(UnTaskJson_1.length !=0){
+                UnTaskJson_1.sort(function(a,b){
+                    return fnChangeTimePic(b.createTime) - fnChangeTimePic(a.createTime);
+                })
+            }
+            for(var q=0;q<UnTaskJson_1.length;q++){
+                line_autt_1["UT"].push(UnTaskJson_1[q]);
+            } 
+            for(var q=0;q<DailyTaskJson_1.length;q++){
+                line_autt_1["DT"].push(DailyTaskJson_1[q]);
+            }                   
+            fnInitPaintData(line_autt_1,type);
+        }
+        else if(type == 2){
+            for(var i=0;i<data.stations.length;i++){
+                if('unusualList' in data.stations[i]){
+                    for(var k=0;k<data.stations[i].unusualList.length;k++){
+                        UnTaskJson_2.push({
+                            type : 'UT',
+                            location : data.stations[i].unusualList[k].location,
+                            stationId : data.stations[i].stationId,
+                            sortNum : data.stations[i].sortNum,
+                            unusualPic :　data.stations[i].unusualList[k].pic,
+                            unusualLevel : data.stations[i].unusualList[k].unusualLevel,
+                            createTime : data.stations[i].unusualList[k].createTime,
+                            unusualDesc : data.stations[i].unusualList[k].unusualDesc,
+                            unusualTrackId : data.stations[i].unusualList[k].unusualTrackId,
+                            unusualType : data.stations[i].unusualList[k].unusualTypeName                       
+                        });                 
+                    }
+                }
+                else{
+                    DailyTaskJson_2.push({
+                        type :　'DT',
+                        stationName : data.stations[i].stationName,
+                        sortNum : data.stations[i].sortNum,
+                        dailyTaskDetailId : data.stations[i].taskId
+                    });                 
+
+                }
+            }
+            if(UnTaskJson_2.length !=0){
+                UnTaskJson_2.sort(function(a,b){
+                    return fnChangeTimePic(b.createTime) - fnChangeTimePic(a.createTime);
+                })
+            }
+            for(var q=0;q<UnTaskJson_2.length;q++){
+                line_autt_2["UT"].push(UnTaskJson_2[q]);
+            }
+            for(var q=0;q<DailyTaskJson_2.length;q++){
+                line_autt_2["DT"].push(DailyTaskJson_2[q]);
+            }                               
+            fnInitPaintData(line_autt_2,type);
+        }       
+    }
+    
+  function fnInitPaintData(line_autt,type){
+//     alert(JSON.stringify(line_autt))
+        var htmlTopStr = '',htmlUtStr = '',htmlDtStr = '',htmlStr = '';
+        if(line_autt["DT"].length != 0 || line_autt["UT"].length != 0){
+            htmlTopStr =  '<li class="mui-table-view-cell">'+
+                                '<span id="road-line">线路：'+ type +'号线</span>'+
+                                '<span class="mui-pull-right" style="color:#0066ff">异常点'+ line_autt["UT"].length +'处，站点'+ line_autt["DT"].length +'个</span>'+
+                            '</li>';
+            for(var i=0;i<line_autt["UT"].length;i++){
+                htmlUtStr +=    '<li class="mui-table-view-cell mui-media">'+
+                                    '<a href="javascript:;">'+
+                                        '<img class="mui-media-object mui-pull-left" onclick="fnShowImage(this)" src="'+ fnGetServerAddr() + '/subway/annexUpload.do?todo=download&download=true&smallImage=true&width=500&height=500&annexId=' + line_autt["UT"][i].unusualPic + '">'+
+                                        '<div class="mui-media-body">'+
+                                            '<div> 异常描述：'+ line_autt["UT"][i].unusualDesc +'</div>'+
+                                            '<div> 发现时间：'+ line_autt["UT"][i].createTime +'</div>'+
+                                            '<div> 异常点位置：'+ line_autt["UT"][i].location +'</div>'+
+                                            '<div> 异常类别：'+ line_autt["UT"][i].unusualType +' <span class="mui-pull-right mui-badge mui-badge-danger">'+ line_autt["UT"][i].unusualLevel +'</span></div>'+
+                                        '</div>'+
+                                    '</a>'+
+                                '</li>';
+            }
+            for(var k=0;k<line_autt["DT"].length;k++){
+                htmlDtStr +=    '<li class="mui-table-view-cell mui-media">'+
+                                    '<a href="javascript:;">'+
+                                        '<img class="mui-media-object mui-pull-left ow-img" src="../../../../image/trinStation.png">'+
+                                        '<div class="mui-media-body" style="line-height: 40px;">'+ line_autt["DT"][k].stationName +'</div>'+
+                                    '</a>'+
+                                '</li>';    
+            }
+            
+            htmlStr += '<ul class="mui-table-view">'+ htmlTopStr + htmlUtStr +'</ul>';
+            htmlStr += '<ul class="mui-table-view">'+ htmlDtStr +'</ul>';;
+            $('body').append(htmlStr);
+            api.hideProgress();
+        }   
+  }
+
+//时间戳转换
+    function fnChangeTimePic(times){
+        var date = new Date(times.replace(/-/g, '/'));
+        return Date.parse(date);
+    } 
+    
+</script>
+</html>

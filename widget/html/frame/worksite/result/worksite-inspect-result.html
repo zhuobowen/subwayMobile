@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+  <html>
+  <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+      <title>今日监护报告</title>
+      <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+      <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+      <link rel="stylesheet" type="text/css" href="../../../../css/common-mui.css"/>
+      <style>
+          html,body{
+              height: 95%;
+          }
+          .mui-btn {
+              padding: 6px 0px 4px 6px;
+              min-width: 5.5rem;
+              margin-left: .5rem;
+              margin-bottom: .5rem
+          }
+          .foot{
+              display: none;
+          }
+      </style>
+  </head>
+  <body>
+    <div class="mui-content">
+        <ul class="mui-table-view first-table">
+            <li class="mui-table-view-cell mui-color-blue">
+                <span class="mui-circle">1</span>
+                <span class="mui-circle-info">监护出勤</span>
+            </li>
+            <span id="attendance">
+
+            </span>
+        </ul>
+        <ul class="mui-table-view mui-margin-top-15">
+            <li class="mui-table-view-cell mui-color-blue">
+                <span class="mui-circle">2</span>
+                <span class="mui-circle-info">监护情况</span>
+            </li>
+            <span id="count"></span>
+        </ul>
+    </div>
+    <div class="foot">
+        <div class="mui-common-btn" tapmode onclick="fnRecoverInspect();">继续监护</div>
+    </div>
+  </body>
+  <script type="text/template" id="attendanceTemplate">
+      <li class="mui-table-view-cell">
+          <div class="mui-row mui-ellipsis mui-margin-tb-1 mui-padding-left-10">
+              <span class="iconfont icon-alarm-clock"></span>
+              <span>巡查日期：</span>
+              <span id="inspectTime">
+                    {{=it.attenDate}}
+                </span>
+          </div>
+          <div class="mui-row mui-ellipsis mui-margin-tb-1 mui-padding-left-10">
+              <span class="iconfont icon-people"></span>
+              <span>出勤人员：</span>
+              <span id="inspectUser">{{=it.inspectUser}}</span>
+          </div>
+          <div class="mui-row mui-fixed mui-margin-tb-1">
+              <div class="mui-fixed-item">
+                  <p>
+                      起始时间
+                  </p>
+                  <b id="startTime" style="font-size:20px;">
+                      {{=it.startTime}}
+                  </b>
+              </div>
+              <div class="mui-fixed-item" style="width: 50%;">
+                  <p id="contentTime">
+                      {{=it.timeDuration}}
+                  </p>
+              </div>
+              <div class="mui-fixed-item">
+                  <p>
+                      结束时间
+                  </p>
+                  <b id="endTime" style="font-size:20px;">
+                      {{=it.endTime || '<span style="font-size: 16px">未结束</span>'}}
+                  </b>
+              </div>
+          </div>
+      </li>
+  </script>
+  <script type="text/template" id="countTemplate">
+      <li class="mui-table-view-cell">
+          <div class="mui-row mui-padding-left-10 mui-padding-top-5 mui-padding-bottom-5">
+                <span class="mui-pull-left">
+                    今日监护工点
+                </span>
+              <span class="mui-pull-right mui-color-blue">
+                    {{=it.worksiteCount}}处
+                </span>
+          </div>
+          {{~it.lines:line}}
+              <div class="mui-row mui-padding-left-1 mui-padding-top-5 mui-padding-bottom-5">
+                  {{=line.lineName}}监护工点 {{=line.worksiteCount}} 处，监护异常工点 {{=line.unusualCount}} 处
+              </div>
+          {{~}}
+          <div class="mui-row mui-padding-left-1 mui-padding-top-5 mui-padding-bottom-5 mui-color-red">
+              尚余 {{=it.undoCount}} 个工点未监护
+          </div>
+      </li>
+      <li class="mui-table-view-cell">
+          <div class="mui-row">
+              <button type="button" class="mui-btn mui-pull-right" tapmode onclick="fnOpenInspectSituation()">监护情况</button>
+              <button type="button" class="mui-btn mui-pull-right  mui-margin-right-10" onclick="fnOpenLefter()">监护进度</button>
+          </div>
+      </li>
+  </script>
+  <script type="text/javascript" src="../../../../script/api.js"></script>
+  <script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+  <script type="text/javascript" src="../../../../script/doT.min.js"></script>
+  <script type="text/javascript" src="../../../../script/common.js"></script>
+  <script type="text/javascript">
+      apiready = function(){
+          fnInitData();
+      };
+
+      //初始化数据
+      function fnInitData(){
+          $('body').hide();
+          api.ajax({
+              url: fnGetServerAddr() + '/apicloud/worksite.do?todo=getWorksiteTaskData',
+              method: 'get',
+              data: {
+                  values: {userId: getUserId()}
+              }
+          }, function (ret, err) {
+              if(ret){
+                  if(ret.success){
+                      $('#attendance').replaceWith(fnTemplate('attendanceTemplate',ret.attendance));
+                      $('#count').replaceWith(fnTemplate('countTemplate',ret));
+                      $('body').show();
+                      if(api.pageParam.isFinish){
+                          $('.foot').show();
+                      }
+                  }else{
+                      fnShowMessage(ret.msg || "数据异常");
+                  }
+              }else {
+                  fnShowMessage("网络异常")
+              }
+          });
+      }
+
+      //打开巡查情况
+      function fnOpenInspectSituation(){
+          var pageName = 'worksite-inspect-situation-top';
+          var title = '巡查情况';
+          var leftIcons = 'icon-arrow-left,event-back';
+          var pageObj = {
+              title: title,
+              frameName: pageName,
+              frameUrl: 'widget://html/frame/worksite/result/' + pageName + '.html',
+              leftIcons: leftIcons
+          };
+          fnOpenCommonWin(pageName, pageObj);
+      }
+
+      //打开左侧列表
+      function fnOpenLefter(){
+          api.openDrawerPane({
+              type: 'left'
+          });
+      }
+
+      //打开今日巡查点页面
+      function fnOpenWorksiteInspectPoint(){
+          api.closeWin({
+              name: 'workstie-inspect-point-main'
+          });
+          api.openDrawerLayout({
+              name: 'workstie-inspect-point-main',
+              url: 'widget://html/frame/worksite/inspect/worksite-inspect-point-main.html',
+              slidBackEnabled:false,
+              rightPane: {
+                  edge: api.winWidth/5,
+                  name: 'today-inspect-point-right',
+                  url: 'widget://html/frame/worksite/inspect/worksite-inspect-point-right.html',
+                  rect: {
+                      x: 0,
+                      y: 0,
+                      w: api.winWidth,
+                      h: api.winHeight
+                  }
+              },
+              animation:{
+                  type: 'movein',
+                  subType:'from_left',
+                  duration:300
+              }
+          });
+
+          //延时关闭本窗口
+          setTimeout(function(){
+              api.closeWin({
+                  name: api.winName
+              });
+          },1000)
+      }
+
+      //恢复巡查
+      function fnRecoverInspect(){
+          fnShowProgress("正在恢复监护")
+          api.ajax({
+              url: fnGetServerAddr() + '/apicloud/worksite.do?todo=goonWorksiteTask',
+              method: 'post',
+              timeout: 6,
+              data: {
+                  values: {userId: getUserId()}
+              }
+          }, function (ret, err) {
+              fnHideProgress();
+              if(ret){
+                  if(ret.success){
+                      fnOpenWorksiteInspectPoint();
+                      setTimeout(function(){
+                          api.closeWin();
+                      },500)
+                  }else{
+                      fnShowMessage(ret.msg || "数据异常");
+                  }
+              }else{
+                  fnShowMessage("网络异常")
+              }
+          });
+      }
+  </script>
+  </html>

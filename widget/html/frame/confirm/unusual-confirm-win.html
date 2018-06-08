@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>异常确认单现场确认</title>
+    <link rel="stylesheet" type="text/css" href="../../../css/api.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../css/common-win.css"/>
+</head>
+<body>
+<div id="wrap">
+    <div id="header">
+        <div class="left-btn">
+            <span class="iconfont iconfont-large icon-arrow-left" tapmode="active" onclick="fnCloseWin()"></span>
+        </div>
+        <div class="title">待处理异常确认单</div>
+        <div class="right-btn">
+            <span class="iconfont iconfont-large icon-result-order" tapmode="active" onclick="fnReportWin()"></span>
+        </div>
+    </div>
+    <div id="main">
+
+    </div>
+</div>
+</body>
+<script type="text/javascript" src="../../../script/api.js"></script>
+<script type="text/javascript" src="../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../script/transform.js"></script>
+<script type="text/javascript" src="../../../script/common.js"></script>
+<script type="text/javascript">
+    apiready = function () {
+        fnInitFrame();
+        fnReadyHeader();
+    }
+
+    //调整状态栏
+    function fnReadyHeader() {
+        var header = $api.byId('header');
+        if (header) {
+            $api.fixStatusBar(header);
+            var headerHeight = $api.offset(header).h;
+            $api.setStorage('headerHeight', headerHeight);
+        }
+    };
+
+    //初始化页面
+    function fnInitFrame(){
+        api.openFrame({
+            name: 'unusual-confirm-main',
+            url: './unusual-confirm-main.html',
+            rect: {
+                x: 0,
+                y: getHeaderHeight(),
+                w: 'auto',
+                h: 'auto'
+            },
+            bounces: false
+        });
+
+        api.openFrame({
+            name: 'unusual-confirm-bottom',
+            url: './unusual-confirm-bottom.html',
+            rect: {
+                x: 0,
+                y: api.winHeight - 100,
+                w: api.winWidth,
+                h: 100
+            },
+            bounces: false
+        });
+
+        /*api.openFrame({
+            name: 'map-location',
+            url: 'widget://html/frame/map/map-location.html',
+            rect: {
+                x: 10,
+                y: api.winHeight - 150,
+                w: 30,
+                h: 30
+            },
+            pageParam: {
+                parentName: 'subway-protect-inspect-main'
+            },
+            bounces: false
+        });*/
+    }
+
+    //打开右侧
+    function fnOpenRighter(){
+
+    }
+    //打开报告窗口
+    function fnReportWin(){
+        var pageName = 'unusual-confirm-report';
+        var pageObj = {
+            title: '疑似异常确认履历',
+            frameName:pageName,
+            frameUrl:'widget://html/frame/confirm/'+ pageName + '.html',
+            leftIcons:'icon-arrow-left,event-back',
+            bounces:false
+        };
+        fnOpenCommonWin(pageName,pageObj);
+    }
+
+    //关闭窗口
+    function fnCloseWin(){
+        api.closeWin({
+            name: api.winName
+        });
+    }
+
+    function fnY(y){
+        return api.systemType == 'ios' ? api.frameHeight - getHeaderHeight() - (y+5) : api.frameHeight - getHeaderHeight() - y
+    }
+</script>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <title>巡查人员列表右侧内容</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.indexedlist.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css" />
+    <style>
+    html,
+    body {
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .mui-bar {
+        -webkit-box-shadow: none;
+        box-shadow: none;
+    }
+
+    #done.mui-disabled {
+        color: gray;
+    }
+
+    .mui-indexed-list-item,.mui-indexed-list-empty-alert{
+        padding-left: 40px;
+    }
+
+    /*.mui-checkbox.mui-left input[type=checkbox], .mui-radio.mui-left input[type=radio]{
+        left: auto;
+    }*/
+    </style>
+</head>
+
+<body>
+    <div class="mui-content">
+        <div id='list' class="mui-indexed-list">
+            <div class="mui-indexed-list-inner">
+                <ul class="mui-table-view">
+                 <form class="mui-input-group" id="user-list">
+
+                 </form>
+             </ul>
+         </div>
+     </div>
+ </div>
+</body>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript" src="../../../../script/mui.indexedlist.js"></script>
+<script type="text/javascript">
+    var key;
+    var groupList;
+    var attendances;
+    apiready = function() {
+        groupList = api.pageParam.groupList;
+        attendances = api.pageParam.attendances || [];
+        fnReadyCheckBox();
+    };
+
+    //监听复选框事件
+    function fnReadyCheckBox(){
+        mui('.mui-input-group').on('change', 'input', function() {
+            var checked = this.checked;
+            var id = $(this).val();
+            var name = $(this).prev().html();
+            if(!attendances || attendances.length == 0){
+                attendances.push({
+                    id:id,
+                    name:name
+                });
+            }else if(!checked){
+                for (var i = 0; i < attendances.length; i++) {
+                    if(id == attendances[i].id){
+                        attendances.splice(i,1);
+                    }
+                }
+            }else if(checked){
+                attendances.push({
+                    id:id,
+                    name:name
+                });
+            }
+        });
+    }
+
+    //根据巡查组巡查该组的所有人员
+    function fnQueryUserByGroupId(groupId){
+        $('#user-list').empty();
+        for (var i = 0 ; i < groupList.length; i++) {
+            var group = groupList[i];
+            if(group.id == groupId){
+                var users = group.users;
+                for (var j = 0; j < users.length; j++) {
+                    var user = users[j];
+                    var checked = '';
+                    for (var k = 0; k < attendances.length; k++) {
+                        if( user.id == attendances[k].id){
+                            checked = 'checked=checked';
+                        }
+                    }
+                    $('#user-list').append('<li class="mui-table-view-cell mui-indexed-list-item mui-checkbox"><span>' + user.name + '</span><input type="checkbox" ' + checked + ' value="' + user.id + '"/></li>');
+                }
+            }
+        }
+    }
+    //根据名称查询人员
+    function fnQueryUserByUserName(username){
+        $('#user-list').empty();
+        for (var i = 0 ; i < groupList.length; i++) {
+            var group = groupList[i];
+            var users = group.users;
+            for (var j = 0; j < users.length; j++) {
+                var user = users[j];
+                var checked = '';
+                for (var k = 0; k < attendances.length; k++) {
+                    if( user.id == attendances[k].id){
+                        checked = 'checked=checked';
+                    }
+                }
+                if(username && user.name.indexOf(username) != -1){
+                  $('#user-list').append('<li class="mui-table-view-cell mui-indexed-list-item mui-checkbox">' + user.name + '<input type="checkbox" ' + checked + ' value="' + user.id + '"/></li>');
+                }
+            }
+        }
+    }
+
+    //保存
+    function fnSave(){
+        api.execScript({
+            name: api.pageParam.frontFrame + '-win',
+            frameName: api.pageParam.frontFrame,
+            script: 'fnInitAttendanceUser(\'' + JSON.stringify(attendances) + '\');'
+        });
+    }
+</script>
+</html>

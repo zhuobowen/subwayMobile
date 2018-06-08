@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+  <html>
+  <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+      <title>title</title>
+      <link rel="stylesheet" type="text/css" href="../../../css/api.css"/>
+      <link rel="stylesheet" type="text/css" href="../../../css/common-mui.css"/>
+      <style>
+          html,body{
+              background-color: transparent;
+          }
+          .mui-btn-content{
+              width:100%;height:60px;
+          }
+          .mui-btn-item{
+            border-radius: 50%;
+            color: #fff;
+            height: 4.5rem;
+            width: 4.5rem;
+            line-height: 4.5rem;
+            z-index: 10000;
+            margin: 0px auto;
+            background-color: #0877D0;
+            text-align: center;
+          }
+      </style>
+  </head>
+  <body>
+      <div class="mui-btn-content mui-fixed">
+          <div class="mui-fixed-item" tapmode onclick="fnOpenCommonPage(1)">
+              <div class="mui-btn-item">
+                  重点区间
+              </div>
+          </div>
+          <div class="mui-fixed-item"  tapmode onclick="fnOpenCommonPage(2)">
+            <div class="mui-btn-item">
+                  异常点
+            </div>
+          </div>
+          <div class="mui-fixed-item" tapmode onclick="fnOpenCommonPage(3)">
+            <div class="mui-btn-item">
+                  总图
+            </div>
+          </div>
+          <div class="mui-fixed-item" tapmode onclick="fnOpenCommonPage(4)">
+            <div class="mui-btn-item">
+                  监护工点
+            </div>
+          </div>
+          <div class="mui-fixed-item" tapmode onclick="fnOpenCommonPage(5)">
+            <div class="mui-btn-item">
+                  巡查监督
+            </div>
+          </div>
+      </div>
+  </body>
+  <script type="text/javascript" src="../../../script/api.js"></script>
+  <script type="text/javascript" src="../../../script/common.js"></script>
+  <script type="text/javascript">
+
+      apiready = function(){
+          api.parseTapmode();
+      };
+      var pageMap = {
+          1: {
+              title:"重点区间",
+              pageName: "map-common-page"
+          },
+          2: {
+              title:"异常点",
+              pageName: "map-common-page"
+          },
+          3: {
+              title:"总图",
+              pageName: "map-overall-view"
+          },
+          4: {
+              title:"监护工点",
+              pageName: "map-common-page"
+          },
+          5: {
+              title:"巡查监督",
+              pageName: "map-inspect-supervise"
+          }
+      };
+      //打开窗口（包括选项卡1、2、3、4）
+      function fnOpenCommonPage(index){
+          var title = pageMap[index].title;
+          var pageName = pageMap[index].pageName;
+          var pageObj = {
+              title: title,
+              frameName:pageName,
+              frameUrl:'widget://html/frame/map/page/'+ pageName + '.html',
+              leftIcons:'icon-arrow-left,event-back',
+              index:index,
+              bounces:false,
+              lines: api.pageParam.lines
+          };
+          fnOpenCommonWin(pageName,pageObj);
+      }
+  </script>
+  </html>

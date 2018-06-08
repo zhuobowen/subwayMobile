@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>巡查轨迹</title>
+    <style>
+        body{
+            
+        }
+    </style>
+</head>
+<body>
+    
+</body>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/transform.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript" src="../../../../script/map.js"></script>
+<script type="text/javascript">
+    var aMap;
+    var end_point = 'widget://image/map/end-point.png';
+    var start_point = 'widget://image/map/start-point.png';
+    apiready = function(){
+        fnInitMap();
+    };
+
+    function fnInitMap(){
+        aMap = api.require('aMap');
+        var center = $api.getStorage('current_location');
+
+        if(!center){
+            fnShowMessage('请开启定位');
+            return;
+        }
+
+        aMap.open({
+            rect: {
+                x:0,
+                y:0,
+                w: api.frameWidth,
+                h: api.frameHeight
+            },
+            showUserLocation: true,
+            zoomLevel: 10,
+            center:{
+                lon: center.lon,
+                lat: center.lat
+            },
+            fixedOn: api.frameName,
+            fixed: true
+        },
+        function(ret, err) {
+            aMap.setMapAttr({
+                type: 'standard',
+                trafficOn: false,
+                zoomEnable: true,
+                scrollEnable: true,
+                building: false,
+                overlookEnabled: false,
+                rotateEnabled: false
+            });
+            aMap.setCompass({
+                show: false
+            });
+            aMap.setScaleBar({
+                show: false
+            });
+            fnInitPoints();
+            fnInitTrack();
+        });
+    }
+
+    //初始化行车轨迹
+    function fnInitTrack(){
+        var id = api.pageParam.carId;
+        var inspectTime = api.pageParam.inspectTime;
+        if(!id){
+            fnAlert('巡查车辆不能为空');
+            api.closeWin();
+        }
+        if(!inspectTime){
+            fnAlert('巡查时间不能为空');
+            api.closeWin();
+        }
+        api.ajax({
+            url: fnGetServerAddr() + '/subway/car.do?todo=inspectionTrack',
+            method: 'get',
+            data: {
+                body: {
+                    id: id,
+                    dateStr: inspectTime
+                }
+            }
+        }, function (ret) {
+            if(ret){
+                if(ret.length > 0){
+                    var latLngs = ret;
+                    var points = [];
+                    for( var i = 0; i < latLngs.length; i++){
+                        var latLng = latLngs[i];
+                        if(latLng){
+                            points.push({
+                                lon:latLng[0],
+                                lat:latLng[1]
+                            });
+                        }
+                    }
+                    aMap.addAnnotations({
+                        annotations: [{
+                            id:Math.random(),
+                            lon:points[0].lon,
+                            lat:points[0].lat
+                        }],
+                        icons: [start_point],
+                        draggable: false
+                    }, function(rett) {
+
+                    });
+                    aMap.addAnnotations({
+                        annotations: [{
+                            id:Math.random(),
+                            lon:points[points.length-1].lon,
+                            lat:points[points.length-1].lat
+                        }],
+                        icons: [end_point],
+                        draggable: false
+                    }, function(rett) {
+
+                    });
+                    aMap.addLine({
+                        id: Math.random(),
+                        styles: {
+                            type: 'square',
+                            borderColor: '#FF0000',
+                            borderWidth: api.systemType == 'ios' ? 2 : 6,
+                            lineDash: false,
+                            strokeImg: ''
+                        },
+                        points: points
+                    });
+                }else{
+                    fnShowMessage("暂无巡查轨迹");
+                }
+            }else{
+                fnShowMessage("网络异常")
+            }
+        });
+    }
+</script>
+</html>

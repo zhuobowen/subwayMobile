@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>异常确认单现场确认地图</title>
+    <link rel="stylesheet" type="text/css" href="../../../css/mui.min.css" />
+    <link rel="stylesheet" type="text/css" href="../../../css/iconfont.css" />
+    <link rel="stylesheet" type="text/css" href="../../../css/common-win.css" />
+    <style>
+
+    </style>
+</head>
+<body>
+    <div id="headerInfo" tapmode class="mui-navigate-right" onclick="fnOpenRighter();">
+        <img src="../../../image/loading_more.gif" class="mui-loading" />加载中...
+    </div>
+</body>
+<script type="text/javascript" src="../../../script/api.js"></script>
+<script type="text/javascript" src="../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../script/transform.js"></script>
+<script type="text/javascript" src="../../../script/common.js"></script>
+<script type="text/javascript">
+    var aMap;
+    var mapOpened = false;
+    var annotations = [];
+    var current_location;
+    var riskMap = {};
+    var dataInited = false;
+    var data;
+    apiready = function(){
+        aMap = api.require('aMap');
+        current_location = fnGetCurrentLocation();
+        aMap.open({
+            rect: {
+                x: 0,
+                w: api.frameWidth,
+                h: api.frameHeight,
+                y: $api.offset($api.byId('headerInfo')).h
+            },
+            showUserLocation: true,
+            zoomLevel: 11,
+            center:{
+                lon: 118.086531,
+                lat: 24.575115
+            },
+            fixedOn: api.frameName,
+            fixed: true
+        },
+        function(ret, err) {
+            mapOpened = true;
+
+            aMap.setMapAttr({
+                type: 'standard',
+                trafficOn: false,
+                zoomEnable: true,
+                scrollEnable: true,
+                building: false,
+                overlookEnabled: false,
+                rotateEnabled: false
+            });
+
+            aMap.setCompass({
+                show: false
+            });
+
+            aMap.setScaleBar({
+                show: false
+            });
+
+            //打开页面显示地图
+            api.addEventListener({
+                name:'viewappear'
+            }, function(ret, err){
+                if(!mapOpened){
+                    aMap.show();
+                    mapOpened = true;
+                }
+                if(!dataInited){
+                    fnInitData();
+                }
+            });
+
+            //关闭页面显示地图
+            api.addEventListener({
+                name:'viewdisappear'
+            }, function(ret, err){
+                if(mapOpened){
+                    aMap.hide();
+                    mapOpened = false;
+                }
+                dataInited = false;
+            });
+        });
+
+        //底部滑动监听
+        api.addEventListener({
+            name:'bottom-slide'
+        }, function(ret, err){
+            var id = ret.value.id;
+            fnGoCenter(riskMap[id] ? riskMap[id].point : undefined);
+        });
+    };
+
+
+    //初始化数据
+    function fnInitData(){
+        annotations = [];
+        aMap.removeAnnotations({});//移除所有标记
+        api.ajax({
+            url: fnGetServerAddr() + '/subway/riskSituation.do?todo=ajaxByParam',
+            method: 'get',
+            data: {
+                values: {
+                    state: 0,
+                    executeUserId: getUserId()
+                }
+            }
+        }, function (ret, err) {
+            dataInited = true;
+            if(ret){
+                if(ret.success){
+                    data = ret.data;
+                    if(data.length > 0){
+                        fnAddAnnotations(data);
+                        $('#headerInfo').html('当前待确认疑似异常点'+data.length+'个');
+                    }else{
+                        $('#headerInfo').html('当前暂无待确认疑似异常点');
+                    }
+                }else{
+                    $('#headerInfo').html('数据异常');
+                }
+            }else{
+
+            }
+        })
+    }
+
+
+    //添加点位
+    function fnAddAnnotations(data){
+        for (var i = 0 ; i < data.length; i++){
+            var risk = data[i];
+            var id = risk.id;
+            var description = risk.description;
+            var latLng = risk.latLng ? risk.latLng.split(',') : [];
+            var point = {};
+            if(latLng.length > 0){
+                var lon = parseFloat(latLng[0]);
+                var lat = parseFloat(latLng[1]);
+                var distance = parseFloat(fnDistance(current_location.lat,current_location.lon,lat,lon));
+                point = {
+                    id:id,
+                    lon:lon,
+                    lat:lat,
+                    index:i,
+                    distance:distance
+                }
+                annotations.push(point);
+            }
+
+            riskMap[id] = {
+                risk: risk,
+                point: point
+            }
+        }
+
+        //设置地图标记
+        aMap.addAnnotations({
+            annotations: annotations,
+            icons: ['widget://image/map/location-orange-large.png'],
+            draggable: false
+        }, function(ret) {
+            if (ret.eventType == 'click') {
+                fnGoCenter(riskMap[ret.id].point);
+                api.sendEvent({
+                    name: 'point-click',
+                    extra: {index: riskMap[ret.id].point.index}
+                });
+            }
+        });
+
+        //设置弹出气泡
+        for(var key in riskMap){
+            var risk = riskMap[key].risk;
+            var point = riskMap[key].point;
+            aMap.setWebBubble({
+                id:point.id,
+                size : {
+                    width:risk.description.length * 18,
+                    height:32
+                },
+                bg:'#ffffff',
+                data:'<div style="font-size:12px;text-align:center;">'+risk.description+'</div>'
+            });
+        }
+
+        var minIndex = annotations.min();
+        fnGoCenter(annotations[minIndex]);
+    }
+
+    //显示地图中心
+    function fnGoCenter(point){
+        if(!point)
+            point = current_location;
+
+        aMap.popupBubble({
+            id: point.id
+        }, function(ret){
+
+        });
+        aMap.setCenter({
+            coords: {
+                lon: point.lon,
+                lat: point.lat
+            },
+            animation: true
+        });
+
+        setTimeout(function(){
+            aMap.setZoomLevel({
+                level: 15,
+                animation: true
+            });
+        },500)
+    }
+
+    //打开右侧
+    function fnOpenRighter(){
+        api.sendEvent({
+            name: 'open-right',
+            extra: {data: data}
+        });
+        api.openDrawerPane({
+            type: 'right'
+        });
+    }
+
+    //返回数组最小值
+    Array.prototype.min = function() {
+        var min = this[0].distance;
+        var len = this.length;
+        var index = 0;
+        for (var i = 1; i < len; i++){
+            if (this[i].distance < min){
+                min = this[i].distance;
+                index = i;
+            }
+        }
+        return index;
+    }
+
+</script>
+</html>

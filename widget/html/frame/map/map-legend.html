@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+	<title>地图图例</title>
+	<link rel="stylesheet" type="text/css" href="../../../css/api.css" />
+	<link rel="stylesheet" type="text/css" href="../../../css/mui.min.css" />
+	<link rel="stylesheet" type="text/css" href="../../../css/iconfont.css" />
+	<link rel="stylesheet" type="text/css" href="../../../css/common.css" />
+	<style>
+	html,body{
+		background-color: transparent;
+		margin: 0px;padding:0px;
+		overflow: hidden;
+	}
+	.title{
+		height: 30px;
+		line-height: 30px;
+		text-align: center;
+		background-color: #0A78D0;
+		font-size: 17px;
+		color: white;
+	}
+	.mui-table-view-cell{
+		padding: 5px 15px;
+	}
+	.mui-media-body{
+		line-height: 40px;
+	}
+	.mui-table-view .mui-media-object{
+		line-height: 30px;
+		max-width: 30px;
+		min-width: 30px;
+		height: 30px;
+		margin-top: 5px;
+	}
+	/*.mui-table-view{
+		width: 50%;
+		position: fixed;
+		bottom: 0px;
+		right: 0px;
+		z-index: 999;
+	}*/
+	
+</style>
+</head>
+<body>
+
+	<ul class="mui-table-view">
+		<li class="mui-table-view-cell title" style="">
+			<a href="javascript:;">
+				图例
+			</a>
+		</li>
+		<li class="mui-table-view-cell mui-media">
+			<a href="javascript:;">
+				<img class="mui-media-object mui-pull-left" src="../../../image/map/legend-line-blue.png">
+				<div class="mui-media-body">
+					地铁隧道及地铁站
+				</div>
+			</a>
+		</li>
+		<li class="mui-table-view-cell mui-media">
+			<a href="javascript:;">
+				<img class="mui-media-object mui-pull-left" src="../../../image/map/legend-line-red.png">
+				<div class="mui-media-body">
+					地铁保护区
+				</div>
+			</a>
+		</li>
+		<li class="mui-table-view-cell mui-media">
+			<a href="javascript:;">
+				<img class="mui-media-object mui-pull-left" src="../../../image/map/legend-rectangle-green.png">
+				<div class="mui-media-body">
+					巡查盲区
+				</div>
+			</a>
+		</li>
+		<li class="mui-table-view-cell mui-media">
+			<a href="javascript:;">
+				<img class="mui-media-object mui-pull-left" src="../../../image/map/location-orange-large.png">
+				<div class="mui-media-body">
+					异常问题
+				</div>
+			</a>
+		</li>
+		<li class="mui-table-view-cell mui-media">
+			<a href="javascript:;">
+				<img class="mui-media-object mui-pull-left" src="../../../image/map/location-red.png">
+				<div class="mui-media-body">
+					重点路段
+				</div>
+			</a>
+		</li>
+		<li class="mui-table-view-cell mui-media">
+			<a href="javascript:;">
+				<img class="mui-media-object mui-pull-left" src="../../../image/map/icon-work.png">
+				<div class="mui-media-body">
+					监护工点
+				</div>
+			</a>
+		</li>
+		<li class="mui-table-view-cell mui-media">
+			<a href="javascript:;">
+				<img class="mui-media-object mui-pull-left" src="../../../image/map/user.png">
+				<div class="mui-media-body">
+					巡查单兵
+				</div>
+			</a>
+		</li>
+		<li class="mui-table-view-cell mui-media">
+			<a href="javascript:;">
+				<img class="mui-media-object mui-pull-left" src="../../../image/map/car.png">
+				<div class="mui-media-body">
+					巡查车辆
+				</div>
+			</a>
+		</li>
+	</ul>
+</body>
+<script type="text/javascript">
+	apiready = function(){
+
+	}
+</script>
+</html>

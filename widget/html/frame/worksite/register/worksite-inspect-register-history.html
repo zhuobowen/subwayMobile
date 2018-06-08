@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport"
+          content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>工点监护履历表</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/common-mui.css"/>
+    <style>
+        html, body {
+            font-size: 14px;
+        }
+
+        .mui-content,#offCanvasSide {
+            background-color: #ffffff;
+        }
+
+        .mui-table-view-cell.mui-active{
+            background-color: #ffffff;
+        }
+
+        .mui-inner-wrap .mui-table-view:before,
+        .mui-inner-wrap .mui-table-view:after {
+            background-color: transparent;
+        }
+
+        .mui-inner-wrap .mui-table-view-cell:after {
+            left: 0px;
+            background-color: transparent;
+        }
+        .mui-media-body{
+            line-height: 35px;
+            padding-left: 20px;
+        }
+        .icon-view{
+            position: absolute;
+            right: 10px;
+            top:20px;
+        }
+        .icon-view:before{
+            font-size: 30px;
+        }
+    </style>
+</head>
+<body>
+<div id="offCanvasWrapper" class="mui-off-canvas-wrap mui-draggable mui-slide-in">
+    <!--侧滑菜单部分-->
+    <aside id="offCanvasSide" class="mui-off-canvas-left">
+        <div id="offCanvasSideScroll" class="mui-scroll-wrapper">
+            <div class="mui-scroll">
+                <ul class="mui-table-view" id="worksiteUnusualSituations">
+
+                </ul>
+            </div>
+        </div>
+    </aside>
+    <!--主界面部分-->
+    <div class="mui-inner-wrap">
+        <div id="offCanvasContentScroll" class="mui-content mui-scroll-wrapper">
+            <div id="pullrefresh" class="mui-content mui-scroll-wrapper">
+                <div class="mui-scroll">
+                    <div id="content"></div>
+                </div>
+            </div>
+        </div>
+        <div class="mui-off-canvas-backdrop"></div>
+    </div>
+</div>
+</body>
+<script type="text/template" id="unusualTemplate">
+    <li class="mui-table-view-cell">
+        <span class="mui-pull-left {{? it.unusualCount}} mui-color-red {{??}} mui-color-green {{?}}">{{=it.typeName}}</span>
+        {{? it.unusualCount}}
+            <span class="mui-badge mui-badge-danger mui-pull-right mui-count">{{=it.unusualCount}}</span>
+        {{??}}
+            <span class="mui-icon mui-pull-right iconfont icon-checked mui-color-green"></span>
+        {{?}}
+    </li>
+    {{~ it.unusualSituations:unusual}}
+        <div class="mui-row mui-padding-left-10">
+            {{=unusual.projectName}}
+        </div>
+        <li class="mui-table-view-cell mui-padding-top-5 mui-padding-bottom-5">
+            <img class="mui-pull-left" width="60px" height="60px" imagePath="{{=(unusual.recentPhotos||unusual.photos) ? fnGetImageUrl((unusual.recentPhotos||unusual.photos).split(',')[0],true,200,200) : '../../../../image/nopicture.png'}}" src="../../../../image/nopicture.png">
+            <div class="mui-media-body">
+                <p class="mui-ellipsis">{{=unusual.projectWorksiteKeynote}}</p>
+                <span class="mui-badge {{=statusMap[unusual.oldStatus].className}}">{{=statusMap[unusual.oldStatus].text}}</span>
+                <span class="mui-icon iconfont icon-view mui-color-blue" tapmode onclick="fnViewUnusual('{{=unusual.photos}}','{{=unusual.oldStatus}}')"></span>
+            </div>
+        </li>
+    {{~}}
+</script>
+<script type="text/template" id="trackTemplate">
+    {{~it:track}}
+    <ul class="mui-table-view worksite-track-record">
+        <li class="mui-table-view-cell">
+            <span class="mui-pull-left">{{=track.monitoreDate}}</span>
+            {{? track.unusualCount > 0}}
+                <span class="mui-pull-right mui-color-red" tapmode onclick="fnOpenLefter('{{=track.id}}','{{=track.worksiteTypes}}')">发现监护异常</span>
+            {{??}}
+                <span class="mui-pull-right mui-color-green">未发现异常情况</span>
+            {{?}}
+        </li>
+        <li class="mui-table-view-cell">
+            {{? track.proofPic && track.proofPic.indexOf('subway') == -1}}
+            <div class="mui-slider">
+                <div class="mui-slider-group">
+                    {{~ track.proofPic.split(',') : annexId:index}}
+                        {{? annexId }}
+                            <div class="mui-slider-item">
+                                <a href="#">
+                                    <div class="mui-card-header mui-card-media" style="height:15rem;background-image: url({{=fnGetImageUrl(annexId,true,500,500)}})"></div>
+                                </a>
+                            </div>
+                        {{?}}
+                    {{~}}
+                </div>
+                <div class="mui-slider-indicator">
+                    {{~ track.proofPic.split(',') : annexId:index}}
+                        {{? annexId }}
+                            <div class="mui-indicator {{? index == 0}} mui-active {{?}}"></div>
+                        {{?}}
+                    {{~}}
+                </div>
+            </div>
+            {{??}}
+            <div class="mui-card-header mui-card-media"
+                 style="height:15rem;background-image:url(../../../../image/nopicture.png)"></div>
+            {{?}}
+        </li>
+    </ul>
+    {{~}}
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/offcanvas.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript">
+    var apiFlag = muiFlag = false;
+    var projectTypeMap = {
+        1: '基坑类',
+        2: '隧道类',
+        3: '管线类',
+        4: '桩基、钻探、打井类',
+        5: '爆破类',
+        50: '其他类'
+    };
+    var statusMap = {
+        1: {className:'mui-badge-danger',text:'待确认'},
+        2: {className:'mui-badge-success',text:'已确认'},
+        3: {className:'mui-badge-success',text:'非异常'},
+        4: {className:'mui-badge-danger',text:'申请排除'},
+        5: {className:'mui-badge-success',text:'已排除'},
+        6: {className:'mui-badge-danger',text:'继续跟踪'},
+        10: {className:'mui-badge-danger',text:'已删除'}
+    };
+    var page = 0;
+    var rows = 10;
+
+    apiready = function () {
+        apiFlag = true;
+        if(muiFlag){
+            pullupRefresh();
+        }
+    };
+
+    //初始化下拉刷新
+    mui.init({
+        pullRefresh: {
+            container: '#pullrefresh',
+            up : {
+                height:50,
+                auto:true,
+                contentrefresh : "正在加载...",
+                contentnomore:'没有更多数据了',
+                callback : pullupRefresh
+            }
+        }
+    });
+
+    //打开左侧
+    function fnOpenLefter(id,worksiteTypes){
+        api.ajax({
+            url: fnGetServerAddr() + '/apicloud/worksiteTrack.do?todo=queryWorksiteTrackUnusual',
+            method: 'get',
+            timeout: 6,
+            data: {
+                values: {
+                    id: id
+                }
+            }
+        }, function (ret, err) {
+            if(ret){
+                if(ret.success){
+                    var tempMap = {};
+                    $('#worksiteUnusualSituations').empty();
+                    var typeMap = fnGetWorksiteTypes(worksiteTypes);
+                    for (var key in typeMap){
+                        tempMap['typeName'] = typeMap[key];
+                        tempMap['unusualCount'] = ret.data[key] ? ret.data[key].length : 0;
+                        tempMap['unusualSituations'] = ret.data[key] || undefined;
+                        $('#worksiteUnusualSituations').append(fnTemplate('unusualTemplate',tempMap));
+                    }
+                    mui('#offCanvasWrapper').offCanvas('show');
+                    mui('.mui-scroll-wrapper').scroll({
+                        deceleration: 0.0005
+                    });
+                    api.parseTapmode();
+                }else{
+                    fnShowMessage(ret.msg || "数据异常");
+                }
+            }else{
+                fnShowMessage("网络异常");
+            }
+        });
+    }
+
+    /**
+     * 上拉加载具体业务实现
+     */
+    function pullupRefresh() {
+        muiFlag = true;
+        if(apiFlag){
+            page++;
+            api.ajax({
+                url: fnGetServerAddr() + '/subway/worksite.do?todo=queryWorksiteRecode',
+                method: 'get',
+                data: {
+                    values: {
+                        page: page,
+                        rows: rows,
+                        worksiteId: api.pageParam.worksiteId
+                    }
+                }
+            }, function (ret, err) {
+                if (ret) {
+                    if(!ret.total || ret.total == 0){
+                        mui('#pullrefresh').pullRefresh().disablePullupToRefresh();
+                        $('#content').html('<div class="mui-row mui-align-center">暂无监护履历</div>');
+                    }
+                    fnHandleImagePath();//图片懒加载
+                    var count = 0;
+                    if(ret.total%rows > 0){
+                        count  = parseInt(ret.total/rows) + 1;
+                    }else{
+                        count = parseInt(ret.total/rows);
+                    }
+                    mui('#pullrefresh').pullRefresh().endPullupToRefresh((count == page));
+                    $('#content').append(fnTemplate('trackTemplate', ret.rows));
+                    mui('.mui-slider').slider({});
+                    api.parseTapmode();
+                } else {
+                    fnShowMessage("网络异常")
+                }
+            });
+        }
+    }
+
+    //查看单个异常点
+    function fnViewUnusual(photos,status){
+        api.openFrame({
+            name: 'worksite-unusual-view',
+            url: 'widget://html/frame/worksite/view/worksite-unusual-view.html',
+            rect: {
+                x: 0,
+                y: 0,
+                w: api.winWidth,
+                h: api.winHeight
+            },
+            pageParam: {
+                status: status,
+                photos: photos
+            },
+            bounces: false
+        });
+    }
+
+    //根据id集合获取对应的工点类别map
+    function fnGetWorksiteTypes(worksiteTypes){
+        var tempMap = {};
+        if(worksiteTypes){
+            var tempArr = worksiteTypes.split(',');
+            for (var key in projectTypeMap){
+                for (var i = 0; i < tempArr.length ; i++){
+                    if(tempArr[i] == key){
+                        tempMap[key] = projectTypeMap[key];
+                    }
+                }
+            }
+        }
+        return tempMap;
+    }
+    if (mui.os.plus) {
+        mui.plusReady(function () {
+            setTimeout(function () {
+                mui('#pullrefresh').pullRefresh().pullupLoading();
+            }, 1000);
+        });
+    } else {
+        mui.ready(function () {
+            mui('#pullrefresh').pullRefresh().pullupLoading();
+        });
+    }
+</script>
+</html>

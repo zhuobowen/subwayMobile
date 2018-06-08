@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>站点签到</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/common.css"/>
+    <style>
+        .my-circle{
+            background-color: #00ff00;
+            border:0px;
+            color: #fff;
+            padding-right: 1px;
+            padding-top: 1px;
+            margin:15px;
+        }
+        .mui-media-object{
+            width: 80px;
+            height: 80px;
+            margin: 0px;
+            min-width: 80px;
+        }
+        .mui-segmented-control.mui-scroll-wrapper .mui-scroll,
+        .mui-segmented-control.mui-scroll-wrapper{
+            height: 80px;
+        }
+        .mui-segmented-control.mui-scroll-wrapper .mui-control-item{
+            padding:0px;
+        }
+        .mui-segmented-control.mui-segmented-control-inverted .mui-control-item.mui-active{
+            border-bottom: none;
+        }
+        .stationInfo{
+            padding: 0px 15px;
+        }
+    </style>
+</head>
+<body>
+    <div id="content">
+
+    </div>
+</body>
+<script type="text/template" id="template">
+    {{~it:line:i}}
+        <ul class="mui-table-view"
+            {{? i != 0}}
+                style="margin-top: 20px;"
+            {{?}}
+        >
+           <li class="mui-table-view-cell" style="border-left: 3px solid #0877D0">
+               <span class="lineName">
+                   {{=line.lineName}}
+               </span>
+               <span class="stationCount mui-pull-right mui-color-gray">
+                   共 {{=line.stationCount}} 个车站
+               </span>
+           </li>
+       </ul>
+        <div class="stationInfo">
+            {{~line.stations:station:index}}
+                <div class="mui-row">
+                    <span><span class="my-circle">{{=index+1}}</span>{{=station.stationName}}</span>
+                </div>
+                <div class="mui-scroll-wrapper mui-slider-indicator mui-segmented-control mui-segmented-control-inverted">
+                    <div class="mui-scroll">
+                        {{~station.pictures:picture}}
+                            <a class="mui-control-item" tapmode onclick="fnShowImg(this)">
+                                <span class="my-image">
+                                    <img class="mui-media-object mui-pull-left" imagePath="{{=picture}}" src="../../../../image/nopicture.png"/>
+                                </span>
+                            </a>
+                        {{~}}
+                    </div>
+                </div>
+            {{~}}
+        </div>
+    {{~}}
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript">
+    var imageBrowser;
+    apiready = function(){
+        imageBrowser = api.require('imageBrowser');
+        fnRefresh();
+        fnInitData();
+    };
+    //设置下拉刷新
+    function fnRefresh(){
+        fnRefreshHeader('fnInitData',false);//设置下拉刷新
+    }
+    //初始化数据
+    function fnInitData(){
+        api.ajax({
+            url: fnGetServerAddr() + '/apicloud/dailyTask.do?todo=queryStationPicForApp',
+            method: 'get',
+            data: {
+                values: {
+                    executeUserId: fnGetUser().userId,
+                    inspectTime:fnGetTodayStr('-')
+                }
+            }
+        },function(ret, err){
+            api.refreshHeaderLoadDone();//结束刷新
+            if (ret.status) {
+                $('#content').empty();
+                var lines = [];
+                if( ret.data && ret.data.length > 0){
+                    for (var i = 0; i < ret.data.length; i++) {
+                        var line = ret.data[i];
+                        var stations = line.stations;
+                        line['stationCount'] = stations.length;
+                        lines.push(line);
+                    }
+                    var html = doT.template($api.byId('template').innerHTML)(lines);
+                    $('#content').html(html);
+
+                    api.parseTapmode();
+                    mui('.mui-scroll-wrapper').scroll({
+                        deceleration: 0.0005
+                    });
+                    fnHandleImagePath();//图片懒加载处理
+                }else{
+                    var html = '<ul class="mui-table-view" style="text-align: center;">'+
+                                     '<li class="mui-table-view-cell">暂无站点签到</li>'+
+                                '</ul>'
+                    $('#content').html(html);
+                }
+            }
+        });
+    }
+
+    //显示图片
+    function fnShowImg(_this){
+        var imageUrls = [];
+        var imgIndex = 0;
+        var imagePath = fnIsSmallImg($(_this).find('img').attr('src'));
+        $(_this).parent().find('img').each(function(index,ele){
+            imageUrls.push(fnIsSmallImg($(ele).attr('src')));
+            if(imagePath == fnIsSmallImg($(ele).attr('src'))){
+                imgIndex = index;
+            }
+        })
+        imageBrowser.openImages({
+            imageUrls: imageUrls,
+            showList: false,
+            activeIndex: imgIndex
+        });
+    }
+
+    //检查是否是缩略图
+    function fnIsSmallImg(imagePath){
+        if(imagePath && imagePath.indexOf('smallImage=true') > -1){
+            imagePath = imagePath.replace('smallImage=true','smallImage=false')
+        }
+        return imagePath;
+    }
+</script>
+</html>

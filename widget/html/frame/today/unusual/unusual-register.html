@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>异常点登记</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.picker.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.poppicker.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/common.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/frame/today/unusual/unusual-register.css"/>
+</head>
+<body>
+    <div class="mui-content">
+        <form id="myform">
+            <input type="hidden" name="id"/>
+            <input type="hidden" name="area"/>
+            <input type="hidden" name="girth"/>
+            <input type="hidden" name="position"/><!--多个异常位置经纬度-->
+            <input type="hidden" name="latLng"/><!--单个异常位置经纬度-->
+            <input type="hidden" name="lineId" class="validatebox" msg="请选择路线"/>
+            <input type="hidden" name="stationId" class="validatebox" msg="请选择站点"/>
+            <input type="hidden" name="location" class="validatebox" msg="请选择异常位置"/><!--异常位置中文-->
+            <input type="hidden" name="unusualLevelId" value="一级" class="validatebox" msg="请选择异常等级"/>
+            <input type="hidden" name="unusualTypeId" class="validatebox" msg="请选择异常类型"/>
+            <input type="hidden" name="isEmphasis" value="0"/><!--是否是重点路段-->
+            <ul class="mui-table-view mui-margin-top-none top">
+                <li class="mui-table-view-cell first">
+                    <span class="mui-pull-left">当前站点/区间</span>
+                </li>
+                <div id="currentStation">
+
+                </div>
+            </ul>
+            <ul class="mui-table-view mui-margin-top-20">
+                <li class="mui-table-view-cell my-cell">
+                    <span><span class="my-circle">1</span>异常诊断</span>
+                    <!--<span class="mui-pull-right mui-color-gray" tapmode onclick="fnGoManageAndTechnical()">-->
+                        <!--<span class="mui-icon iconfont icon-question2"></span>-->
+                        <!--标准规范-->
+                    <!--</span>-->
+                </li>
+                <li class="mui-table-view-cell" tapmode onclick="fnSelectUnusualType()">
+                    <label>异常类别</label>
+                    <span class="mui-pull-right mui-color-blue" tapmode field="unusualTypeName">选择类型</span>
+                </li>
+                <li class="mui-table-view-cell" tapmode onclick="fnSelectUnusualLevel()">
+                    <label>异常等级</label>
+                    <span class="mui-pull-right mui-color-blue"  field="unusualLevelName" >一级</span>
+                </li>
+                <li class="mui-table-view-cell">
+                    <label>重点路段</label>
+                    <div class="mui-switch mui-switch-mini" id="isEmphasis">
+                        <div class="mui-switch-handle"></div>
+                    </div>
+                </li>
+            </ul>
+            <ul class="mui-table-view mui-margin-top-20">
+                <li class="mui-table-view-cell my-cell">
+                    <span><span class="my-circle">2</span>位置及描述</span>
+                </li>
+                <li class="mui-table-view-cell" tapmode onclick="fnChooseLocation()">
+                    <label>异常位置</label>
+                    <span id="location" class="mui-pull-right mui-color-blue"></span>
+                    <img src="../../../../image/loading_more.gif" class="mui-loading mui-pull-right"/>
+                </li>
+                <li class="mui-table-view-cell">
+                    <label class="mui-margin-bottom-10">异常描述（文字）</label>
+                    <div class="mui-row">
+                        <textarea rows="1" cols="30" placeholder="请输入异常描述" name="unusualDesc" class="validatebox" msg="请输入异常描述" style="font-size: 14px;"></textarea>
+                        <!-- <span class="mui-btn mui-btn-link mui-icon mui-icon-mic" tapmode onclick="fnAddAudio(this,'unusualDesc')" style="font-size: 20px;position: absolute; right: 20px;top:45px;"></span> -->
+                    </div>
+                </li>
+                <li class="mui-table-view-cell">
+                    <label class="mui-margin-bottom-10">关注重点（文字）</label>
+                    <div class="mui-row">
+                        <textarea rows="1" cols="30" placeholder="请输入关注重点" name="focus" class="validatebox" msg="请输入关注重点" style="font-size: 14px;"></textarea>
+                        <!-- <span class="mui-btn mui-btn-link mui-icon mui-icon-mic" tapmode onclick="fnAddAudio(this,'focus')" style="font-size: 20px;position: absolute; right: 20px;top:45px;"></span> -->
+                    </div>
+                </li>
+                <li class="mui-table-view-cell mui-media">
+                    <label style="margin-bottom: 13px;">异常图片</label>
+                    <div class="mui-row" id="unusual_img">
+                        <span id="unusualPics"></span>
+                        <span class="image-up" id="image-up" style="position: relative;top:-3px;" tapmode onclick="fnOpenCamera('unusualPics');"></span>
+                    </div>
+                </li>
+                <li class="mui-table-view-cell mui-media">
+                    <label class="mui-margin-bottom-10">异常点小视频</label>
+                    <div class="mui-row">
+                        <span id="unusualVideos"></span>
+                        <span class="image-up" id="video-up" tapmode onclick="fnGetVideo('unusualVideos','../../../../image/video-btn.png');"></span>
+                    </div>
+                </li>
+            </ul>
+            <ul class="mui-table-view mui-margin-top-20">
+                <li class="mui-table-view-cell my-cell">
+                    <span><span class="my-circle">3</span>绘制</span>
+                </li>
+                <li class="mui-table-view-cell">
+                    <a class="mui-navigate-right" onclick="fnUnusualDraw();">
+                        <label>现场位置绘制</label>
+                        <span class="mui-color-gray" style="position: absolute;right: 40px;">
+                            <span field="empty">(可选项)</span>
+                            <span field="area"></span>
+                            <span field="girth"></span>
+                        </span>
+                    </a>
+                </li>
+            </ul>
+        </form>
+    </div>
+    <div class="submit-btn" tapmode onclick="fnSave()">提交</div>
+    <div id="audioRecord" style="display: none;">
+        <div id="audioTime_div" style="color:white;text-align:center;padding-top: 3px;">
+            <span id="span_min">00</span>:<span id="span_sec">00</span>
+        </div>
+        <div class="audio-main">
+
+        </div>
+        <div style="color: white;text-align: center;">请说话</div>
+    </div>
+</body>
+<script id="imgTemplate" type="text/template">
+    <div class="mui-media-object mui-pull-left">
+        <img class="mui-image" src="{{=it.imagePath}}" alt="" style="" onclick="{{=it.showFunction}}">
+        <span class="mui-icon mui-icon-close-filled my-del" onclick="{{=it.delFunction}}"></span>
+        <input type="hidden" name="{{=it.picName}}" value="{{=it.id}}"/>
+    </div>
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/mui.picker.js"></script>
+<script type="text/javascript" src="../../../../script/mui.poppicker.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript" src="../../../../script/media.js"></script>
+<script type="text/javascript" src="../../../../script/map.js"></script>
+<script type="text/javascript" src="../../../../script/db.js"></script>
+<script type="text/javascript" src="../../../../script/transform.js"></script>
+<script type="text/javascript" src="../../../../script/frame/today/unusual/unusual-register.js"></script>
+</html>

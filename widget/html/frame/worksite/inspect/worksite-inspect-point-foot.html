@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <title>今日工点监护底部</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css" />
+    <style>
+        html,
+        body {
+            font-size: 14px;
+            overflow: hidden;
+        }
+        .worksite-info{
+            min-height: 84px;
+        }
+        .iconfont-large{
+          font-size: 17px;
+        }
+        .mui-badge{
+            border-radius: 2px;
+        }
+        .mui-media-body{
+          line-height: 22px;
+        }
+        .mui-table-view-cell:after{
+        	left: 0px;
+        }
+        .mui-table-view .mui-media-object {
+            line-height: 64px;
+            max-width: 84px;
+            min-width: 84px;
+            height: 64px;
+        }
+        .mui-table-view .mui-media-object {
+            line-height: 64px;
+            max-width: 94px;
+            height: 64px;
+        }
+        .mui-content>.mui-table-view:first-child {
+            margin-top: 0px;
+        }
+        .mui-border-left{
+            border-left:.5px solid gray;
+        }
+        .mui-center{
+          text-align: center;
+        }
+        .btn-active{
+           background-color: #cccccc;
+        }
+        .mui-padding-top-0{
+            padding-top: 0px;
+            padding-left: 0px;
+        }
+        .mui-padding-bottom-0{
+            padding-bottom: 0px;
+            padding-right: 0px;
+        }
+    </style>
+</head>
+<body>
+    <div class="mui-content" style="overflow: hidden;">
+        <ul class="mui-table-view mui-margin-top-0">
+            <li class="mui-table-view-cell mui-media worksite-info">
+
+            </li>
+            <li class="mui-table-view-cell mui-center mui-padding-top-0 mui-padding-bottom-0">
+                <div class="mui-row">
+                    <div class="mui-col-sm-6 mui-col-xs-6" tapmode="btn-active" style="height:43px;line-height:43px;" onclick="fnFinishInspect()">
+                        <div class="mui-color-black">
+                            <span class="mui-icon iconfont-large icon-btn-check"></span>
+                            <span>结束今日监护</span>
+                        </div>
+                    </div>
+                    <div class="mui-col-sm-6 mui-col-xs-6 mui-border-left" style="height:43px;line-height:43px;" tapmode="btn-active" onclick="fnOpenCameraForWorksite();">
+                        <div class="mui-color-black">
+                            <span class="mui-icon iconfont-large icon-order"></span>
+                            <span>登记异常监护情况</span>
+                        </div>
+                    </div>
+                </div>
+            </li>
+        </ul>
+    </div>
+</body>
+<script type="text/template" id="worksiteTemplate">
+    <a href="javascript:;">
+        <img class="mui-media-object mui-pull-left" tapmode onclick="fnShowCacheImage(this)" urls="{{=it.picfile}}" src="../../../../image/nopicture.png">
+        <div class="mui-media-body">
+            <b>{{=it.name}}</b>
+            <span class="mui-badge mui-badge-danger" style="margin-left: 10px;">{{=it.grade}}</span>
+            <p class='mui-ellipsis'>面积{{=it.area || 0.00}}㎡,周长{{=it.girth || 0.00 }}m</p>
+            <p class='mui-ellipsis'>
+                <span>{{=it.stationName}}{{=it.distance}}km</span>
+                {{? it.trackId}}
+                    <span class="mui-badge mui-badge-success mui-pull-right">已监护</span>
+                {{??}}
+                    <span class="mui-badge mui-badge-danger mui-pull-right">未监护</span>
+                {{?}}
+            </p>
+        </div>
+    </a>
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript">
+    var worksiteId,trackId;
+    apiready = function() {
+        api.parseTapmode();
+        fnInitData(api.pageParam.worksite);
+        fnInitListener();
+    };
+
+    //初始化监听器
+    function fnInitListener(){
+        api.addEventListener({
+            name: 'worksite-changed'
+        }, function(ret, err) {
+            fnInitData(ret.value.worksite);
+        });
+    }
+
+    //初始化数据
+    function fnInitData(worksite){
+        trackId = worksite.trackId;
+        worksiteId = worksite.worksiteId;
+        $('.worksite-info').html(fnTemplate('worksiteTemplate',worksite));
+        fnCacheImage('img');
+    }
+
+    //打开监护工点照相机
+    function fnOpenCameraForWorksite(){
+        if(trackId){
+            var pageName = 'worksite-inspect-register';
+            var pageObj = {
+                worksiteId: worksiteId,
+                title: '工点监护情况记录',
+                frameName: pageName,
+                frameUrl: './frame/worksite/register/' + pageName + '.html',
+                leftIcons:'icon-arrow-left,event-back'
+            };
+            fnOpenCommonWin(pageName, pageObj);
+        }else{
+            api.openWin({
+                name: 'camera-main-win',
+                url: 'widget://html/frame/common/media/camera-win.html',
+                slidBackEnabled:false,
+                pageParam: {
+                    worksiteId:worksiteId,
+                    cameraType:6
+                }
+            });
+        }
+    }
+
+    //结束巡查
+    function fnFinishInspect(){
+        fnShowProgress("正在结束监护",true);
+        api.ajax({
+            url: fnGetServerAddr() + '/apicloud/worksite.do?todo=endWorksiteTask',
+            method: 'get',
+            timeout: 6,
+            data: {
+                values: {userId: getUserId()}
+            }
+        }, function (ret, err) {
+            fnHideProgress();
+            if (ret) {
+                if ( ret.success ) {
+                    fnOpenWorksiteInspectResult();
+                }else {
+                    fnShowMessage("数据异常")
+                }
+            }else {
+                fnShowMessage("网络异常")
+            }
+        });
+    }
+
+    //打开今日工点监护（结果页面）
+    function fnOpenWorksiteInspectResult(){
+        var title = '今日监护报告';
+        var pageName = 'worksite-inspect-result',
+            leftIcons = 'icon-arrow-left,event-back';
+        var pageObj = {
+            title: title,
+            frameName: pageName,
+            frameUrl: 'widget://html/frame/worksite/result/' + pageName + '.html',
+            leftIcons: leftIcons,
+            scrollEnabled:false,
+            isFinish: true
+        };
+        api.openDrawerLayout({
+            name: 'worksite-inspect-restult-win',
+            url: 'widget://html/common-win.html',
+            animation: {
+                type: 'none'
+            },
+            slidBackEnabled: false,
+            pageParam: pageObj,
+            leftPane: {
+                edge: api.winWidth / 3,
+                name: 'worksite-inspect-result-right',
+                url: 'widget://html/frame/worksite/inspect/worksite-inspect-point-right.html',
+                rect: {
+                    x: 0,
+                    y: 0,
+                    w: api.winWidth,
+                    h: api.winHeight
+                }
+            },
+            animation: {
+                type: 'movein',
+                subType: 'from_right',
+                duration: 300
+            }
+        });
+        setTimeout(function(){
+            api.closeWin({
+                name:'workstie-inspect-point-main'
+            });
+        },1500)
+    }
+
+</script>
+</html>

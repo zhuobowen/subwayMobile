@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>今日巡查点-底部</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/common.css"/>
+    <style>
+    html,
+    body {
+        background-color: #fff
+    }
+    #footer{
+        position: absolute;
+        bottom: 0px;
+        height: 130px;
+        width: 100%;
+        overflow: hidden;}
+    .mui-table-view .mui-media-object {
+        line-height: 64px;
+        max-width: 94px;
+        height: 64px;
+    }
+    .iconinfo{
+        line-height: 22px;
+    }
+    .icon-location:before{
+        color: #676767;
+    }
+    .mui-badge{
+        border-radius: 5px;
+    }
+    .iconfont-large{
+        font-size: 19px;
+    }
+    </style>
+</head>
+<body>
+    <div id="footer">
+        <input type="hidden" name="position" id="position">
+        <ul class="mui-table-view" id="content"></ul>
+    </div>
+</body>
+<script id="unusualTemplate" type="text/template">
+    <form id="unusualForm">
+        <input type="hidden" name="id" value="{{=it.stationId}}"/>
+        <input type="hidden" name="taskId" value="{{=it.taskId}}"/>
+        <input type="hidden" name="trackId" value="{{=it.trackId}}"/>
+    </form>
+    <li class="mui-table-view-cell mui-media" style="height: 84px;">
+        <img class="mui-media-object mui-pull-left" src="{{=it.unusualPic}}" style="width: 84px;height: 64px;" tapmode onclick="fnShowImage(this)"/>
+        <div class="mui-media-body">
+            <div class="iconinfo">
+                <b>{{=it.unusualDesc}}</b>
+                <span class="mui-badge mui-badge-danger" style="margin-left: 10px;">{{=it.unusualLevel}}</span>
+            </div>
+            <div class="iconinfo">
+                <span class="lineInfo mui-color-gray">{{=it.lineName}}/{{=it.stationName}}</span>
+            </div>
+            <div class="iconinfo">
+                    <span class="location mui-color-gray">{{=it.distance}} km</span>
+                {{? it.trackId > 0}}
+                    <span class="mui-badge mui-badge-success mui-pull-right">已巡查</span>
+                {{?? it.trackId == 0}}
+                    {{? it.isAfter}}
+                        <span class="mui-badge mui-badge-warning mui-pull-right">待补记</span>
+                    {{??}}
+                        <span class="mui-badge mui-badge-danger mui-pull-right">未巡查</span>
+                    {{?}}
+                {{?}}
+            </div>
+        </div>
+    </li>
+    <li class="mui-table-view-cell" id="foot-btn">
+     <div class="mui-row">
+        <div class="mui-col-sm-6 mui-col-xs-6 mui-center">
+            <a href="#" class="mui-color-black" tapmode onclick="fnFinishInspect()">
+                <span class="mui-icon iconfont-large icon-btn-check"></span>
+                <span>结束今日巡查</span>
+            </a>
+        </div>
+        <div class="mui-col-sm-6 mui-col-xs-6 mui-center" style="border-left:1px solid gray;">
+            <span class="mui-color-black" id="inspect">
+                <span tapmode onclick="fnOpenCameraForUnusual({{=it.id}},{{=it.trackId}});">
+                    <span class="mui-icon iconfont-large icon-order"></span>
+                    <span>登记巡查情况</span>
+                </span>
+            </span>
+        </div>
+    </div>
+</li>
+</script>
+<script id="dailyTempldate" type="text/template">
+   <li class="mui-table-view-cell mui-media" style="height: 84px;">
+    <div class="mui-media-body">
+        <div class="iconinfo">
+            <b>{{=it.stationName}}</b>
+        </div>
+        <div class="iconinfo mui-color-gray" style="padding-left: 20px;margin-top: 20px">
+                <span>{{=it.stationName}}  {{=it.distance}} km</span>
+            {{? it.detailId > 0}}
+                <span class="mui-badge mui-badge-success mui-pull-right">已巡查</span>
+            {{?? it.detailId == 0}}
+                <span class="mui-badge mui-badge-danger mui-pull-right">未巡查</span>
+            {{?}}
+        </div>
+    </div>
+</li>
+<li class="mui-table-view-cell" id="foot-btn">
+ <form id="dailyForm">
+     <input type="hidden" name="lon" value="{{=it.lon}}">
+     <input type="hidden" name="lat" value="{{=it.lat}}">
+     <input type="hidden" name="stationId" value="{{=it.stationId}}">
+     <input type="hidden" name="taskId" value="{{=it.taskId}}">
+     <input type="hidden" name="detailId" value="{{=it.detailId}}">
+     <input type="hidden" name="stationName" value="{{=it.stationName}}">
+ </form>
+ <div class="mui-row">
+    <div class="mui-col-sm-6 mui-col-xs-6 mui-center">
+        <a href="#" class="mui-color-black" tapmode onclick="fnFinishInspect()">
+            <span class="mui-icon iconfont-large icon-btn-check"></span>
+            <span>结束今日巡查</span>
+        </a>
+    </div>
+    <div class="mui-col-sm-6 mui-col-xs-6 mui-center" style="border-left:1px solid gray;">
+        <span class="mui-color-black" id="inspect">
+            <span tapmode  onclick="fnOpenCameraForDaily()">
+                <span class="mui-icon iconfont-large icon-location"></span>
+                <span>拍照登记</span>
+            </span>
+        </span>
+    </div>
+</div>
+</li>
+</script>
+<script type="text/template"></script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/db.js"></script>
+<script type="text/javascript" src="../../../../script/map.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript">
+    var object;
+    apiready = function(){
+        fnInitDB();
+        fnInitData(api.pageParam.point);
+    }
+    //初始化数据
+    function fnInitData(point){
+        if(typeof(point) == 'string'){
+            point = $api.strToJson(point);
+        }
+        try{
+            if (point){
+                object = point;
+                var template = 'dailyTempldate';
+                if(point.type == 2){
+                    template = 'unusualTemplate';
+                }
+                $('#content').html(doT.template($api.byId(template).innerHTML)(point));
+                //改变经纬度
+                setTimeout(function(){
+                    api.execScript({
+                        name: api.winName,
+                        frameName: 'map-navigation',
+                        script: 'fnChangePosition(\''+point.lon+'\', \''+point.lat+'\');'
+                    });
+                },500)
+                api.parseTapmode();
+            }else{
+                dealError();
+            }
+        }catch(e){
+            dealError();
+        }
+
+    }
+
+    //处理异常情况
+    function dealError(){
+        fnShowMessage('未知错误');
+        api.closeFrame({
+            name: api.frameName
+        });
+        api.closeFrame({
+            name: 'map-navigation'
+        });
+        fnOpenLocationFrame({
+            x: 10,
+            y: api.winHeight - 30,
+            w: 30,
+            h: 30
+        });
+    }
+
+    //打开异常照相机
+    function fnOpenCameraForUnusual() {
+        var createUser = getUserId();
+        var createTime = fnGetTodayStr('-');
+        if(object.trackId && object.trackId > 0){
+            var pageName = 'unusual-track';
+            var pageObj = {
+                unusual:object,
+                title:'异常情况登记',
+                frameName:pageName,
+                frameUrl:'widget://html/frame/today/unusual/'+pageName+'.html',
+                leftIcons:'icon-arrow-left,event-back'
+            };
+            fnOpenCommonWin(pageName,pageObj);
+        }else{
+            if(object.isAfter){  //待补记
+                var start_time = createTime + ' 00:00:00';
+                var end_time = createTime + ' 23:59:59';
+                var result = fnSelectSync('select ut.* from sw_unusual_trcak ut,sw_unusual_info ui where ut.unusual_info_id = ui.id and ui.unusual_id = "'+object.situationId+'" and ut.createUser = "' + createUser + '" and ut.createTime >= "'+start_time+'" and ut.createTime <= "' + end_time + '"');
+                if(result.status && result.data.length> 0){
+                    var track = result.data[0];
+                    var imgUrlsResult =  fnSelectSync('select spu.url from sw_track_photo stp ,sw_photo_url spu where stp.photo_url_id = spu.id and stp.unusual_track_id = "' + track.id + '"');
+                    var imgUrls = imgUrlsResult.data.properties('url');
+                    var pageName = 'unusual-track';
+                    var pageObj = {
+                        unusual:object,
+                        imgUrls:imgUrls,
+                        trackKey:track.id,
+                        title:'异常情况登记',
+                        frameName:pageName,
+                        frameUrl:'widget://html/frame/today/unusual/'+pageName+'.html',
+                        leftIcons:'icon-arrow-left,event-back'
+                    };
+                    fnOpenCommonWin(pageName,pageObj);
+                }
+            }else{
+              api.openWin({
+                  name: 'camera-main-win',
+                  url: 'widget://html/frame/common/media/camera-win.html',
+                  slidBackEnabled:false,
+                  pageParam: {
+                      unusual:object,
+                      cameraType:2
+                  }
+              });
+            }
+        }
+    }
+    //打开相机
+    function fnOpenCameraForDaily(){
+        if(object.detailId && object.detailId > 0){
+            var pageName = 'daily-inspect-register';
+            var pageObj = {
+                title: '日常巡查登记',
+                frameName: pageName,
+                frameUrl: './frame/today/daily/' + pageName + '.html',
+                leftIcons: 'icon-arrow-left,event-back',
+                daily:object
+            };
+            fnOpenCommonWin(pageName, pageObj);
+        }else{
+            api.openWin({
+                name: 'camera-main-win',
+                url: 'widget://html/frame/common/media/camera-win.html',
+                slidBackEnabled:false,
+                pageParam: {
+                    daily:object,
+                    cameraType:3
+                }
+            });
+        }
+    }
+
+    //结束巡查-更新巡查任务状态（结束巡查状态）
+    function fnFinishInspect(){
+        fnShowProgress('正在结束巡查');
+        var executeUser = getUserId();
+        var inspectTime = fnGetTodayStr('-');
+        api.ajax({
+            url: fnGetServerAddr () + '/apicloud/task.do?todo=updateTaskStatusForApp',
+            method: 'post',
+            data: {
+                values: {
+                    inspectSituation:2, //结束巡查状态
+                    executeUser:executeUser,
+                    inspectTime:inspectTime
+                }
+            }
+        },function(ret, err){
+            fnHideProgress();
+            if (ret) {
+                fnOpenInspectResult();
+            }
+        });
+    }
+
+    //打开巡查结果
+    function fnOpenInspectResult(){
+        var title = '今日巡查结果';
+        var pageName = 'today-inspect-result-main'
+        var leftIcons = 'icon-arrow-left,event-back';
+        var pageObj = {
+            title: title,
+            frameName: pageName,
+            frameUrl: 'widget://html/frame/today/result/' + pageName + '.html',
+            leftIcons: leftIcons,
+            isFinish:true
+        };
+        api.openDrawerLayout({
+            name: 'today-inspect-restult-win',
+            url: 'widget://html/common-win.html',
+            animation: {
+                type: 'none'
+            },
+            slidBackEnabled:false,
+            pageParam:pageObj,
+            leftPane: {
+                edge: api.winWidth/3,
+                name: 'today-inspect-point-right',
+                url: 'widget://html/frame/today/inspect/today-inspect-point-right.html',
+                rect: {
+                    x: 0,
+                    y: 0,
+                    w: api.winWidth,
+                    h: api.winHeight
+                }
+            },
+            animation:{
+                type: 'movein',
+                subType:'from_right',
+                duration:300
+            }
+        });
+        setTimeout(function(){
+            api.closeWin({
+                name: api.winName
+            });
+        },2000)
+    }
+
+    /*
+      获取数组指定的元素
+    */
+    Array.prototype.properties = function(propertyName){
+        var len = this.length;
+        var tempArr = [];
+        for (var i = 0; i < len; i++) {
+            if(this[i].hasOwnProperty(propertyName)){
+                tempArr.push(this[i][propertyName]);
+            }
+        }
+        return tempArr;
+    }
+</script>
+</html>

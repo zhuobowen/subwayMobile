@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <title>待监护工点</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../css/common-mui.css" />
+    <style>
+        body,html{
+            height: 100%;
+            overflow: auto;
+        }
+        .mui-table-view .mui-media-object {
+            max-width: 84px;
+            min-width: 84px;
+            height: 84px;
+        }
+        .mui-unusual{
+            right: 5px;
+            height: 38px;
+            color: #dd524d;
+            line-height: 30px;
+            position: absolute;
+            border-radius: 40px;
+            border: 1px solid #dd524d;
+            background-color: #ffffff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="mui-content">
+
+    </div>
+</body>
+<script type="text/template" id="worksiteTemplate">
+    {{~it:worksite}}
+        <ul class="mui-table-view mui-margin-top-15">
+            <li class="mui-table-view-cell">
+                <span class="mui-pull-left">线路：{{=worksite.lineName}}</span>
+                <span class="mui-pull-right">区间/站点：{{=worksite.stationName}}</span>
+            </li>
+            <li class="mui-table-view-cell mui-media mui-active">
+                <div class="mui-row">
+                    <img class="mui-media-object mui-pull-left" onclick="fnShowPhotos('{{=worksite.picfile}}')" src="{{=worksite.picfile ? fnGetImageUrl(worksite.picfile.split(',')[0],true,200,200) : '../../../../image/nopicture.png'}}">
+                    <div class="mui-media-body">
+                        <div class='mui-ellipsis mui-color-gray'>工程名称：{{=worksite.name}}
+                            {{? worksite.unusualCount && worksite.unusualCount > 0}}
+                                <span class="mui-badge mui-badge-danger mui-pull-right mui-unusual">异常</span>
+                            {{?}}
+                        </div>
+                        <div class="mui-ellipsis mui-color-gray">发现时间：{{=worksite.createTime}}</div>
+                        <div class="mui-ellipsis mui-color-gray">施工单位：{{=worksite.company}}</div>
+                        <div class="mui-ellipsis mui-color-gray">
+                            监护重点：{{=worksite.emphases}}
+                            <span class="mui-badge mui-badge-danger mui-pull-right">{{=worksite.grade}}</span>
+                        </div>
+                    </div>
+                </div>
+            </li>
+        </ul>
+    {{~}}
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        fnInitData();
+    };
+
+    //初始化数据
+    function fnInitData(){
+        fnShowProgress("正在加载数据")
+        api.ajax({
+            url: fnGetServerAddr() + '/apicloud/worksite.do?todo=queryWorksiteTodoByTaskIdAndLineId',
+            method: 'get',
+            data: {
+                values: {
+                    userId: getUserId(),
+                    taskId: api.pageParam.taskId,
+                    lineId: api.pageParam.lineId
+                }
+            }
+        }, function (ret, err) {
+            fnHideProgress();
+            if(ret){
+                if(ret.success){
+                    $('.mui-content').empty().html(fnTemplate('worksiteTemplate',ret.data));
+                }else{
+                    fnShowMessage(ret.msg || "数据异常");
+                }
+            }else{
+                fnShowMessage("数据异常");
+            }
+        });
+    }
+
+    //查看照片
+    function fnShowPhotos(photoIds){
+        var imgUrls = [];
+        var imageBrowser = api.require('imageBrowser');
+        if(!photoIds){
+            return;
+        }else{
+            var tempArr = photoIds.split(',');
+            for (var i = 0 ; i < tempArr.length; i++){
+                if(tempArr[i]){
+                    imgUrls.push(fnGetImageUrl(tempArr[i],false))
+                }
+            }
+        }
+        imageBrowser.openImages({
+            imageUrls: imgUrls,
+            showList: false,
+            activeIndex: 0
+        });
+    }
+</script>
+
+</html>

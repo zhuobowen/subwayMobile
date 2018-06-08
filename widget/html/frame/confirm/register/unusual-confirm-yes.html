@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>异常页面</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.picker.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.poppicker.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/common-mui.css"/>
+    <style>
+        html,body{
+            height: 100%;
+            overflow:auto;
+            background-color: #ffffff;
+        }
+        .mui-table-view-cell .mui-circle {
+            top: .5rem
+        }
+        .mui-content .mui-table-view:first-child{
+            margin-top: 0px;
+        }
+        .mui-input-group:before,.mui-input-group:after{
+            height: 0px;
+            background-color: transparent;
+        }
+        .mui-segmented-control.mui-scroll-wrapper .mui-control-item{
+            padding: 0px;
+        }
+        .mui-segmented-control.mui-scroll-wrapper .mui-control-item {
+            padding: 0px;
+            height: 74px;
+            width: 74px;
+            position: relative;
+            margin-right: 10px;
+        }
+        .mui-input-group .mui-input-row:after{
+            height: 0px;
+        }
+        .mui-media-image {
+            width: 74px;
+            height: 74px;
+            margin: 0px;
+            min-width: 74px;
+        }
+        .mui-delete-btn{
+            right: 0px;
+            width:16px;
+            height:16px;
+            position: absolute;
+
+        }
+        .image-up{
+            position: relative;
+            margin-top: -1px;
+            height: 76px;
+            width: 76px;
+            -moz-background-size: 80px 80px;
+            -webkit-background-size: 80px 80px;
+            -o-background-size: 80px 80px;
+            background-size: 80px 80px;
+        }
+        .icon-voice{
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            font-size: 20px;
+            z-index: 9999;
+        }
+        .mui-input-row textarea{
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="mui-content">
+        <form id="myform">
+            <input type="hidden" name="id"/>
+            <input type="hidden" name="userId"/>
+            <input type="hidden" name="area"/>
+            <input type="hidden" name="girth"/>
+            <input type="hidden" name="position"/>
+            <input type="hidden" name="latLng"/>
+            <input type="hidden" name="lineId"/>
+            <input type="hidden" name="stationId"/>
+            <input type="hidden" name="location"/>
+            <input type="hidden" name="unusualTypeId"/>
+            <input type="hidden" name="unusualLevelId"/>
+            <input type="hidden" name="isEmphasis" value="0"/>
+            <input type="hidden" name="riskSituationId"/>
+            <ul class="mui-table-view">
+                <li class="mui-table-view-cell">
+                    <span class="mui-pull-left">当前站点/区间</span>
+                </li>
+                <div id="currentStation">
+
+                </div>
+            </ul>
+            <ul class="mui-table-view mui-margin-top-15">
+                <li class="mui-table-view-cell mui-color-blue mui-small-padding">
+                    <span class="mui-circle">1</span>
+                    <span class="mui-circle-info">异常诊断</span>
+                </li>
+                <li class="mui-table-view-cell" tapmode onclick="fnSelectUnusualType()">
+                    <label>异常类别<span class="mui-color-red">*</span></label>
+                    <span class="mui-pull-right mui-color-blue" tapmode field="unusualTypeName">
+                        选择类型
+                    </span>
+                </li>
+                <li class="mui-table-view-cell" tapmode onclick="fnSelectUnusualLevel()">
+                    <label>异常等级<span class="mui-color-red">*</span></label>
+                    <span class="mui-pull-right mui-color-blue"  field="unusualLevelName" >请选择等级</span>
+                </li>
+                <li class="mui-table-view-cell">
+                    <label>重点路段</label>
+                    <div class="mui-switch mui-switch-mini" id="isEmphasis">
+                        <div class="mui-switch-handle"></div>
+                    </div>
+                </li>
+            </ul>
+            <ul class="mui-table-view mui-margin-top-15">
+                <li class="mui-table-view-cell mui-color-blue mui-small-padding">
+                    <span class="mui-circle">2</span>
+                    <span class="mui-circle-info">异常位置及描述</span>
+                </li>
+                <li class="mui-table-view-cell" tapmode onclick="fnChooseLocation()">
+                    <label>异常位置<span class="mui-color-red">*</span></label>
+                    <span id="location" class="mui-pull-right mui-color-blue">
+                    <img style="width: 17px;height: 17px;" src="../../../../image/loading_more.gif" class="mui-loading mui-pull-right"/>
+                </span>
+                </li>
+                <li class="mui-table-view-cell">
+                    <div class="mui-input-group">
+                        <label class="mui-margin-bottom-5">关注重点（文字）<span class="mui-color-red">*</span></label>
+                        <div class="mui-input-row">
+                            <textarea placeholder="请输入描述" name="focus" cols="30" rows="1"></textarea>
+                            <!--<span class="mui-icon iconfont icon-voice"></span>-->
+                        </div>
+                    </div>
+                </li>
+                <li class="mui-table-view-cell">
+                    <div class="mui-input-group">
+                        <label class="mui-margin-bottom-5">异常描述（文字）<span class="mui-color-red">*</span></label>
+                        <div class="mui-input-row">
+                            <textarea placeholder="请输入描述" name="unusualDesc" cols="30" rows="1"></textarea>
+                            <!--<span class="mui-icon iconfont icon-voice"></span>-->
+                        </div>
+                    </div>
+                </li>
+                <li class="mui-table-view-cell">
+                    <div class="mui-row mui-margin-bottom-5">
+                        异常照片<span class="mui-color-red">*</span>
+                    </div>
+                    <div class="mui-scroll-wrapper mui-slider-indicator mui-segmented-control mui-segmented-control-inverted" style="height: 74px;">
+                        <div class="mui-scroll">
+                            <div class="mui-control-item" id="photo-btn" tapmode onclick="fnOpenCamera()">
+                                <img class="image-up" src="../../../../image/iconfont-tianjia.png" alt="">
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="mui-table-view-cell">
+                    <div class="mui-row mui-margin-bottom-5">
+                        异常点小视频
+                    </div>
+                    <div class="mui-scroll-wrapper mui-slider-indicator mui-segmented-control mui-segmented-control-inverted" style="height: 74px;">
+                        <div class="mui-scroll">
+                            <div class="mui-control-item" id="video-btn" tapmode onclick="fnOpenVideo()">
+                                <img class="image-up" src="../../../../image/iconfont-video.png" alt="">
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+            <ul class="mui-table-view mui-margin-top-15">
+                <li class="mui-table-view-cell mui-color-blue mui-small-padding">
+                    <span class="mui-circle">3</span>
+                    <span class="mui-circle-info">绘制</span>
+                </li>
+                <li class="mui-table-view-cell">
+                    <a class="mui-navigate-right" onclick="fnUnusualDraw();">
+                        <label>现场位置绘制</label>
+                        <span class="mui-color-gray" style="position: absolute;right: 40px;">
+                        <span field="empty">(可选项)</span>
+                        <span field="area"></span>
+                        <span field="girth"></span>
+                    </span>
+                    </a>
+                </li>
+            </ul>
+        </form>
+    </div>
+</body>
+<script type="text/template" id="photoTemplate">
+    <div class="mui-control-item">
+        <img class="mui-media-image" onclick="fnShowPhotos(this)" src="{{=it.url}}" alt=""/>
+        <img class="mui-delete-btn" tapmode onclick="fnDelPhoto(this)" src="../../../../image/delete-btn.png"/>
+    </div>
+</script>
+<script type="text/template" id="videoTemplate">
+    <div class="mui-control-item">
+        <img class="mui-media-image" onclick="fnShowVideo(this)" data-url="{{=it.url}}" src="../../../../image/video-btn.png" alt=""/>
+        <img class="mui-delete-btn" tapmode onclick="fnDelVideo(this)" src="../../../../image/delete-btn.png"/>
+    </div>
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/map.js"></script>
+<script type="text/javascript" src="../../../../script/mui.poppicker.js"></script>
+<script type="text/javascript" src="../../../../script/mui.picker.js"></script>
+<script type="text/javascript" src="../../../../script/transform.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript">
+    mui.init();
+    var fs;
+    var photos = [];
+    var videos = [];
+    var levelList = [];
+    var levelPicker;
+    var imageBrowser;
+    apiready = function(){
+        fnInitData();
+
+        //新增异常类型选择监听
+        api.addEventListener({
+            name: 'type-changed'
+        }, function (ret, err) {
+            var type = ret.value.type;
+            if(type){
+                $('#myform').find('input[name=unusualTypeId]').val(type.typeId);
+                $('#myform').find('input[name=unusualLevelId]').val(type.levelId);
+                $('#myform').find('span[field=unusualTypeName]').html(type.typeName);
+                $('#myform').find('span[field=unusualLevelName]').html(type.levelName);
+            }
+        });
+
+        //监听异常位置改变
+        api.addEventListener({
+            name: 'location-changed'
+        }, function (ret, err) {
+            var lon = ret.value.lon;
+            var lat = ret.value.lat;
+            var location = ret.value.location;
+            if(location){
+                $('#location').html(location);
+                $('#myform').find('input[name=location]').val(location);
+                $('#myform').find('input[name=latLng]').val(lon + ',' + lat);
+            }
+        });
+
+        //监听异常位置改变
+        api.addEventListener({
+            name: 'draw-changed'
+        }, function (ret, err) {
+            var area = ret.value.area;
+            var girth = ret.value.girth;
+            var points = ret.value.points;
+            $('#myform').find('input[name=area]').val(area);
+            $('#myform').find('input[name=girth]').val(girth);
+            $('#myform').find('input[name=position]').val(points);
+        });
+
+        //新增保存监听
+        api.addEventListener({
+            name: 'save2'
+        }, function (ret, err) {
+            fnSave();
+        });
+
+        api.parseTapmode();
+    };
+
+    //初始化模块
+    function fnInitModule(){
+        fs = api.require('fs');
+        imageBrowser = api.require('imageBrowser');
+    }
+
+    //初始化数据
+    function fnInitData(){
+        fnInitModule();
+        fnInitStation();
+        fnInitLevelList();
+        fnInitEmphasis();
+
+        var userId = getUserId();
+        var id = api.pageParam.id;
+        var imgUrls = api.pageParam.imgUrls;
+        //初始化疑似异常点id
+        if(id){
+            $('#myform').find('input[name=riskSituationId]').val(id);
+        }
+        //初始化照片
+        if(imgUrls){
+            for (var i = 0; i < imgUrls.length ; i++){
+                var url = imgUrls[i].url;
+                photos.push(url);
+                $('#photo-btn').before(fnTemplate('photoTemplate',{url:url}));
+                api.parseTapmode();
+            }
+        }
+        //初始化当前用户
+        if(userId){
+            $('#myform').find('input[name=userId]').val(userId);
+        }
+    }
+
+    //初始化站点
+    function fnInitStation(unusual){
+        var lineId,stationId,location,latLng,html = '';
+        var stationPoints = $api.getStorage('StationPoints');
+        current_location = $api.getStorage('current_location');
+        if( current_location ){
+            var minIndex = fnGetCurrentStation(current_location,true);
+            if(stationPoints[minIndex]){
+                var line_id = stationPoints[minIndex].lineId;
+                var line_id_2 = stationPoints[minIndex - 1] ? stationPoints[minIndex - 1].lineId : '';
+                var line_id_3 = stationPoints[minIndex + 1] ? stationPoints[minIndex + 1].lineId : '';
+
+                //判断前一个站点是否是区间
+                if(minIndex!= 0){
+                    if(stationPoints[minIndex -1] && stationPoints[minIndex -1].type == "2" && line_id == line_id_2) {
+                        html  += fnGetStationStr(stationPoints[minIndex -1].stationName,'');
+                    }
+                }
+
+                html += fnGetStationStr(stationPoints[minIndex].stationName,'checked=checked');
+
+                //判断后一个站点是否是区间
+                if( minIndex != (stationPoints.length -1)){
+                    if(stationPoints[minIndex + 1] && stationPoints[minIndex + 1].type == "2" && line_id == line_id_3) {
+                        html += fnGetStationStr(stationPoints[minIndex+1].stationName,'');
+                    }
+                }
+
+                lineId = stationPoints[minIndex].lineId;
+                stationId = stationPoints[minIndex].stationId;
+            }
+            location = current_location.location || '重新定位';
+            latLng = current_location.lon + ',' + current_location.lat;
+        }else{
+            fnShowMessage('定位失败');
+        }
+        $('#location').html(location);
+        $('#currentStation').append(html);
+        $('#myform').find('input[name=latLng]').val(latLng);
+        $('#myform').find('input[name=lineId]').val(lineId);
+        $('#myform').find('input[name=location]').val(location);
+        $('#myform').find('input[name=stationId]').val(stationId);
+    }
+
+    //选择异常类型
+    function fnSelectUnusualType(){
+        var pageName = 'unusual-confirm-type';
+        var pageObj = {
+            title:'异常类型选择',
+            frameName:pageName,
+            frameUrl:'widget://html/frame/confirm/register/'+ pageName + '.html',
+            leftIcons:'icon-arrow-left,event-back'
+        };
+        fnOpenCommonWin(pageName,pageObj);
+    }
+
+
+    //初始化异常等级
+    function fnInitLevelList(){
+        levelPicker = new mui.PopPicker();
+        api.ajax({
+            url: fnGetServerAddr() + '/subway/unusualLevel.do?todo=ajaxQueryList',
+            method: 'get',
+            data: {}
+        },function(ret, err){
+            for (var i = 0; i < ret.length; i++) {
+                levelList.push({
+                    value:ret[i].id,
+                    text:ret[i].name
+                });
+            }
+            levelPicker.setData(levelList);
+            fnInitTypeAndLevel();
+        })
+    }
+
+    //初始化类型和等级
+    function fnInitTypeAndLevel(unusual){
+        var typeId;
+        var typeName;
+        var levelId;
+        var levelName;
+        if(unusual){//编辑页面
+            typeId = unusual.unusualType.typeId;
+            typeName = unusual.unusualType.typeName;
+            levelId = unusual.unusualLevel.levelId;
+            levelName = unusual.unusualLevel.levelName;
+        }
+    }
+
+    //改变异常等级
+    function fnSelectUnusualLevel(){
+        levelPicker.show(function(items) {
+            $('#myform').find('input[name=unusualLevelId]').val(items[0].value);
+            $('#myform').find('span[field=unusualLevelName]').html(items[0].text ? items[0].text : '');
+        })
+    }
+
+    //监听是否重点路段
+    function fnInitEmphasis(unusual){
+        if(unusual && unusual.isEmphasis){
+            $('#isEmphasis').addClass('mui-active');
+            $('#myform').find('input[name=isEmphasis]').val(isEmphasis);
+        }
+        document.getElementById('isEmphasis').addEventListener('toggle', function(event) {
+            $('#myform').find('input[name=isEmphasis]').val(event.detail.isActive ? '1' : '0')
+        });
+    }
+
+    //获取位置
+    function fnChooseLocation(){
+        var pageName = 'unusual-location';
+        var events = [];
+        var pageObj = {
+            title:'异常位置',
+            frameName:pageName,
+            frameUrl:'widget://html/frame/today/unusual/'+pageName+'.html',
+            leftIcons:'icon-arrow-left,event-back',
+            bounces:true,
+            frontFrame:api.pageParam.frameName
+        };
+        fnOpenCommonWin(pageName,pageObj);
+    }
+
+
+    //格式化获取字符串
+    function fnGetStationStr(stationName,checked){
+        return '<li class="mui-table-view-cell mui-indexed-list-item mui-radio">'+
+                    '<span>' + stationName + '</span><input name="radio" ' + checked + ' type="radio">'+
+                '</li>';
+    }
+
+    //打开照相机
+    function fnOpenCamera(picName){
+        api.closeWin({
+            name: 'camera-main-win'
+        });
+        api.openWin({
+            name: 'camera-main-win',
+            url: 'widget://html/frame/common/media/camera-win.html',
+            slidBackEnabled:false,
+            pageParam: {
+                cameraType: 5,
+                frontWin: api.winName,
+                frontFrame: api.frameName
+            }
+        });
+    }
+
+    //拍照的回调函数
+    function fnTakePhotoCallBack(url){
+        photos.push(url);
+        $('#photo-btn').before(fnTemplate('photoTemplate',{url:url}));
+        api.parseTapmode();
+    }
+
+    //查看照片
+    function fnShowPhotos(_this){
+        var index = 0;
+        var imgUrls = [];
+        $(_this).parents('.mui-scroll').find('.mui-media-image').each(function(i,ele){
+            var imgUrl = $(ele).attr('src');
+            var thisUrl = $(_this).attr('src');
+            if (thisUrl == imgUrl) {
+                index = i;
+            }
+            if(imgUrl && imgUrl.indexOf('smallImage=true') != -1){
+                imgUrl = imgUrl.replace('smallImage=true','smallImage=false');
+            }
+            imgUrls.push(imgUrl);
+        });
+        imageBrowser.openImages({
+            imageUrls: imgUrls,
+            showList: false,
+            activeIndex: index
+        });
+    }
+
+    //删除本地照片
+    function fnDelPhoto(_this) {
+        var imagePath = $(_this).prev().attr('src');
+        for (var i = 0; i < photos.length; i++) {
+            if (imagePath == photos[i]) {
+                photos.splice(i, 1);
+            }
+        }
+        if (imagePath) {//删除本地缓存照片
+            fs.remove({
+                path: imagePath
+            }, function(ret, err) {
+                $(_this).parent().remove();
+                api.toast({
+                    msg: '删除成功',
+                    duration: 1000,
+                    location: 'bottom'
+                });
+            });
+        }
+    }
+
+    //获取视频
+    function fnOpenVideo(){
+        api.getPicture({
+            sourceType:'camera',
+            encodingType: 'jpg',
+            mediaValue:'video',
+            destinationType: 'url',
+            videoQuality: 'medium',//high
+            saveToPhotoAlbum: false
+        },function(ret,err){
+            if (ret) {
+                if(ret.data!=''){
+                    var url = ret.data;
+                    videos.push(url);
+                    $('#video-btn').before(fnTemplate('videoTemplate',{url:url}));
+                    api.parseTapmode();
+                }
+            }
+            //禁止屏幕休眠
+            api.setKeepScreenOn({ keepOn: true });
+        });
+    }
+
+    //播放视频
+    function fnShowVideo(_this){
+        var url = $(_this).attr('data-url');
+        if(url && url.indexOf('annexId') > -1){
+            api.showProgress({
+                style: 'default',
+                animationType: 'fade',
+                title: '努力加载中...',
+                modal: true
+            });
+            api.download({
+                url: url,
+                report: false,
+                cache: true,
+                allowResume: false
+            }, function(ret, err) {
+                if (ret.state == 1) {
+                    api.hideProgress();
+                    api.openVideo({
+                        url: ret.savePath
+                    });
+                }
+            });
+        }else if (url) {
+            api.openVideo({
+                url: url
+            });
+        }
+    }
+
+    //删除视频
+    function fnDelVideo(_this){
+        var url = $(_this).prev().attr('data-url');
+        for (var i = 0; i < videos.length; i++) {
+            if (url == videos[i]) {
+                videos.splice(i, 1);
+            }
+        }
+        if (url) {
+            fs.remove({//删除本地缓存照片
+                path: url
+            }, function(ret, err) {
+                $(_this).parent().remove();
+                api.toast({
+                    msg: '删除成功',
+                    duration: 1000,
+                    location: 'bottom'
+                });
+            });
+        }
+    }
+
+    /**
+     打开异常点绘制的页面
+     */
+    function fnUnusualDraw(){
+        var area = $('#myform').find('input[name=area]').val();
+        var girth = $('#myform').find('input[name=girth]').val();
+        var points = $('#myform').find('input[name=position]').val();
+        var pageName = 'unusual-draw';
+        var events = [];
+        var pageObj = {
+            title:'现场位置绘制',
+            frameName:pageName,
+            frameUrl:'widget://html/frame/today/unusual/'+pageName+'.html',
+            leftIcons:'icon-arrow-left,event-back',
+            area:area,
+            girth:girth,
+            points:points
+        };
+        fnOpenCommonWin(pageName,pageObj);
+    }
+
+    //保存
+    function fnSave(){
+
+        if(!$('#myform').find('input[name=lineId]').val()){
+            fnShowMessage("请开启手机定位");
+            return;
+        }
+
+        if(!$('#myform').find('input[name=stationId]').val()){
+            fnShowMessage("请开启手机定位");
+            return;
+        }
+
+        if(!$('#myform').find('input[name=unusualTypeId]').val()){
+            fnShowMessage("请选择异常类型");
+            return;
+        }
+
+        if(!$('#myform').find('input[name=unusualLevelId]').val()){
+            fnShowMessage("请选择异常等级");
+            return;
+        }
+
+        if(!$('#myform').find('input[name=latLng]').val()){
+            fnShowMessage("请选择异常位置");
+            return;
+        }
+        if(!$('#myform').find('input[name=location]').val()){
+            fnShowMessage("请选择异常位置");
+            return;
+        }
+
+        if(!$('#myform').find('textarea[name=focus]').val()){
+            fnShowMessage("请输入关注重点");
+            return;
+        }
+
+        if(!$('#myform').find('textarea[name=unusualDesc]').val()){
+            fnShowMessage("请输入异常描述");
+            return;
+        }
+
+        if(!photos || photos.length == 0){
+            fnShowMessage("请上传异常照片");
+            return;
+        }
+        var files = {};
+        var params = getFormData('myform');
+
+        if(photos && photos.length > 0){
+            for (var i = 0; i < photos.length; i++) {
+                files['unusualPics[' + i + ']'] = photos[i];
+            }
+        }
+        if(videos && videos.length > 0){
+            for (var i = 0; i < videos.length; i++) {
+                files['unusualVideos[' + i + ']'] = videos[i];
+            }
+        }
+
+        fnShowProgress("正在保存");
+
+        api.ajax({
+            url: fnGetServerAddr() + '/apicloud/unusualSituation.do?todo=saveRiskUnusualSituation',
+            method: 'post',
+            timeout:6,
+            data: {
+                values: params,
+                files: files
+            }
+        },function(ret, err){
+            fnHideProgress();
+            if(ret){
+                if(ret.success){
+                    for (var i = 0; i < photos.length; i++) {
+                        fs.removeSync({ path: photos[i]});
+                    }
+                    for (var i = 0; i < videos.length; i++) {
+                        fs.removeSync({ path: videos[i]});
+                    }
+                    api.closeWin();
+                }else{
+                    fnShowMessage(ret.msg || "数据异常")
+                }
+            }else{
+                fnShowMessage("网络异常")
+            }
+        })
+
+    }
+
+    //序列化表单用
+    function getFormData(id) {
+        var obj = {};
+        var objArr = $("#" + id).serializeArray();
+        if (objArr && objArr.length) {
+            var k, v;
+            for (var i = 0; i < objArr.length; i++) {
+                k = objArr[i].name;
+                v = objArr[i].value;
+
+                if (k in obj) {
+                    var arr;
+                    if ($.type(obj[k]) != 'array') {
+                        arr = [obj[k]];
+                    } else {
+                        arr = obj[k];
+                    }
+                    arr.push(v);
+                    obj[k] = arr;
+                } else {
+                    obj[k] = v;
+                }
+            }
+        }
+        return obj;
+    }
+</script>
+</html>

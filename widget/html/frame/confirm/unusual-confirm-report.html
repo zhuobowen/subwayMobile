@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>疑似异常确认履历</title>
+    <link rel="stylesheet" type="text/css" href="../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../css/common-mui.css"/>
+    <style>
+        #lines-content{
+            height: 3.5rem;
+            border-bottom: 1px solid #0A78D0;
+        }
+        .mui-line{
+            border: 1px solid #0A78D0;
+            height: 32px;
+            line-height: 32px;
+            color: #0A78D0;
+            display: inline;
+            padding: 5px 8px;
+            margin:10px 5px;
+        }
+        #lines{
+            height: 3.4rem;
+            line-height: 3.4rem;
+        }
+        .mui-line-active{
+            color: #ffffff;
+            background-color: #0A78D0;
+        }
+        #pullrefresh{
+            top:3.5rem;
+        }
+        .mui-table-view .mui-media-object {
+            line-height: 78px;
+            max-width: 100px;
+            min-width: 100px;
+            height: 84px;
+        }
+        .mui-table-view-cell>.mui-badge{
+            position: relative;
+            top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="mui-content">
+        <div class="mui-scroll-wrapper mui-slider-indicator mui-segmented-control mui-segmented-control-inverted" id="lines-content">
+            <div class="mui-scroll" id="lines">
+
+            </div>
+        </div>
+        <div id="pullrefresh" class="mui-content mui-scroll-wrapper">
+            <div class="mui-scroll">
+                <div id="content">
+
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script type="text/template" id="lineTemplate">
+    {{~ it:line}}
+    <div class="mui-line mui-line-active" tapmode id="{{=line.id}}" onclick="fnChooseLine(this)">{{=line.lineName}}</div>
+    {{~}}
+</script>
+<script type="text/template" id="riskTemplate">
+    {{~it:risk}}
+        <ul class="mui-table-view mui-margin-top-10">
+            <li class="mui-table-view-cell mui-media mui-height-100">
+                <img class="mui-media-object mui-pull-left" tapmode onclick="fnShowImage(this)" urls="{{=risk.photos}}" src="../../../image/nopicture.png">
+                <div class="mui-media-body mui-line-height-25"  tapmode onclick="fnOpenRiskRegister('{{=risk.id}}')">
+                    <p class='mui-ellipsis'>
+                        <span class="mui-icon iconfont icon-bills"></span>
+                        异常描述：
+                        {{=risk.description}}
+                    </p>
+                    <p class='mui-ellipsis'>
+                        <span class="mui-icon iconfont icon-alarm-clock"></span>
+                        创建时间：
+                        {{=risk.createTime}}
+                    </p>
+                    <p class='mui-ellipsis'>
+                        <span class="mui-icon iconfont icon-localization"></span>
+                        地理位置：
+                        {{=risk.location}}
+                    </p>
+                    <p class='mui-ellipsis'>
+                        <span class="mui-icon iconfont icon-people"></span>
+                        执行人：
+                        {{=risk.executeUser}}
+                    </p>
+                </div>
+            </li>
+            <li class="mui-table-view-cell" style="padding: 10px 10px 10px 30px">
+                <span class="mui-pull-right">
+                    {{? risk.state == 1}}
+                        <span class="mui-icon iconfont icon-right mui-color-green">确认结果：无异常</span>
+                    {{?}}
+                    {{? risk.state == 2}}
+                        <span class="mui-icon iconfont icon-caution mui-color-red">确认结果：异常点</span>
+                    {{?}}
+                </span>
+                <span class="mui-badge mui-badge-danger" style="float: left">{{=risk.unusualLevel}}</span>
+            </li>
+        </ul>
+    {{~}}
+</script>
+<script type="text/template" id="emptyTemplate">
+    <b style="display: block; text-align: center;width: 100%;font-size: 15px;color: #515151;padding: 5px 0px;" >暂无数据</b>
+</script>
+<script type="text/javascript" src="../../../script/api.js"></script>
+<script type="text/javascript" src="../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../script/echarts.min.js"></script>
+<script type="text/javascript" src="../../../script/common.js"></script>
+<script type="text/javascript">
+    var page = 1;
+    var rows = 10;
+    var imageBrowser;
+
+    apiready = function () {
+        fnInitLine();
+        imageBrowser = api.require('imageBrowser');
+    }
+
+    //初始化线路
+    function fnInitLine(){
+        api.ajax({
+            url: fnGetServerAddr() + '/subway/lineAndStation.do?todo=queryLine',
+            method: 'get'
+        }, function (ret, err) {
+            if(ret){
+                $.each(ret,function(index,line){
+                    $('#lines').append('<div class="mui-line mui-line-active" tapmode id="'+line.id+'" onclick="fnChangeLine(this)">'+line.lineName+'</div>');
+                });
+                mui.init({
+                    pullRefresh: {
+                        container: '#pullrefresh',
+                        up : {
+                            height:34,
+                            auto:true,
+                            contentrefresh : "正在加载...",
+                            contentnomore:'没有更多数据了',
+                            callback : pullupRefresh
+                        }
+                    }
+                });
+            }else{
+                fnShowMessage("网络异常");
+            }
+        });
+    }
+
+    //下拉加载更多
+    function pullupRefresh(lineChanged){
+        if(lineChanged){
+            fnShowProgress("正在加载",true);
+        }
+        var lineIds = [];
+        $('.mui-line-active').each(function(index,ele){
+            lineIds.push(parseFloat(ele.id));
+        });
+        var body = {
+            page: page,
+            rows: rows,
+            lineIds: lineIds
+        }
+        api.ajax({
+            url: fnGetServerAddr() + '/subway/riskSituation.do?todo=ajaxQueryConfirmed',
+            method: 'get',
+            data: {
+                body: body
+            }
+        }, function (ret, err) {
+            if(lineChanged){
+                fnHideProgress();
+            }
+            if (ret) {
+                if(ret.rows.length > 0){
+                    if(lineChanged){
+                        $('#content').html(fnTemplate('riskTemplate', ret.rows));
+                    }else{
+                        $('#content').append(fnTemplate('riskTemplate', ret.rows));
+                    }
+                    fnCacheImage('.mui-media-object');
+                }else{
+                    $('#content').empty();
+                }
+                api.parseTapmode();
+                mui('#pullrefresh').pullRefresh().endPullupToRefresh((ret.currentPageNO >= ret.lastPageNO));
+                page++;
+            }
+        });
+    }
+
+    //选择线路
+    function fnChangeLine(_this){
+        if($(_this).hasClass('mui-line-active')){ //选中状态
+            $(_this).removeClass('mui-line-active');
+        }else{
+            $(_this).addClass('mui-line-active');
+        };
+        page = 1;
+        pullupRefresh(true);
+    }
+
+    //查看图片列表
+    function fnShowImage(ele){
+        var urls = $(ele).attr('urls');
+        var urlArr = urls.split(',');
+        var imageUrls = [];
+        for(var i = 0; i < urlArr.length;i++){
+            imageUrls.push(fnGetImageUrl(urlArr[i],false));
+        }
+        imageBrowser.openImages({
+            imageUrls: imageUrls,
+            showList: false,
+            activeIndex: 0
+        });
+    }
+
+    //编辑疑似异常点
+    function fnOpenRiskRegister(){
+
+    }
+
+</script>
+</html>

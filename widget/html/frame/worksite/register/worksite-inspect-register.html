@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <title>工点监护情况记录</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../css/common-mui.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.dtpicker.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../css/frame/worksite/register/worksite-inspect-register.css"/>
+</head>
+<body style="display: none">
+  <div class="mui-content">
+      <form id="myform">
+          <ul class="mui-table-view">
+              <li class="mui-table-view-cell mui-color-blue mui-small-padding">
+                  <span class="mui-circle">1</span>
+                  <span class="mui-circle-info">工点信息</span>
+              </li>
+              <li class="mui-table-view-cell mui-row worksite-info">
+                  <div style="text-align:center;">暂无数据</div>
+              </li>
+          </ul>
+
+          <ul class="mui-table-view mui-margin-top-15">
+              <li class="mui-table-view-cell mui-color-blue mui-small-padding">
+                  <span class="mui-circle">2</span>
+                  <span class="mui-circle-info">监护照片</span>
+              </li>
+              <li class="mui-table-view-cell mui-media mui-small-padding mui-fixed">
+                  <div class="mui-fixed-item mui-scroll-wrapper mui-slider-indicator mui-segmented-control mui-segmented-control-inverted" style="height: 74px;width:90%;">
+                        <div class="mui-scroll worksite-photos"></div>
+                  </div>
+                  <span class="mui-fixed-item mui-icon iconfont icon-camera" tapmode="camera-active" onclick="fnOpenCamera()"></span>
+              </li>
+          </ul>
+
+          <ul class="mui-table-view mui-margin-top-15">
+              <li class="mui-table-view-cell mui-color-blue mui-small-padding">
+                  <span class="mui-circle">3</span>
+                  <span class="mui-circle-info">监护情况</span>
+              </li>
+              <li class="mui-table-view-cell mui-row worksite-types">
+                   <div style="text-align:center;">暂无数据</div>
+              </li>
+          </ul>
+
+          <ul class="mui-table-view mui-margin-top-15">
+              <li class="mui-table-view-cell mui-color-blue mui-small-padding">
+                  <span class="mui-circle">4</span>
+                  <span class="mui-circle-info">应对处理措施</span>
+              </li>
+              <li class="mui-table-view-cell mui-row worksite-measures">
+                  <div style="text-align:center;">暂无数据</div>
+              </li>
+          </ul>
+
+          <ul class="mui-table-view">
+              <li class="mui-table-view-cell">
+                  <span class="mui-pull-left">监护期限</span>
+                  <span class="mui-pull-right mui-color-gray" onclick="fnDtPicker(this)" id="limitDate">选择日期</span>
+              </li>
+          </ul>
+      </form>
+      <div class="foot">
+          <div class="mui-common-btn" tapmode="common-btn-active" onclick="fnSubmit()">提交</div>
+      </div>
+  </div>
+</body>
+
+<script type="text/template" id="worksiteTemplate">
+    <li class="mui-table-view-cell mui-media mui-active">
+        <div class="mui-row mui-margin-bottom-5">
+            <span class="mui-pull-left">线路：{{=it.worksite.lineName}}</span>
+            <span class="mui-pull-right">区间/站点：{{=it.worksite.stationName}}</span>
+        </div>
+        <div class="mui-row">
+            <img class="mui-media-object mui-pull-left" onclick="fnShowCacheImage(this)" urls="{{=it.worksite.picFile}}" src="../../../../image/nopicture.png">
+            <div class="mui-media-body" style="line-height:25px;">
+                <b class='mui-ellipsis'>{{=it.worksite.name}}</b>
+                <div class="mui-ellipsis mui-color-gray">施工单位：{{=it.worksite.company}}</div>
+                <div class="mui-ellipsis mui-color-gray">
+                    监护重点：{{=it.worksite.emphases}}
+                    <span class="mui-badge mui-badge-danger mui-pull-right">{{=it.worksite.grade}}</span>
+                </div>
+            </div>
+        </div>
+    </li>
+    <li class="mui-table-view-cell">
+        <a class="mui-navigate-right" tapmode onclick="fnOpenHistoryTrack('{{=it.worksite.id}}');">
+            工点监护履历
+        </a>
+    </li>
+</script>
+<!--单照片模板-->
+<script type="text/template" id="photoTemplate">
+      <div class="mui-control-item">
+          <img class="mui-media-image" onclick="fnShowPhotos(this)" src="{{=it.url}}" alt=""/>
+          <img class="mui-delete-btn" tapmode onclick="fnDelPhoto(this)" src="../../../../image/delete-btn.png"/>
+      </div>
+</script>
+<!--单照片模板-->
+<script type="text/template" id="existPhotoTemplate">
+    <div class="mui-control-item">
+        <img class="mui-media-image" onclick="fnShowPhotos(this)" src="{{=it.url}}" alt=""/>
+        <img class="mui-delete-btn" tapmode onclick="fnDelExistPhoto(this,'{{=it.photoId}}')" src="../../../../image/delete-btn.png"/>
+    </div>
+</script>
+<script type="text/template" id="worksiteTypeTemplate">
+    <div class="mui-col-xs-6 mui-col-sm-6">
+        <div class="worksite-type" tapmode="active" onclick="fnOpenWorksiteUnusual('{{=it.id}}')" id="{{=it.id}}">
+            {{=it.name}}
+            {{? it.count}}
+                <span class="mui-badge mui-badge-danger mui-pull-right mui-count">{{=it.count}}</span>
+            {{??}}
+                <span class="mui-icon mui-pull-right iconfont icon-checked mui-count"></span>
+            {{?}}
+        </div>
+    </div>
+</script>
+<script type="text/template" id="measureTemplate">
+    {{~it:measure:index}}
+        <div class="mui-col-xs-12 mui-col-sm-12">
+            <div class="worksite-measure" tapmode="active" ikey="{{=measure.id}}">{{=measure.measureName}}</div>
+        </div>
+    {{~}}
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript" src="../../../../script/mui.dtpicker.js"></script>
+<script type="text/javascript">
+    mui.init();
+    mui('.mui-scroll-wrapper').scroll({deceleration: 0.0005});
+    var fs,imageBrowser;
+    var photos = [];
+    var photoIds = [];
+    var deletePhotoIds = [];
+    var hasUnusual = false;
+    var worksiteTypes = {
+        1: '基坑类',
+        2: '隧道类',
+        3: '管线类',
+        4: '桩基、钻探、打井类',
+        5: '爆破类',
+        50: '其他类'
+    };
+    apiready = function() {
+        fnInitModule();//初始化模块
+        fnInitData();//初始化工点跟踪信息
+        fnInitPhotos();//初始化照片
+        fnAddListener();
+    };
+
+    //添加监听器
+    function fnAddListener(){
+        api.addEventListener({
+            name:'unusual-deleted'
+        }, function(ret, err){
+            var typeId = ret.value.worksiteType;
+            var count = parseInt($('#' + typeId).find('.mui-count').html());
+            if(count && count != 1){
+                $('#' + typeId).find('.mui-count').html(count - 1);
+            }else{
+                $('#' + typeId).find('.mui-count').replaceWith('<span class="mui-icon mui-pull-right iconfont icon-checked mui-count"></span>');
+            }
+        });
+
+        //监听新增异常点
+        api.addEventListener({
+            name:'unusual-added'
+        }, function(ret, err){
+            var typeId = ret.value.worksiteType;
+            var count = parseInt($('#' + typeId).find('.mui-count').html());
+            if(count){
+                $('#' + typeId).find('.mui-count').html(count + 1);
+            }else{
+                $('#' + typeId).find('.mui-count').replaceWith('<span class="mui-badge mui-badge-danger mui-pull-right mui-count">1</span>');
+            }
+        });
+    }
+    //初始化数据
+    function fnInitData(){
+        fnShowProgress("正在加载数据");
+        api.ajax({
+            url: fnGetServerAddr() + '/apicloud/worksiteTrack.do?todo=getWorksiteTrack',
+            method: 'get',
+            timeout: 6,
+            data: {
+                values: {
+                    monitoreUserId: getUserId(),
+                    worksiteId: api.pageParam.worksiteId
+                }
+            }
+        }, function (ret, err) {
+            fnHideProgress();
+            if(ret){
+                if(ret.success){
+                    $('.worksite-info').replaceWith(fnTemplate('worksiteTemplate',ret));
+                    $('.worksite-measures').empty().append(fnTemplate('measureTemplate',ret.worksiteMeasures));
+
+                    //工点图片显示
+                    fnCacheImage('.mui-media-object');
+
+                    //初始化回显数据
+                    var measures = [];
+                    if(ret.hasOwnProperty('track') && ret.track){
+                        measures = ret.track.measureIds ? ret.track.measureIds.split(',') : [];
+                        photoIds = ret.track.proofPic ? ret.track.proofPic.split(',') : [];
+                        for (var i = 0; i < photoIds.length; i++){
+                            if(photoIds[i]){
+                                var photo = {
+                                    url: fnGetImageUrl(photoIds[i],true,200,200),
+                                    photoId: photoIds[i]
+                                }
+                                $('.worksite-photos').append(fnTemplate('existPhotoTemplate',photo));
+                            }
+                        }
+                    }
+
+                    //初始化监护工点类型
+                    if(ret.worksite.worksiteTypes){
+                        var typeArr = ret.worksite.worksiteTypes.split(',');
+                        $('.worksite-types').empty();
+                        for (var i = 0; i < typeArr.length ; i++){
+                            var id = typeArr[i];
+                            if(id){
+                                var count = 0;
+                                if(ret.hasOwnProperty('unusualCountObj') && !isEmptyObject(ret.unusualCountObj)){
+                                    hasUnusual = true;
+                                    for (var key in ret.unusualCountObj) {
+                                        if(id == key){
+                                            count = ret.unusualCountObj[key];
+                                            break;
+                                        }
+                                    }
+                                }
+                                var type = {
+                                    id : id,
+                                    name: worksiteTypes[id],
+                                    count: count
+                                }
+                                $('.worksite-types').append(fnTemplate('worksiteTypeTemplate',type));
+                            }
+                        }
+                    }
+
+
+                    //初始化应对措施
+                    $('.worksite-measure').each(function(index,ele){
+                        var id = $(ele).attr('ikey');
+                        if(measures.length > 0){
+                            for (var i = 0 ; i < measures.length ; i++){
+                                if(id && id == measures[i]){
+                                    $(ele).addClass('mui-bg-color-blue');
+                                    $(ele).addClass('mui-color-white');
+                                }
+                            }
+                        }
+                        $(ele).on('click',function(){
+                            if($(ele).attr('class').indexOf('mui-color-white') > -1 ){
+                                $(ele).removeClass('mui-color-white');
+                            }else{
+                                $(ele).addClass('mui-color-white');
+                            }
+                            if($(ele).attr('class').indexOf('mui-bg-color-blue') > -1 ){
+                                $(ele).removeClass('mui-bg-color-blue');
+                            }else{
+                                $(ele).addClass('mui-bg-color-blue');
+                            }
+                        });
+                    });
+
+                    //初始化监护日期
+                    if(ret.worksite.limitDate){
+                        $('#limitDate').html(ret.worksite.limitDate);
+                    }
+                    $('body').show();
+                    api.parseTapmode();
+                }else{
+                    fnShowMessage(ret.msg || "数据异常");
+                }
+            }else{
+                fnShowMessage("网络异常")
+            }
+        });
+    }
+
+
+    //提交
+    function fnSubmit(){
+        var files = {};
+        var measureIds = [];
+        var limitDate = $('#limitDate').html() != '选择日期' ? $('#limitDate').html() : '' ;
+        if (photos && photos.length > 0) {
+            for (var i = 0; i < photos.length; i++) {
+                var ret = fs.existSync({
+                    path: photos[i]
+                });
+                if(ret.exist){
+                    files['photo[' + i + ']'] = photos[i];
+                }else{
+                    fnShowMessage('找不到图片：'+ photos[i]);
+                    return false;
+                }
+            }
+        }
+        $('.worksite-measure').each(function(index,ele){
+            if($(ele).attr('class').indexOf('mui-bg-color-blue') > -1){
+                measureIds.push($(ele).attr('ikey'))
+            }
+        });
+
+        //表单验证
+        if(photos.length == 0 && photoIds.length == 0){
+            fnShowMessage("请上传照片");
+            return;
+        }
+        //如果工点存在异常，这两个字段必选
+        if(hasUnusual){
+            if(measureIds.length == 0){
+                fnShowMessage("请选择应对措施");
+                return;
+            }
+            if(limitDate == '选择日期'){
+                fnShowMessage("请选择监护日期");
+                return;
+            }
+        }
+        //上传数据
+        fnShowProgress("正在保存");
+        api.ajax({
+            url: fnGetServerAddr() + '/apicloud/worksiteTrack.do?todo=saveWorksiteTrack',
+            method: 'post',
+            timeout: 10,
+            data: {
+                values: {
+                    limitDate:limitDate,
+                    monitoreUserId: getUserId(),               //用户id
+                    photoIds: photoIds.join(','),              //已经上传的照片id
+                    measureIds: measureIds.join(','),          //应对措施id
+                    worksiteId: api.pageParam.worksiteId,      //监护工点id
+                    deletePhotoIds : deletePhotoIds.join(',')  //删除已经上传照片的id
+                },
+                files: files
+            }
+        }, function (ret, err) {
+            fnHideProgress();
+            if(ret){
+                if(ret.success) {
+                    setTimeout(function(){
+                        api.closeWin();
+                        if(ret.trackId){
+                            api.sendEvent({
+                                name: 'worksite-is-tracked',
+                                extra: {
+                                    trackId: ret.trackId,
+                                    worksiteId: api.pageParam.worksiteId
+                                }
+                            });
+                        }
+                    },300);
+                }else {
+                    fnShowMessage(ret.msg || "保存失败")
+                }
+            }else{
+                fnShowMessage("网络异常")
+            }
+        });
+    }
+
+    //打开监护履历表
+    function fnOpenHistoryTrack(worksiteId){
+        var pageName = 'worksite-inspect-register-history';
+        var pageObj = {
+            title: '工点监护履历',
+            frameName: pageName,
+            frameUrl: './frame/worksite/register/' + pageName + '.html',
+            leftIcons: 'icon-arrow-left,event-back',
+            worksiteId: worksiteId
+        };
+        fnOpenCommonWin(pageName, pageObj);
+    }
+    //初始化模块
+    function fnInitModule(){
+        fs = api.require("fs");
+        imageBrowser = api.require("imageBrowser");
+    }
+    //初始化照片
+    function fnInitPhotos(){
+        var imgUrls = api.pageParam.imgUrls;
+        if (imgUrls && imgUrls.length > 0) {
+            for (var i = 0 ; i < imgUrls.length ; i++){
+                photos.push(imgUrls[i].url);
+                $('.worksite-photos').append(fnTemplate('photoTemplate',imgUrls[i]));
+            }
+            api.parseTapmode();
+        }
+    }
+
+    //打开工点异常监护
+    function fnOpenWorksiteUnusual(worksiteType){
+        var pageName = 'worksite-inspect-unusual-register';
+        var pageObj = {
+            title: '工点异常问题监护',
+            frameName: pageName,
+            frameUrl: './frame/worksite/register/' + pageName + '.html',
+            leftIcons: 'icon-arrow-left,event-back',
+            worksiteType: worksiteType,
+            worksiteId: api.pageParam.worksiteId
+        };
+        fnOpenCommonWin(pageName, pageObj);
+    }
+
+    //打开照相机
+    function fnOpenCamera(picName){
+        api.closeWin({
+            name: 'camera-main-win'
+        });
+        api.openWin({
+            name: 'camera-main-win',
+            url: 'widget://html/frame/common/media/camera-win.html',
+            slidBackEnabled:false,
+            pageParam: {
+                cameraType: 5,
+                frontWin: api.winName,
+                frontFrame: api.frameName
+            }
+        });
+    }
+
+    //拍照的回调函数
+    function fnTakePhotoCallBack(url){
+        photos.push(url);
+        $('.worksite-photos').append(fnTemplate('photoTemplate',{url:url}));
+        api.parseTapmode();
+    }
+
+    //删除本地照片
+    function fnDelPhoto(_this) {
+        var imagePath = $(_this).prev().attr('src');
+        for (var i = 0; i < photos.length; i++) {
+            if (imagePath == photos[i]) {
+                photos.splice(i, 1);
+            }
+        }
+        if (imagePath) {//删除本地缓存照片
+            fs.remove({
+                path: imagePath
+            }, function(ret, err) {
+                $(_this).parent().remove();
+                api.toast({
+                    msg: '删除成功',
+                    duration: 1000,
+                    location: 'bottom'
+                });
+            });
+        }
+    }
+
+    //删除已经上传的照片
+    function fnDelExistPhoto(_this,id) {
+        deletePhotoIds.push(id);
+        $(_this).parent().remove();
+    }
+
+    //选择日期
+    function fnDtPicker(element) {
+        var dtPicker = new mui.DtPicker({type: "date"});
+        dtPicker.show(function(rs) {
+            $(element).html(rs.text);
+            dtPicker.dispose();
+        });
+    }
+
+    //查看照片
+    function fnShowPhotos(_this){
+        var index = 0;
+        var imgUrls = [];
+        $(_this).parents('.mui-scroll').find('.mui-media-image').each(function(i,ele){
+            var imgUrl = $(ele).attr('src');
+            var thisUrl = $(_this).attr('src');
+            if (thisUrl == imgUrl) {
+               index = i;
+            }
+            if(imgUrl && imgUrl.indexOf('smallImage=true') != -1){
+                imgUrl = imgUrl.replace('smallImage=true','smallImage=false');
+            }
+            imgUrls.push(imgUrl);
+        });
+        imageBrowser.openImages({
+        		imageUrls: imgUrls,
+        		showList: false,
+        		activeIndex: index
+      	});
+    }
+
+
+    //判断map是否为空
+    function isEmptyObject(e) {
+        var t;
+        for (t in e)
+            return !1;
+        return !0
+    }
+</script>
+</html>

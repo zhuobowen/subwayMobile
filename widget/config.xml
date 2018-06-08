@@ -1,0 +1,49 @@
+ <widget id="A6067860230845"  version="0.0.1">
+ 	<name>subwayMobile</name>
+ 	<description>地铁保护项目</description>
+ 	<author email="developer@apicloud.com" href="http://www.apicloud.com">Developer</author>
+ 	<!-- <content src="./html/login.html" /> -->
+ 	<content src="index.html" />
+ 	<access origin="*" />
+ 	<preference name="pageBounce" value="false"/>
+ 	<preference name="appBackground" value="rgba(0,0,0,0.0)"/>
+ 	<preference name="windowBackground" value="rgba(0,0,0,0.0)"/>
+ 	<preference name="frameBackgroundColor" value="rgba(0,0,0,0.0)"/>
+ 	<preference name="hScrollBarEnabled" value="true"/>
+ 	<preference name="vScrollBarEnabled" value="true"/>
+ 	<preference name="autoLaunch" value="true"/>
+ 	<preference name="fullScreen" value="false"/>
+ 	<preference name="autoUpdate" value="true" />
+ 	<preference name="smartUpdate" value="true" />
+ 	<preference name="debug" value="true"/>
+ 	<preference name="statusBarAppearance" value="true"/>
+ 	<permission name="readPhoneState" />
+ 	<permission name="camera" />
+ 	<permission name="record" />
+ 	<permission name="location" />
+ 	<permission name="fileSystem" />
+ 	<permission name="internet" />
+ 	<permission name="bootCompleted" />
+ 	<permission name="hardware" />
+ 	<feature name="FNPhotograph"/>
+ 	<feature name="db"/>
+ 	<feature name="aMap">
+ 		<param name="android_api_key" value="39725e2d2f64c854eaadd4349a30fc38"/>
+ 		<param name="ios_api_key" value="e2000636dd3c0db8110bd62fc6a28019"/>
+ 	</feature>
+ 	<feature name="aMapLBS">
+ 		<param name="android_api_key" value="39725e2d2f64c854eaadd4349a30fc38"/>
+ 		<param name="ios_api_key" value="e2000636dd3c0db8110bd62fc6a28019"/>
+ 	</feature>
+ 	<feature name="fs"/>
+    <feature name="imageBrowser"/>
+ 	<feature name="videoPlayer"/>
+ 	<feature name="speechRecognizer"/>
+ 	<feature name="audio"/>
+ 	<feature name="mam"/>
+ 	<feature name="imgUtils"/>
+ 	<feature name="pictureWatermark"/>
+    <!-- <feature name="navigator"/> -->
+    <feature name="imageFilter"/>
+    <preference name="querySchemes" value="baidumap,iosamap,comgooglemaps" />
+ </widget>

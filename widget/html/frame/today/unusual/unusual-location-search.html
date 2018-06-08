@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>搜索框</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/common.css"/>
+    <style>
+        .mui-table-view .mui-media-object{
+            width: 30px;
+            height: 30px;
+            margin: 0px;
+            min-width: 30px;
+            margin-top: 5px;
+        }
+        #header{
+            margin-top: 30px;
+            padding: 5px;
+            background-color: #cccccc;
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-box-orient:horizontal;
+            -webkit-flex-flow:row;
+            flex-flow:row;
+        }
+        #searchText{
+            margin-bottom: 0px;
+            padding: 5px;
+            height: 25px;
+            font-size: 14px;
+            width: 90%;
+            -webkit-box-flex:2;
+            -webkit-flex:2;
+            flex:2;
+        }
+        .cancel{
+            margin-left: 10px;
+            margin-right: 10px;
+        }
+        .icon-location:before{
+            color: #cccccc;
+            font-size: 16px;
+        }
+        .tip-active{
+            background-color: #cccccc
+        }
+    </style>
+</head>
+<body>
+    <div id="header" class="mui-row">
+        <input type="text" id="searchText" placeholder="搜索或输入位置" >
+        <span class="cancel mui-color-blue" tapmode onclick="fnClose()">取消</span>
+    </div>
+    <div id="main">
+        <ul class="mui-table-view" id="tips">
+        </ul>
+    </div>
+</body>
+<script type="text/template" id="tip">
+    {{~ it:data}}
+    <li class="mui-table-view-cell" tapmode="tip-active" onclick="fnChooseLocation('{{=data.name}}','{{=data.lon}}','{{=data.lat}}')">
+        <span class="mui-icon iconfont icon-location"></span>
+        <span>{{=data.name}}</span>
+    </li>
+    {{~}}
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript">
+    apiready = function(){
+        api.parseTapmode();
+        var aMap = api.require('aMap');
+        var current_location = $api.getStorage('current_location');
+        if (current_location) {
+            $('#searchText').focus();
+            $('#searchText').on('keyup',function(){
+                var value = $('#searchText').val();
+                $('#tips').empty();
+                if(value){
+                    $('#tips').append('<li class="mui-table-view-cell mui-media" style="padding:5px 15px;" onclick="fnChooseLocation(\'' + value + '\',\'' + current_location.lon + '\',\'' + current_location.lat + '\')">'+
+                            '<a href="javascript:;">'+
+                                '<img class="mui-media-object mui-pull-left" src="../../../../image/plus.png">'+
+                                '<div class="mui-media-body">'+value+
+                                    '<p class="mui-ellipsis">点击使用输入文字作为地点发布</p>'+
+                                '</div>'+
+                            '</a>'+
+                        '</li>');
+                    fnShowProgress('正在搜索...');
+                    aMap.autocomplete({
+                        keyword: value,
+                        city: '厦门'
+                    }, function(ret) {
+                        fnHideProgress();
+                        if (ret.status) {
+                            $('#tips').append(doT.template($api.byId('tip').innerHTML)(ret.tips));
+                            api.parseTapmode();
+                        }
+                    });
+                }
+             })
+        }
+    };
+
+    //关闭当前frame
+    function fnClose(){
+        api.closeFrame({
+            name: api.frameName
+        });
+    }
+
+    //确定选择位置
+    function fnChooseLocation(poiName,lon,lat){
+        api.sendEvent({
+            name: 'location-changed',
+            extra: {
+                lon: lon,
+                lat: lat,
+                location: poiName
+            }
+        });
+        api.closeWin({
+            name: api.winName
+        });
+    }
+</script>
+</html>

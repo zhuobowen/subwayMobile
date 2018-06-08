@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+	<title>公共窗口</title>
+	<link rel="stylesheet" type="text/css" href="../css/api.css"/>
+	<link rel="stylesheet" type="text/css" href="../css/iconfont.css"/>
+	<link rel="stylesheet" type="text/css" href="../css/common-win.css"/>
+	<style>
+</style>
+</head>
+<body>
+	<div id="wrap">
+		<div id="header">
+			<div class="left-btn">
+				<span class="iconfont iconfont-large" id="left" tapmode="active"></span>
+			</div>
+			<div class="title"></div>
+			<div class="right-btn">
+				<span class="iconfont iconfont-large" id="right" tapmode="active"></span>
+			</div>
+		</div>
+		<div id="main">
+
+		</div>
+	</div>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/common.js"></script>
+<script type="text/javascript">
+	apiready = function(){
+		fnReadyHeader();//修复状态栏样式
+		fnReadyProperty();//初始化参数值
+		fnReadyKeyback();//绑定事件
+		fnOpenCommonFrame();//打开子frame
+	    fnAddKeyBackListener(); //监听android返回键
+	};
+
+	/**
+     * 监听android返回键
+     */
+	function fnAddKeyBackListener(){
+		api.addEventListener({
+	        name: 'keyback'
+	    }, function (ret, err) {
+	        fnShowMessage('再按一次退出程序');
+	        api.addEventListener({
+		        name: 'keyback'
+		    }, function (ret, err) {
+		        api.closeWidget({
+				    id: api.appId,
+				    retData: {
+				        name: 'closeWidget'
+				    },
+				    animation: {
+				        type: 'flip',
+				        subType: 'from_bottom',
+				        duration: 500
+				    }
+				});
+		    });
+		   	setTimeout(function(){
+		   		api.removeEventListener({
+		   		    name: 'keyback'
+		   		});
+		   		fnAddKeyBackListener();
+		   	},3000)
+	    });
+	}
+	//调整状态栏
+	function fnReadyHeader() {
+		var header = $api.byId('header');
+		if (header) {
+			$api.fixStatusBar(header);
+			var headerHeight = $api.offset(header).h;
+			$api.setStorage('headerHeight', headerHeight);
+		}
+	};
+	//设置当前子frame的属性
+	function fnReadyProperty(){
+		var header = $api.byId('header');
+		var left_btn = $api.byId('left');
+		var right_btn = $api.byId('right');
+
+		var leftIcons = [];
+		var rightIcons = [];
+		var title = api.pageParam.title;//标题
+		var frameName = api.pageParam.frameName;//子页面名称
+		var frameUrl = api.pageParam.frameUrl;//子页面路径
+		var leftCla = api.pageParam.leftIcons;//左上方字体图标
+		var rightCla = api.pageParam.rightIcons;//右上方字体图标
+		var events = api.pageParam.events;//绑定的事件，其中
+
+		//设置左图标
+		if(leftCla){
+			leftIcons = leftCla.split(',');
+			for (var j = 0; j < leftIcons.length; j++) {
+				$api.addCls(left_btn, leftIcons[j]);
+			}
+		}
+		//设置右图标
+		if(rightCla){
+			rightIcons = rightCla.split(',');
+			for (var j = 0; j < rightIcons.length ; j++) {
+				$api.addCls(right_btn, rightIcons[j]);
+			}
+		}
+		//设置标题
+		if (title) {
+			$api.domAll(header, '.title')[0].innerHTML = title;
+		}
+
+		//执行方法
+		if(events){
+			for (var i = 0; i < events.length; i++) {
+				eval(events[i]);
+			}
+		}
+		api.addEventListener({
+            name: 'keyback'
+        },function(ret, err) {
+            api.closeWin();
+        });
+
+		api.parseTapmode();
+	}
+
+	//左键返回键绑定事件
+	function fnReadyKeyback() {
+		var keybacks = $api.domAll('.event-back');
+		for (var i = 0; i < keybacks.length; i++) {
+			$api.attr(keybacks[i], 'tapmode', 'highlight');
+			keybacks[i].onclick = function() {
+				api.closeWin();
+			};
+		}
+		api.parseTapmode();
+	};
+
+	//打开公共frame的方法
+	function fnOpenCommonFrame(){
+		var bounces = api.pageParam.bounces;
+		var vScrollBarEnabled = api.pageParam.vScrollBarEnabled;
+		var hScrollBarEnabled = api.pageParam.hScrollBarEnabled;
+		api.pageParam['headerHeight'] = getHeaderHeight();
+		api.openFrame({
+			name: api.pageParam.frameName,
+			url: api.pageParam.frameUrl,
+			rect: {
+				x: 0,
+				y: getHeaderHeight(),
+				w: 'auto',
+				h: 'auto'
+			},
+			pageParam:api.pageParam,
+			bounces: bounces ?  bounces : false ,
+			vScrollBarEnabled: vScrollBarEnabled ? vScrollBarEnabled : false,
+			hScrollBarEnabled: hScrollBarEnabled ? hScrollBarEnabled : false
+		});
+	}
+	/**
+		左键返回键绑定事件-跳转指定windows
+	*/
+	function fnReadyKeybackTo(toWinName){
+		var keybacks = $api.domAll('.event-back');
+		for (var i = 0; i < keybacks.length; i++) {
+			$api.attr(keybacks[i], 'tapmode', 'highlight');
+			keybacks[i].onclick = function() {
+				api.closeToWin({
+					name: toWinName
+				});
+			};
+		}
+		api.parseTapmode();
+	}
+
+	/**
+	 * 绑定左右键点击事件
+	 * @param {Object} iconCla 左右键Class样式
+	 * @param {Object} functionName	子页面的方法名称
+	 */
+	 function fnReadyKeyBinding(iconCla,functionName){
+	 	var keybacks = $api.domAll('.'+iconCla);
+	 	for (var i = 0; i < keybacks.length; i++) {
+	 		$api.attr(keybacks[i], 'tapmode', 'highlight');
+	 		keybacks[i].onclick = function() {
+	 			api.execScript({
+	 				name: api.winName,
+	 				frameName: api.pageParam.frameName,
+	 				script: functionName
+	 			});
+	 		};
+	 	}
+	 	api.parseTapmode();
+	 }
+
+	 /**
+	 *
+	 *绑定.event-back样式返回指定窗口
+	 @params toWinName 窗口名称
+	 */
+	 function fnReadyKeybackTo(toWinName){
+	 	var keybacks = $api.domAll('.event-back');
+	 	for (var i = 0; i < keybacks.length; i++) {
+	 		$api.attr(keybacks[i], 'tapmode', 'highlight');
+	 		keybacks[i].onclick = function() {
+	 			api.closeToWin({
+	 				name: toWinName
+	 			});
+	 		};
+	 	}
+	 	api.parseTapmode();
+	 }
+
+	 /**
+	 *跳转到一个Frame页面
+	 *@params frameName 跳转frame的名称
+	 *@params closeID 关闭按钮的id
+	 */
+	 function fnReadyKeyback(frameName,closeID){
+	 	var keybacks = $api.domAll('.event-back');
+	 	for (var i = 0; i < keybacks.length; i++) {
+	 		$api.attr(keybacks[i], 'tapmode', 'highlight');
+	 		keybacks[i].onclick = function() {
+	 			api.historyBack({
+	 				frameName: frameName
+	 			}, function(ret, err) {
+	 				if (!ret.status) {
+	 					api.closeWin();
+	 				}else{
+	 					if(closeID!=null){
+	 						$('#'+closeID).show();
+	 					}
+	 				}
+	 			});
+	 		};
+	 	};
+	 	if(closeID!=null){
+	 		$api.dom('#'+closeID).onclick = function(){
+	 			api.closeWin();
+	 		}
+	 	}
+	 	api.parseTapmode();
+	 }
+</script>
+</html>

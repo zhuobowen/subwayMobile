@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>地保巡视报告页面</title>
+    <link rel="stylesheet" type="text/css" href="../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../css/common-mui.css"/>
+    <style>
+        html,body{
+            height: 100%;
+            overflow: hidden;
+        }
+        .mui-font-size-17{
+            font-size: 17px;
+        }
+    </style>
+</head>
+<body>
+    <div class="mui-content">
+        <ul class="mui-table-view first-table">
+            <li class="mui-table-view-cell mui-color-blue">
+                <span class="mui-icon iconfont icon-people2 mui-color-blue mui-font-size-17"></span>
+                <span>巡查组1</span>
+            </li>
+            <li class="mui-table-view-cell">
+                <div class="mui-row mui-ellipsis mui-margin-tb-1 mui-padding-left-10">
+                    <span class="iconfont icon-alarm-clock"></span>
+                    <span>巡查日期：</span>
+                    <span id="inspectTime"></span>
+                </div>
+                <div class="mui-row mui-ellipsis mui-margin-tb-1 mui-padding-left-10">
+                    <span class="iconfont icon-people"></span>
+                    <span>出勤人员：</span>
+                    <span id="inspectUser"></span>
+                </div>
+                <div class="mui-row mui-fixed mui-margin-tb-1">
+                    <div class="mui-fixed-item">
+                        <p>
+                            起始时间
+                        </p>
+                        <b id="startTime" style="font-size:20px;">
+                        </b>
+                    </div>
+                    <div class="mui-fixed-item" style="width: 50%;">
+                        <p id="contentTime">
+                        </p>
+                    </div>
+                    <div class="mui-fixed-item">
+                        <p>
+                            结束时间
+                        </p>
+                        <b id="endTime" style="font-size:20px;">
+
+                        </b>
+                    </div>
+                </div>
+            </li>
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../../../script/api.js"></script>
+<script type="text/javascript" src="../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../script/common.js"></script>
+<script type="text/javascript">
+    apiready = function(){
+        
+    };
+</script>
+</html>

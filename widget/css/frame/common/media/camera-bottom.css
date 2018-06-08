@@ -1,0 +1,104 @@
+html,body {
+    min-height: 100%;
+    background-color: #9e9e9e;
+}
+.camera-btn{
+    width: 65px;
+    height:65px;
+    border-radius: 50%;
+    background-attachment:fixed;
+    margin:0 auto;
+    margin-top:5px;
+    border: 5px solid #fff;
+}
+.camera-center-btn{
+    width: 59px;
+    height:59px;
+    margin:0 auto;
+    margin-top:3px;
+    border-radius: 50%;
+    background-color: #fff;
+}
+.camera-btn div:active{
+    background-color:#ddd;
+}
+
+.my-badge{
+    font-size: 10px;
+    line-height: 1.4;
+    position: absolute;
+    top: -5px;
+    left: 100%;
+    margin-left: -10px;
+    padding: 1px 5px;
+    color: white;
+    background: red;
+    border-radius: 100px;
+}
+.photos-btn{
+    top: 12px;
+    left: 10px;
+    width: 70px;
+    height:60px;
+    position: absolute;
+}
+.save-btn{
+    top: 25px;
+    width: 55px;
+    right: 10px;
+    height:35px;
+    color:#464646;
+    line-height:35px;
+    border-radius:15px;
+    position: absolute;
+    text-align: center;
+    background-color:#fff;
+}
+.save-ban:active{
+    background-color:#ddd;
+}
+.location-btn{
+    top: 30px;
+    color: #fff;
+    right: 20px;
+    position: absolute;
+}
+.icon-location:before{
+    color: #fff;
+    font-size: 20px;
+}
+.component{
+    display: none;
+}
+.side-btn{
+    color:  #EEC900;
+    font-size: 14px;
+    margin: 5px auto;
+    text-align: center;
+}
+.right{
+    color: #EEE5DE;
+    margin-left: 10px;
+}
+#my-leftbtn{
+    position: absolute;
+    left: 10px;
+    top: 25px;
+    width: 75px;
+    height:35px;
+    text-align: center;
+    line-height:35px;
+    color:#fff;
+    font-size: 18px;
+}
+#my-rightbtn{
+    position: absolute;
+    right: 10px;
+    top: 25px;
+    width: 75px;
+    height:35px;
+    text-align: center;
+    line-height:35px;
+    color:#fff;
+    font-size: 18px;
+}

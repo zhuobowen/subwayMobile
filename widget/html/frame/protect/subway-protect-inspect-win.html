@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>地铁巡视窗口</title>
+    <link rel="stylesheet" type="text/css" href="../../../css/api.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../css/common-win.css"/>
+</head>
+<body>
+<div id="wrap">
+    <div id="header">
+        <div class="left-btn">
+            <span class="iconfont iconfont-large icon-arrow-left" tapmode="active" onclick="fnCloseWin()"></span>
+        </div>
+        <div class="title">地保工作巡视</div>
+        <div class="right-btn">
+            <!--<span class="iconfont iconfont-large icon-result-order" tapmode="active" onclick="fnOpenProtectInspectResult()"></span>-->
+        </div>
+    </div>
+    <div id="main">
+
+    </div>
+</div>
+</body>
+<script type="text/javascript" src="../../../script/api.js"></script>
+<script type="text/javascript" src="../../../script/map.js"></script>
+<script type="text/javascript" src="../../../script/common.js"></script>
+<script type="text/javascript">
+    apiready = function () {
+        fnInitFrame();
+        fnReadyHeader();
+    }
+
+    //调整状态栏
+    function fnReadyHeader() {
+        var header = $api.byId('header');
+        if (header) {
+            $api.fixStatusBar(header);
+            var headerHeight = $api.offset(header).h;
+            $api.setStorage('headerHeight', headerHeight);
+        }
+    };
+
+    //初始化页面
+    function fnInitFrame(){
+        api.openFrame({
+            name: 'subway-protect-inspect-main',
+            url: './subway-protect-inspect-main.html',
+            rect: {
+                x: 0,
+                y: getHeaderHeight(),
+                w: 'auto',
+                h: 'auto'
+            },
+            pageParam: {
+
+            },
+            bounces: false
+        });
+        api.openFrame({
+            name: 'subway-protect-inspect-bottom',
+            url: './subway-protect-inspect-bottom.html',
+            rect: {
+                x: 0,
+                y: api.winHeight - 100,
+                w: api.winWidth,
+                h: 100
+            },
+            bounces: false,
+            bgColor: 'rgba(0,0,0,0)'
+        });
+
+        api.openFrame({
+            name: 'map-location',
+            url: 'widget://html/frame/map/map-location.html',
+            rect: {
+                x: api.winWidth-35,
+                y: api.winHeight - 150,
+                w: 30,
+                h: 30
+            },
+            pageParam: {
+                parentName: 'subway-protect-inspect-main'
+            },
+            bounces: false
+        });
+
+        api.openFrame({
+            name: 'subway-protect-inspect-main-icon',
+            url: 'widget://html/frame/protect/subway-protect-inspect-main-icon.html',
+            rect: { //显示右上角定位图标
+                x: api.frameWidth - 40,
+                y: 100,
+                w: 40,
+                h: 135
+            },
+            bounces: false
+        });
+    }
+
+    function fnOpenProtectInspectResult(){
+        fnShowMessage("努力开发中");
+        return;
+        var pageName = 'subway-protect-inspect-result';
+        var title = '巡查工作情况';
+        var leftIcons = 'icon-arrow-left,event-back';
+        var pageObj = {
+            title: title,
+            frameName: pageName,
+            frameUrl: 'widget://html/frame/protect/' + pageName + '.html',
+            leftIcons: leftIcons
+        };
+        fnOpenCommonWin(pageName, pageObj);
+    }
+
+    //关闭窗口
+    function fnCloseWin(){
+        api.closeWin({
+            name: api.winName
+        });
+    }
+</script>
+</html>

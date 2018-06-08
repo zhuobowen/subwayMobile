@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <title>右侧内容</title>
+    <link rel="stylesheet" type="text/css" href="../../../css/iconfont.css" />
+    <link rel="stylesheet" type="text/css" href="../../../css/mui.min.css" />
+    <link rel="stylesheet" type="text/css" href="../../../css/common-mui.css" />
+    <style type="text/css">
+        html,
+        body {
+            background-color: #fff;
+            font-size: 17px;
+        }
+        .mui-icon{
+            font-size: 14px;
+        }
+        .mui-table-view .mui-media-object {
+            max-width: 78px;
+            min-width: 78px;
+            height: 60px;
+        }
+    </style>
+</head>
+
+<body>
+<div id="wrap">
+    <div id="header" style="background-color: #0877D0;"></div>
+    <div class="main" style="height:100%;">
+
+    </div>
+</div>
+</body>
+<script type="text/template" id="template">
+     {{~it:risk}}
+         <ul class="mui-table-view">
+             <input type="hidden" name="id" value="{{=risk.id}}">
+             <li class="mui-table-view-cell mui-media mui-height-100">
+                 <a href="javascript:;">
+                     <img class="mui-media-object mui-pull-left" urls="{{=risk.photos}}" src="../../../image/nopicture.png">
+                     <div class="mui-media-body mui-line-height-25">
+                         <p class='mui-ellipsis'>
+                             <span class="mui-icon iconfont icon-bills"></span>
+                             异常描述：
+                             <b class="mui-color-black">{{=risk.description}}</b>
+                         </p>
+                         <p class='mui-ellipsis'>
+                             <span class="mui-icon iconfont icon-alarm-clock"></span>
+                             创建时间：
+                             {{= risk.createTime ? risk.createTime.substring(0,10):''}}
+
+                         </p>
+                         <p class='mui-ellipsis'>
+                             <span class="mui-icon iconfont icon-localization"></span>
+                             地理位置：
+                             {{=risk.location}}
+                         </p>
+                         <!--<p class='mui-ellipsis'>
+                             <span class="mui-pull-right mui-badge mui-badge-danger">{{=risk.unusualLevel.name}}</span>
+                         </p>-->
+                     </div>
+                 </a>
+             </li>
+         </ul>
+     {{~}}
+</script>
+<script type="text/javascript" src="../../../script/api.js"></script>
+<script type="text/javascript" src="../../../script/common.js"></script>
+<script type="text/javascript" src="../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../script/aui/aui-tab.js"></script>
+<script type="text/javascript">
+    var data;
+    apiready = function() {
+        fnInitStyle();
+        api.addEventListener({
+            name:'open-right'
+        }, function(ret, err){
+            data = ret.value.data;
+        });
+        api.addEventListener({
+            name:'viewappear'
+        }, function(ret, err){
+            fnInitData();
+        });
+    };
+
+    //初始化样式
+    function fnInitStyle() {
+        $('#header').css('height', getHeaderHeight() + 'px');
+
+    }
+    //初始化数据
+    function fnInitData() {
+        if(data){
+            $('.main').html(fnTemplate('template',data));
+            fnCacheImage('.mui-media-object');
+        }else{
+            fnAjaxInitData();
+        }
+
+    }
+
+    //如果本地没有数据，再次请求
+    function fnAjaxInitData() {
+        fnShowProgress("正在加载数据");
+        api.ajax({
+            url: fnGetServerAddr() + '/subway/riskSituation.do?todo=ajaxByParam',
+            method: 'get',
+            data: {
+                values: {
+                    state: 0,
+                    executeUserId: getUserId()
+                }
+            }
+        }, function (ret, err) {
+            fnHideProgress();
+            if(ret){
+                if(ret.success){
+                    $('.main').html(fnTemplate('template',ret.data));
+                    fnCacheImage('.mui-media-object');
+                }else{
+                    fnShowMessage("数据异常")
+                }
+            }else{
+                fnShowMessage("网络异常")
+            }
+        });
+    }
+</script>
+
+</html>

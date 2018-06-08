@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>昨日未巡查站点</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/common.css"/>
+    <style>
+        .mui-card-header{
+            height: 84px;
+        }
+        .mui-card-header p{ 
+            position: relative;left: .5rem;color: #111113;
+        }
+        .my-header-daily{
+            height: 3.5rem;font-size: 14px;min-height: 3.5rem;padding-left: 35px;
+        }
+        .my-header-unusual{
+            height: 2.5rem;font-size: 13px;min-height: 2.5rem;
+        }
+        .mui-badge.mui-badge-danger{
+            position: absolute;right: 10px;bottom:5px;
+        }
+    </style>
+</head>
+<body>
+
+</body>
+<script type="text/template" id="content">
+    <div class="mui-card">
+        {{=it.line}}
+        {{=it.unusual}}
+    </div>
+    <div class="mui-card">
+        {{=it.station}}
+    </div>
+</script>
+<script type="text/template" id="line_template">
+    <div class="mui-card-header my-header-unusual">
+        <div class="mui-pull-left">线路：{{=it.lineName}}</div>
+        <div class="mui-pull-right mui-color-blue">异常点{{=it.unusualCount}}处，站点{{=it.dailyCount}}个</div>
+    </div>
+</script>
+<script type="text/template" id="unusual_template">
+    {{~it:unusual}}
+        <div class="mui-card-header mui-card-media">
+            <img src="{{=unusual.unusualPic}}" style="width: 84px; height: 64px;" />
+            <div class="mui-media-body">
+                <p class="mui-ellipsis">异常描述：{{=unusual.unusualDesc}}</p>
+                <p class="mui-ellipsis">发现时间： {{=unusual.createTime}}</p>
+                <p class="mui-ellipsis">异常点位置： {{=unusual.location}}</p>
+                <p class="mui-ellipsis" style="width: 70%">异常类别：{{=unusual.unusualTypeName}}</p>
+                <span class="mui-pull-right mui-badge mui-badge-danger">{{=unusual.unusualLevel}}</span>
+            </div>
+        </div>
+    {{~}}
+</script>
+<script type="text/template" id="station_template">
+    {{~it:station}}
+        <div class="mui-card-header mui-card-media my-header-daily">
+            <img src="../../../../image/trinStation.png" />
+            <div class="mui-media-body" style="line-height: 35px;">
+                {{=station.stationName}}
+            </div>
+        </div>
+    {{~}}
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript">
+    var executeUser;
+    var inspectTime;
+    apiready = function(){
+        fnInitData();
+    };
+    //初始化数据
+    function fnInitData(){
+        executeUser = fnGetUser().userId;
+        inspectTime = fnGetYesterdayStr('-');
+        fnShowProgress('正在加载数据');
+        api.ajax({
+            url: fnGetServerAddr() + '/apicloud/task.do?todo=queryTodayInspectTask',
+            method: 'get',
+            timeout:10,
+            data: {
+                values: { 
+                    isYesterday:"true",
+                    executeUser:executeUser,
+                    inspectTime:inspectTime
+                }
+            }
+        },function(ret, err){
+            fnHideProgress();
+            if(ret){
+                if(ret.length > 0){
+                    var appendStr = '';
+                    for (var i = 0; i < ret.length; i++) {
+                        var unusuals = [];
+                        var line = ret[i];
+                        var stations = line.stations;
+                        for (var j = 0;  j< stations.length; j++) {
+                           var station = stations[j];
+                           if(station.hasOwnProperty('unusualList') && station.unusualList.length > 0){
+                                var unusualList = station.unusualList;
+                                for (var k = 0; k < unusualList.length; k++) {
+                                    var unusual = unusualList[k];
+                                    var unusualPic = '../../../../image/nopicture.png'
+                                    if(unusual.pic){
+                                        unusualPic =  fnGetImageUrl(unusual.pic,true,100,100);
+                                    }
+                                    unusual['unusualPic'] =unusualPic;
+                                    unusuals.push(unusual);
+                                }
+                           }
+                        }
+                        line = {
+                            lineName:line.lineName,
+                            dailyCount: line.hasOwnProperty('dailyCount') && line.dailyCount > 0 ? line.dailyCount : 0 ,
+                            unusualCount: line.hasOwnProperty('unusualCount') && line.unusualCount > 0 ? line.unusualCount : 0
+                        }
+                        appendStr += fnTemplate('content',{
+                            line:fnTemplate('line_template',line),
+                            station:fnTemplate('station_template',stations),
+                            unusual:fnTemplate('unusual_template',unusuals)
+                        })
+                    }
+                    $('body').html(appendStr);
+                }else{
+                    //没有数据
+                }
+            }else{
+                fnShowMessage('网络异常');
+            }
+        })
+    }
+</script>
+</html>

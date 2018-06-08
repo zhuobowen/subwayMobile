@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <title>右侧内容</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../css/aui.css" />
+    <style type="text/css">
+        html,
+        body {
+            background-color: #fff;
+            font-size: 17px;
+        }
+        .aui-timeline .aui-timeline-item-inner{
+            margin-left: 2.0rem;
+        }
+        .aui-timeline:before{
+            left:1.25rem;
+        }
+        .aui-timeline .aui-timeline-item-label-icon {
+            left: .5rem;
+        }
+        .aui-bg-success{
+            color: #ffffff;
+            background-color: #28ce0a !important;
+        }
+        .aui-list-item-media{
+            width:80px;
+        }
+        .aui-timeline-image{
+            width:100px;height:68px;
+        }
+        .hide{
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="wrap">
+        <div id="header" style="background-color: #0877D0;"></div>
+        <div class="main" style="height:100%;">
+            <div class="aui-tab" id="tabs">
+
+            </div>
+            <section class="aui-content" id="timelines">
+
+            </section>
+        </div>
+    </div>
+</body>
+<script type="text/template" id="tab">
+    {{~it:line:index}}
+        <div class="aui-tab-item {{? index == 0}}aui-active{{?}}">{{=line.lineName}}</div>
+    {{~}}
+</script>
+<script type="text/template" id="timeline">
+    {{~it:line:i}}
+        <div class="aui-timeline aui-margin-t-10 {{? i != 0 }} hide {{?}} " id="timeline-{{=i+1}}">
+            {{~line.stations:station:index}}
+                <div class="aui-timeline-item">
+                    <div class="aui-timeline-item-label-icon aui-bg-success">
+                        {{=index+1}}
+                    </div>
+                    <div class="aui-timeline-item-inner">
+                        <div class="aui-card-list">
+                            <div class="aui-card-list-content-padded">
+                                {{=station.stationName}}
+                            </div>
+                            {{? station.worksites.length}}
+                                <div class="aui-card-list-content">
+                                    <ul class="aui-list aui-media-list aui-list-noborder">
+                                        {{~station.worksites:worksite}}
+                                            <li class="aui-list-item aui-list-item-middle">
+                                                <div class="aui-media-list-item-inner">
+                                                    <div class="aui-list-item-media">
+                                                        <img class="aui-timeline-image" onclick="fnShowImage(this)" src="{{=worksite.picfile ? fnGetImageUrl(worksite.picfile.split(',')[0],true,200,200) : '../../../../image/nopicture.png'}}">
+                                                    </div>
+                                                    <div class="aui-list-item-inner">
+                                                        <div class="aui-list-item-text">
+                                                            <div class="aui-list-item-title aui-font-size-12">{{=worksite.name}}</div>
+                                                            <div class="aui-label aui-label-danger">{{=worksite.grade}}</div>
+                                                        </div>
+                                                        <div class="aui-list-item-text">
+                                                            <p class="aui-list-item-title aui-font-size-12">{{=station.stationName}}</p>
+                                                        </div>
+                                                        <div class="aui-list-item-text">
+                                                            <p class="aui-list-item-title aui-font-size-12">面积{{=worksite.area || 0 }}㎡，周长{{=worksite.girth || 0 }}m</p>
+                                                        </div>
+                                                        <div class="aui-list-item-text">
+                                                            {{? worksite.trackId}}
+                                                                <div class="aui-label aui-label-success aui-bg-success">
+                                                                    已监护
+                                                                </div>
+                                                            {{??}}
+                                                                <div class="aui-label aui-label-danger aui-bg-danger">
+                                                                    未监护
+                                                                </div>
+                                                            {{?}}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        {{~}}
+                                    </ul>
+                                </div>
+                            {{?}}
+                        </div>
+                    </div>
+                </div>
+            {{~}}
+        </div>
+    {{~}}
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/aui/aui-tab.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        fnInitStyle();
+        api.addEventListener({
+            name:'viewappear'
+        }, function(ret, err){
+            fnInitData();
+        });
+    };
+
+    //初始化样式
+    function fnInitStyle() {
+        $('#header').css('height', getHeaderHeight() + 'px');
+
+    }
+    //初始化数据
+    function fnInitData() {
+        fnShowProgress("正在加载数据");
+        api.ajax({
+            url: fnGetServerAddr() + '/apicloud/worksite.do?todo=getWorksiteTaskData',
+            method: 'get',
+            data: {
+                values: {userId: getUserId()}
+            }
+        }, function (ret, err) {
+            fnHideProgress();
+            if(ret){
+                if(ret.success){
+                    $('#tabs').html(fnTemplate('tab',ret.lines));
+                    $('#timelines').html(fnTemplate('timeline',ret.lines));
+                    var tab = new auiTab({
+                        element: document.getElementById("tabs"),
+                    }, function(ret) {
+                        $('.aui-timeline').addClass('hide');
+                        $('#timeline-' + ret.index).removeClass('hide')
+                    });
+                }else{
+                    fnShowMessage("数据异常")
+                }
+            }else{
+                fnShowMessage("网络异常")
+            }
+        });
+    }
+
+    //如果本地没有数据，再次请求
+    function fnAjaxInitData() {
+
+    }
+</script>
+
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>监测工程信息</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/common-mui.css"/>
+    <style>
+        .mui-circle {
+            top: .5rem;
+        }
+        .mui-circle-info{
+            font-weight: bolder;
+        }
+        .mui-table-view .mui-media-object {
+            max-width: 120px;
+            min-width: 120px;
+            height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <ul class="mui-table-view" id="situation">
+        <li class="mui-table-view-cell mui-color-blue mui-small-padding">
+            <span class="mui-circle">1</span>
+            <span class="mui-circle-info">异常点信息</span>
+        </li>
+        <li class="mui-table-view-cell mui-media mui-active">
+            <div class="mui-row">
+                <img class="mui-media-object mui-pull-left" onclick="fnShowCacheImage(this)" urls="{{=it.unusualPic}}" src="../../../../image/nopicture.png">
+                <div class="mui-media-body" style="line-height: 25px;">
+                    <div class='mui-ellipsis mui-color-gray'>工程名称：SM城市广场三期</div>
+                    <div class='mui-ellipsis mui-color-gray'>所属线路:1号线</div>
+                    <div class="mui-ellipsis mui-color-gray">施工单位：万科集团</div>
+                    <div class="mui-ellipsis mui-color-gray">监测单位：地保监测处</div>
+                </div>
+            </div>
+        </li>
+    </ul>
+
+    <ul class="mui-table-view mui-margin-top-15">
+        <li class="mui-table-view-cell mui-color-blue mui-small-padding">
+            <span class="mui-circle">2</span>
+            <span class="mui-circle-info">监测项目状态</span>
+        </li>
+        <li class="mui-table-view-cell">
+            <label>沉降监测</label>
+            <div type="button" class="mui-btn mui-btn-success">
+                正常
+            </div>
+        </li>
+        <li class="mui-table-view-cell">
+            <label>几何形位</label>
+            <div type="button" class="mui-btn mui-btn-success">
+                正常
+            </div>
+        </li>
+        <li class="mui-table-view-cell">
+            <label>裂缝/开合度</label>
+            <div type="button" class="mui-btn mui-btn-danger">
+                隐患
+            </div>
+        </li>
+        <li class="mui-table-view-cell">
+            <label>结构收敛</label>
+            <div type="button" class="mui-btn mui-btn-success">
+                正常
+            </div>
+        </li>
+    </ul>
+    <ul class="mui-table-view mui-margin-top-15">
+        <li class="mui-table-view-cell mui-color-blue mui-small-padding">
+            <span class="mui-circle">3</span>
+            <span class="mui-circle-info">监测点告警情况</span>
+        </li>
+        <div id="chart" style="height: 200px;"></div>
+    </ul>
+</body>
+<script type="text/template" id="situationTemplate">
+    <li class="mui-table-view-cell mui-media mui-active">
+        <div class="mui-row">
+            <img class="mui-media-object mui-pull-left" onclick="fnShowCacheImage(this)" urls="{{=it.unusualPic}}" src="../../../../image/nopicture.png">
+            <div class="mui-media-body">
+                <div class='mui-ellipsis mui-color-gray'>线路站点：{{=it.line.lineName}}/{{=it.station.stationName}}</div>
+                <div class='mui-ellipsis mui-color-gray'>异常类别:{{=it.type.typeName}}</div>
+                <div class="mui-ellipsis mui-color-gray">异常描述：{{=it.unusualDesc}}</div>
+                <div class="mui-ellipsis mui-color-gray">发现时间：{{=it.createTime}}</div>
+                <div class="mui-ellipsis mui-color-gray">异常状态：{{=stateMap[it.state]}}
+                    <span class="mui-badge mui-badge-danger mui-pull-right">{{=it.unusualLevel.name}}</span>
+                </div>
+            </div>
+        </div>
+    </li>
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/echarts.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript">
+    apiready = function(){
+        fnInitChart();
+    };
+
+    //初始化图表
+    function fnInitChart(){
+        var chart = echarts.init(document.getElementById('chart'));
+        var option = {
+            tooltip: {
+                trigger: 'item',
+                formatter: "{b}: {c} 条 ({d}%)"
+            },
+            legend:{
+                orient: 'vertical',
+                x: '60%',
+                y: '10%',
+                align: 'auto',
+                selectedMode: false,
+                itemGap:15,
+                textStyle:{
+                    fontSize: 14
+                },
+                formatter:function(name){
+                    var oa = option.series[0].data;
+                    for(var i = 0; i < option.series[0].data.length; i++){
+                        if(name == oa[i].name){
+                            return name + ' ' + oa[i].value + ' 条';
+                        }
+                    }
+                },
+                data:[{
+                    name:'一级告警',
+                    textStyle:{
+                        color: '#48CFAE'
+                    }
+                },{
+                    name:'二级告警',
+                    textStyle:{
+                        color: '#5D9CEC'
+                    }
+                },{
+                    name:'三级告警',
+                    textStyle:{
+                        color: '#DB639B'
+                    }
+                },{
+                    name:'四级告警',
+                    textStyle:{
+                        color: '#FB6E52'
+                    }
+                }],
+                padding:10
+            },
+            series : [
+                {
+                    type: 'pie',
+                    radius : '87%',
+                    center: ['32%', '50%'],
+                    data:[
+                        {value:12, name:'一级告警',itemStyle:{color:'#48CFAE'}},
+                        {value:44, name:'二级告警',itemStyle:{color:'#5D9CEC'}},
+                        {value:22, name:'三级告警',itemStyle:{color:'#DB639B'}},
+                        {value:22, name:'四级告警',itemStyle:{color:'#FB6E52'}}
+                    ],
+                    label: {
+                        normal: {
+                            show: false
+                        }
+                    },
+                    startAngle:140,
+                    hoverAnimation:false,
+                    labelLine :{
+                        show:false
+                    }
+                }
+            ]
+        };
+        chart.setOption(option);
+    }
+</script>
+</html>

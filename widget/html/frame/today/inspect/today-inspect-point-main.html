@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>今日巡查主窗口</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/common-win.css"/>
+</head>
+<body>
+    <div id="wrap">
+        <div id="header">
+            <div class="left-btn">
+                <span class="iconfont iconfont-large icon-arrow-left event-back" id="left" tapmode="active" onclick="fnCloseWin()"></span>
+            </div>
+            <div class="title">今日巡查点</div>
+            <div class="right-btn">
+                <span class="iconfont iconfont-large icon-result-order" id="right" tapmode="active" onclick="fnOpenInspectResult();"></span>
+            </div>
+        </div>
+        <div id="main">
+            <div id="headerInfo" tapmode class="mui-navigate-right">
+                <img src="../../../../image/loading_more.gif" class="mui-loading"/>加载中...
+            </div>
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/map.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript" src="../../../../script/db.js"></script>
+<script type="text/javascript" src="../../../../script/transform.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript">
+    var isInited = false;//ajax请求数据
+    var isFooter = false; //底部是否加载
+    var isLarge = '';
+    var billboard_bg = 'widget://image/map/2.png';
+    var icon_station = 'widget://image/map/station.png';
+    var icon_unusual_danger = 'widget://image/map/location-red.png';
+    var icon_unusual_warning = 'widget://image/map/location-yellow.png';
+    var icon_unusual_success = 'widget://image/map/location-green.png';
+    var annotation_map = {}; //覆盖物map
+    var annotation_id = 0;  //覆盖物id_id
+    var distances = [];
+    var current_location,executeUser,inspectTime;
+
+    var daily_lst = [];           //日常任务站点集合
+    var unusual_danger_lst = [];  //未巡查异常点集合
+    var unusual_warning_lst = [];  //待补录异常点集合
+    var unusual_success_lst = []; //已巡查异常点集合
+    var unusual_billboard_lst = []; //异常点位布告牌（图片）集合
+    var annotationIds = [];        //标注id的集合（不包含布告牌）
+    apiready = function(){
+        if(api.systemType != 'ios'){
+            icon_station = 'widget://image/map/station-large.png';
+            icon_unusual_danger = 'widget://image/map/location-red-large.png';
+            icon_unusual_warning = 'widget://image/map/location-yellow-large.png';
+            icon_unusual_success = 'widget://image/map/location-green-large.png';
+        }
+        fnReadyHeader();                 //修复状态栏样式
+        fnInitDB();
+        api.setKeepScreenOn({keepOn: true});
+        fnInitMap();                     //初始化地图模块
+        fnOpenMap({
+            x: 0,
+            y: getHeaderHeight() + 30,
+            w: api.frameWidth,
+            h: api.frameHeight
+        });
+
+        if(!isInited){
+            fnInitData();
+        }
+        // 监听页面显示，显示地图模块并初始化数据
+        api.addEventListener({
+            name:'viewappear'
+        }, function(ret, err){
+            aMap.show();
+            if(!isInited){
+                fnInitData();
+            }
+        });
+        //监听页面关闭，关闭地图模块
+        api.addEventListener({
+            name:'viewdisappear'
+        }, function(ret, err){
+            aMap.hide();
+            isInited = false;
+        });
+    };
+
+    function fnOpenMapCallBack(){
+        fnOpenUnusualFrame({//显示右上角定位图标
+            x: api.frameWidth - 40,
+            y: 120,
+            w: 40,
+            h: 86
+        });
+    }
+
+    //调整状态栏
+    function fnReadyHeader() {
+        var header = $api.byId('header');
+        if (header) {
+            $api.fixStatusBar(header);
+            var headerHeight = $api.offset(header).h;
+            $api.setStorage('headerHeight', headerHeight);
+        }
+    };
+
+    //初始化数据
+    function fnInitData(){
+        distances = [];
+        daily_lst = [];
+        annotation_id = 0;
+        annotation_map = {};
+        unusual_danger_lst = [];
+        unusual_warning_lst = [];
+        unusual_success_lst = [];
+        annotationIds = [];
+        isInited = true;
+
+        executeUser = fnGetUser().userId;
+        inspectTime = fnGetTodayStr('-');
+        current_location = $api.getStorage('current_location');
+        if(!isFooter)
+            $('#headerInfo').html('<img src="../../../../image/loading_more.gif" class="mui-loading"/>加载中...');
+        api.ajax({
+            url: fnGetServerAddr() + '/apicloud/task.do?todo=queryTodayInspectTask',
+            method: 'get',
+            timeout:10,
+            data: {
+                values: {
+                    executeUser:executeUser,
+                    inspectTime:inspectTime
+                }
+            }
+        },function(ret, err){
+            if (ret) {
+                if (ret.length > 0) {
+                    var headerInfo = '';
+                    $api.setStorage('today_tasks', ret); //缓存今日巡查任务数据
+                    var selectedLines = [];
+                    for (var i = 0; i < ret.length; i++) {
+                        var line = ret[i];
+                        selectedLines.push(line.lineId);   //汇总当天任务所有的线路
+                        headerInfo += fnGetHeaderInfo(line.lineName,line.dailyCount,line.unusualCount);
+                        var stations = ret[i].stations;
+                        for (var j = 0; j < stations.length; j++) {
+                            var station = stations[j];
+                            fnAddAnnotation(station);       //添加站点
+                            if (station.hasOwnProperty("unusualList")){
+                                var unusuals = station.unusualList;
+                                for (var k = 0; k < unusuals.length; k++) {
+                                    var unusual = unusuals[k];
+                                    unusual['lineName'] = line.lineName;
+                                    unusual['stationName'] = station.stationName;
+                                    if(unusual && unusual.lon && unusual.lat){
+                                        if(unusual.pic){
+                                            unusual['unusualPic'] = fnGetImageUrl(unusual.pic,true,200,200);
+                                        }
+                                        fnAddAnnotation(unusual);//添加异常点
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    var min_point = distances.min(); //最近的一个点
+                    var annotation = annotation_map[ min_point.id + ''];
+                    //描绘点位
+                    setTimeout(function(){
+                        fnShowMarkers();
+                    },500)
+                    if(!isFooter){//是否打开底部
+                        setTimeout(function(){
+                            fnOpenFooter(annotation);
+                            fnOpenHeader(headerInfo);
+                        },500);
+                        setTimeout(function(){//描绘地铁保护区
+                            fnSetCenter({
+                                lon: annotation.lon,
+                                lat: annotation.lat
+                            });
+                            fnInitPoints();
+                        },500);
+                        $api.setStorage('selectedLines', selectedLines.distinct());//保存今日巡查线路
+                    }else{
+                        fnChangeFooter(annotation)
+                    }
+                }else{
+                    $('#headerInfo').html('暂无巡查任务');
+                }
+            }else{
+                fnShowMessage('网络异常');
+                $('#headerInfo').html('网络异常,点击重新加载');
+                $('#headerInfo').attr('onclick','fnInitData()');
+                api.parseTapmode();
+            }
+        });
+    }
+
+    //显示标记
+    function fnShowMarkers(){
+        aMap.removeAnnotations({ids:annotationIds});//移除所有的点位
+        //日常站点描点
+        if(daily_lst && daily_lst.length > 0){
+            aMap.addAnnotations({
+                annotations:daily_lst,
+                icons: [icon_station],
+                draggable: false,
+            }, function(ret) {
+                if (ret.eventType == 'click') {
+                    var annotation = annotation_map[ ret.id + '']
+                    fnChangeFooter( JSON.stringify(annotation) );
+                }
+            });
+            //添加日常站点气泡
+            for (var i = 0; i < daily_lst.length; i++) {
+                  var annotation = daily_lst[i];
+                  aMap.setWebBubble({
+                      id:annotation.id,
+                      size : {
+                          width:annotation.stationName.length * 18,
+                          height:32
+                      },
+                      bg:'#ffffff',
+                      data:'<div style="font-size:12px;text-align:center;">'+annotation.stationName+'</div>'
+                  });
+            }
+            //安卓关闭日常站点气泡
+            if(api.systemType != 'ios'){
+                aMap.addEventListener({
+                    name: 'click'
+                }, function(ret) {
+                    if (ret.status) {
+                      for (var i = 0; i < daily_lst.length; i++) {
+                          var id = daily_lst[i].id;
+                          aMap.closeBubble({
+                            id: id
+                          });
+                      }
+                    }
+                });
+            }
+        }
+        //未巡查的异常点描点
+        if(unusual_danger_lst && unusual_danger_lst.length > 0){
+            aMap.addAnnotations({
+                annotations:unusual_danger_lst,
+                icons: [icon_unusual_danger],
+                draggable: false,
+            }, function(ret) {
+                if (ret.eventType == 'click') {
+                    var annotation = annotation_map[ ret.id + '' ]
+                    fnChangeFooter( JSON.stringify(annotation) );
+                }
+            });
+        }
+
+        //待补录异常点描点
+        if(unusual_warning_lst && unusual_warning_lst.length > 0){
+            aMap.addAnnotations({
+                annotations:unusual_warning_lst,
+                icons: [icon_unusual_warning],
+                draggable: false,
+            }, function(ret) {
+                if (ret.eventType == 'click') {
+                    var annotation = annotation_map[ ret.id + '']
+                    fnChangeFooter( JSON.stringify(annotation) );
+                }
+            });
+        }
+
+        //已巡查异常点描点
+        if(unusual_success_lst && unusual_success_lst.length > 0){
+            aMap.addAnnotations({
+                annotations:unusual_success_lst,
+                icons: [icon_unusual_success],
+                draggable: false,
+            }, function(ret) {
+                if (ret.eventType == 'click') {
+                    var annotation = annotation_map[ ret.id + '']
+                    fnChangeFooter( JSON.stringify(annotation) );
+                }
+            });
+        }
+
+        //未巡查的异常点图片
+        for (var i = 0; i < unusual_danger_lst.length; i++) {
+            fnAddBillboard(unusual_danger_lst[i])
+        }
+        //待补录的异常点图片
+        for (var i = 0; i < unusual_warning_lst.length; i++) {
+            fnAddBillboard(unusual_warning_lst[i])
+        }
+        //已巡查的异常点图片
+        for (var i = 0; i < unusual_success_lst.length; i++) {
+            fnAddBillboard(unusual_success_lst[i])
+        }
+    }
+
+    //添加布告牌
+    function fnAddBillboard(billboard){
+        annotation_id++;
+        billboard['id'] = annotation_id;
+        annotation_map[annotation_id] = billboard;
+        aMap.addBillboard({
+             id: annotation_id,
+             draggable: false,
+             coords: {
+                lon: billboard.lon,
+                lat: billboard.lat
+            },
+            bgImg:billboard_bg,
+            content: {
+                illus: billboard.unusualPic
+            },
+            styles: {
+                    size: {
+                         width: 50,
+                         height: 80
+                    },
+                    illusRect: {
+                        x: 3,
+                        y: 3,
+                        w: 44,
+                        h: 44
+                    },
+                    marginT: 100,
+                    titleColor: '#000',
+                    titleSize: 6
+                }
+            }, function(ret) {
+              if (ret) {
+                 if(ret.eventType == 'click'){
+                    var annotation = annotation_map[ ret.id + '']
+                    fnChangeFooter(JSON.stringify(annotation));
+                }
+            }
+        });
+    }
+
+    //添加标记
+    function fnAddAnnotation(annotation){
+        annotation_id++;
+        annotationIds.push(annotation_id);
+        annotation['id'] = annotation_id;
+        //添加当前位置和点位的距离
+        if(annotation.hasOwnProperty('lat') && annotation.lat &&
+            annotation.hasOwnProperty('lon') && annotation.lon){
+            var distance = Number(fnDistance(Number(current_location.lat), Number(current_location.lon), Number(annotation.lat), Number(annotation.lon))/1000).toFixed(2);
+            distances.push({
+                id:annotation_id,
+                distance:parseFloat(distance),
+                lon:annotation.lon,
+                lat:annotation.lat
+            });
+            annotation['distance'] = distance;
+
+            if(annotation.type == 1){                                                //日常任务
+                daily_lst.push(annotation);
+            }else{                                                                   //异常任务任务
+                if(annotation.trackId){//已巡查
+                    unusual_success_lst.push(annotation);
+                }else{                 //未巡查
+                    var start_time = inspectTime + ' 00:00:00';
+                    var end_time = inspectTime + ' 23:59:59';
+                    var result = fnSelectSync('select * from sw_unusual_trcak ut,sw_unusual_info ui where ut.unusual_info_id = ui.id and ui.unusual_id = "'+annotation.situationId+'" and ut.createUser = "' + executeUser + '" and ut.createTime >= "'+start_time+'" and ut.createTime <= "' + end_time + '"');
+                    if(result.status){
+                        if(result.data.length > 0){
+                          annotation.isAfter = true;   //isAfter：标识符，待补记
+                          unusual_warning_lst.push(annotation);
+                        }else{
+                          annotation.isAfter = false;   //isAfter：标识符，待补记
+                          unusual_danger_lst.push(annotation);
+                        }
+                    }
+                }
+            }
+            annotation_map[annotation_id] = annotation;                              //将点位信息放进全局变量中 key: 覆盖物id  value：点位
+        }
+    }
+
+    //获取字符串
+    function fnGetHeaderInfo(lineName,dailyCount,unusualCount){
+        return (' ' + lineName + '  站点区间' + (dailyCount || 0) + '个,异常点' + (unusualCount || 0) + '个');
+    }
+
+    //改变头部信息
+    function fnOpenHeader(headerInfo){
+        $('#headerInfo').html('<marquee>今日待巡查' + headerInfo + '</marquee><span class="iconfont icon-arrow-right" style="position:relative;top:-10px;"></span>');
+        $('#headerInfo').attr('onclick','fnOpenRighter()');
+        api.parseTapmode();
+    }
+
+    //改变底部信息
+    function fnChangeFooter(point){
+        if(!isFooter){
+            fnOpenFooter(point);
+        }else{
+            fnSetCenter({               //设置中心点
+                lon: point.lon,
+                lat: point.lat
+            });
+            api.execScript({
+                name: 'today-inspect-point-main',
+                frameName: 'today-inspect-point-foot',
+                script: 'fnInitData('+JSON.stringify(point)+');'
+            });
+        }
+    }
+
+    //打开底部信息栏
+    function fnOpenFooter(point){
+        api.openFrame({
+            name: 'today-inspect-point-foot',
+            url: 'widget://html/frame/today/inspect/today-inspect-point-foot.html',
+            rect: {
+                x: 0,
+                y: api.systemType == 'ios' ? api.frameHeight - getHeaderHeight() - 65 : api.frameHeight - getHeaderHeight()- 60,
+                w: api.frameWidth,
+                h: 130
+            },
+            scrollEnabled:false,
+            bgColor: 'rgba(0,0,0,0)',
+            pageParam: {
+                point: point
+            },
+            animation:{
+                type:"movein",
+                subType:"from_bottom",
+                duration:100
+            }
+        });
+        //显示左下角定位图标
+        setTimeout(function(){
+            fnOpenLocationFrame({
+                x: 10,
+                y: api.winHeight - 190,
+                w: 30,
+                h: 30
+            });
+        },200)
+        //显示右下角导航图标
+        fnOpenNavigationFrame({
+            x: api.frameWidth - 90,
+            y: api.systemType == 'ios' ? api.frameHeight - getHeaderHeight() - 95 : api.frameHeight - getHeaderHeight() - 90,
+            w: 60,
+            h: 60
+        });
+
+        isFooter = true;//判断已经打开页面
+    }
+
+    //打开右侧列表
+    function fnOpenRighter(){
+        api.openDrawerPane({
+            type: 'right'
+        });
+    }
+
+    //打开巡查结果页面
+    function fnOpenInspectResult(){
+        var title = '今日巡查结果';
+        var pageName = 'today-inspect-result-main'
+        var leftIcons = 'icon-arrow-left,event-back';
+        var pageObj = {
+            title: title,
+            frameName: pageName,
+            frameUrl: 'widget://html/frame/today/result/' + pageName + '.html',
+            leftIcons: leftIcons,
+            isFinish:false
+        };
+        api.openDrawerLayout({
+            name: 'today-inspect-restult-win',
+            url: 'widget://html/common-win.html',
+            animation: {
+                type: 'none'
+            },
+            slidBackEnabled:false,
+            pageParam:pageObj,
+            leftPane: {
+                edge: api.winWidth/3,
+                name: 'today-inspect-result-right',
+                url: 'widget://html/frame/today/inspect/today-inspect-point-right.html',
+                rect: {
+                    x: 0,
+                    y: 0,
+                    w: api.winWidth,
+                    h: api.winHeight
+                }
+            },
+            animation:{
+                type: 'movein',
+                subType:'from_right',
+                duration:300
+            }
+        });
+    }
+
+
+    //关闭窗口
+    function fnCloseWin(){
+        api.closeWin({
+            name: api.winName
+        });
+    }
+
+    //返回数组最小值
+    Array.prototype.min = function() {
+        var min = this[0].distance;
+        var len = this.length;
+        var index = 0;
+        for (var i = 1; i < len; i++){
+            if (this[i].distance < min){
+                min = this[i].distance;
+                index = i;
+            }
+        }
+        return this[index];
+    }
+
+    //数组去重
+    Array.prototype.distinct = function(){
+        var arr = this,
+        result = [],
+        i,
+        j,
+        len = arr.length;
+        for(i = 0; i < len; i++){
+            for(j = i + 1; j < len; j++){
+                if(arr[i] === arr[j]){
+                    j = ++i;
+                }
+            }
+            result.push(arr[i]);
+        }
+        return result;
+    }
+</script>
+</html>

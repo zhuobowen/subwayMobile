@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>每日巡查进度</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/aui.css"/>
+    <style type="text/css">
+        html,body,.timelines{
+            background-color: #fff;
+            height: 100%;
+        }
+        .hide{
+            display: none;
+        }
+        .aui-tab{
+            position: relative;
+            top: 0px;
+            z-index: 99999;
+        }
+        .aui-bg-danger{
+            background-color: #d81e06 !important;
+        }
+        .aui-bg-success{
+            background-color: #28ce0a !important;
+        }
+        .mui-color-white{
+            color: #ffffff;
+        }
+        #timelines{
+            top:32px;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: auto;
+            position: fixed;
+            padding-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<div>
+    <div class="aui-tab" id="tabs">
+
+    </div>
+    <span id="timelines" style=""></span>
+</div>
+</body>
+<script type="text/template" id="tab">
+    {{~it:line:index}}
+    <div class="aui-tab-item {{? index == 0}}aui-active{{?}}">{{=line.lineName}}</div>
+    {{~}}
+</script>
+<script type="text/template" id="timeline">
+    {{~it:line:i}}
+    <div class="aui-timeline {{? i != 0 }} hide {{?}} " id="timeline-{{=i+1}}">
+        {{~line.stations:station:index}}
+        <div class="aui-timeline-item {{?index==0}}aui-margin-t-15{{?}}">
+            <div class="aui-timeline-item-label-icon mui-color-white
+                    {{? !station.detailId}} aui-bg-danger {{?}}
+                    {{? station.detailId}} aui-bg-success {{?}}
+                    ">
+                {{=index+1}}
+            </div>
+            <div class="aui-timeline-item-inner">
+                <div class="aui-card-list">
+                    <div class="aui-card-list-content-padded" style="padding: 0.3rem 0.45rem 0rem;">
+                        {{=station.stationName}}
+                        {{~station.unusualList:unusual}}
+                        <div class="aui-content-padded">
+                            {{? unusual.trackId}}
+                            <span class="iconfont icon-location-green"></span>
+                            {{??}}
+                            <span class="iconfont icon-location-red"></span>
+                            {{?}}
+                            {{=unusual.unusualDesc}}
+                        </div>
+                        {{~}}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {{~}}
+    </div>
+    {{~}}
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/aui/aui-tab.js"></script>
+<script type="text/javascript">
+    apiready = function(){
+        fnInitData();
+    };
+    //如果本地没有数据，再次请求
+    function fnInitData(){
+        var executeUser = api.pageParam.executeUser;
+        var inspectTime = api.pageParam.inspectTime;
+        fnShowProgress('正在加载数据');
+        api.ajax({
+            url: fnGetServerAddr() + '/apicloud/task.do?todo=queryTodayInspectTask',
+            method: 'get',
+            data: {
+                values: {
+                    executeUser:executeUser,
+                    inspectTime:inspectTime
+                }
+            }
+        },function(ret, err){
+            api.hideProgress();
+            if(ret && ret.length > 0){
+                $api.setStorage('today_tasks', ret);
+                $('#tabs').html(fnTemplate('tab',ret))
+                $('#timelines').html(fnTemplate('timeline',ret));
+                setTimeout(function(){
+                    var tab = new auiTab({
+                        element:document.getElementById("tabs"),
+                    },function(ret){
+                        $('.aui-timeline').addClass('hide');
+                        $('#timeline-' + ret.index).removeClass('hide')
+                    });
+                },1000)
+            }
+        })
+    }
+
+
+</script>
+</html>

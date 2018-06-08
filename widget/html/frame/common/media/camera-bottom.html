@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>照相机底部</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/frame/common/media/camera-bottom.css"/>
+    <style>
+
+    </style>
+</head>
+<body>
+    <div class="component side-btn">
+        <span class="left" tapmode onclick="fnChangeCamera('leftPhotos',this)">左侧</span>
+        <span class="right" tapmode onclick="fnChangeCamera('rightPhotos',this)">右侧</span>
+    </div>
+    <div class="camera-btn" tapmode onclick="fnTakePhoto()">
+        <div class="camera-center-btn"></div>
+    </div>
+    <div class="component photos-btn" tapmode onclick="fnShowImages()">
+        <img src="../../../../image/board02.png" width="70px" height="60px"/>
+        <span class="my-badge">0</span>
+    </div>
+    <span class="component location-btn" tapmode onclick="fnGoUnusualLocation()">
+        <span class="iconfont icon-location"></span>异常位置
+    </span>
+    <div class="component save-btn" tapmode onclick="fnSavePhoto()">
+        存储
+    </div>
+    <div id="my-leftbtn" class="component" tapmode onclick="fnReTakePhoto()">
+        重拍
+    </div>
+    <div id="my-rightbtn" class="component" tapmode onclick="fnUsePhoto()">
+        使用照片
+    </div>
+</body>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript" src="../../../../script/camera.js"></script>
+<script type="text/javascript">
+    var cameraType,imgUrls,imageBrowser,leftOrRight = 'leftPhotos';
+    var leftPhotos = [];
+    var rightPhotos = [];
+    apiready = function(){
+        fnInitModule();//初始化模块
+        fnInitData();
+        addTakePhotoListener();
+        addOpenCameraListener();
+    };
+
+    //初始化模块
+    function fnInitModule(){
+        imageBrowser = api.require('imageBrowser');
+    }
+    //初始化数据
+    function fnInitData(){
+        cameraType = api.pageParam.cameraType;
+        if(cameraType == 1){
+            $('.location-btn').show();
+        }else if(cameraType == 3){
+            $('.side-btn').show();
+        }
+    }
+
+    //添加拍照事件监听
+    function addTakePhotoListener(){
+      api.addEventListener({
+          name: 'take-photo'
+      }, function(ret, err) {
+          imgUrls = ret.value.imgUrls;
+          var lastImg = JSON.stringify(imgUrls[imgUrls.length - 1]);
+          if(cameraType == 1){
+              $('.save-btn').show();
+              $('.photos-btn').show();
+              $('.location-btn').hide();
+              fnReadImgInfo(imgUrls);
+          }else if(cameraType == 2){
+              $('.save-btn').show();
+              $('.photos-btn').show();
+              fnReadImgInfo(imgUrls);
+          }else if(cameraType == 3){
+              $('.save-btn').show();
+              $('.photos-btn').show();
+              $('.save-btn').css('top','40px');
+              $('.photos-btn').css('top','30px');
+              fnPushPhoto(lastImg);
+              fnReadImgInfo(imgUrls);
+          }else if(cameraType == 4){
+              $('.camera-btn').hide();
+              $('#my-leftbtn,#my-rightbtn').show();
+          }else if (cameraType == 5){
+              $('.camera-btn').hide();
+              $('#my-leftbtn,#my-rightbtn').show();
+          }else if(cameraType == 6){
+              $('.save-btn').show();
+              $('.photos-btn').show();
+              fnReadImgInfo(imgUrls);
+          }else if(cameraType == 7){
+              $('.save-btn').show();
+              $('.photos-btn').show();
+              fnReadImgInfo(imgUrls);
+          }else if(cameraType == 8){
+              $('.save-btn').show();
+              $('.photos-btn').show();
+              fnReadImgInfo(imgUrls);
+          }else if(cameraType == 9){
+              $('.save-btn').show();
+              $('.photos-btn').show();
+              fnReadImgInfo(imgUrls);
+          }
+      });
+    }
+
+    //添加打开相机监听
+    function addOpenCameraListener(){
+        api.addEventListener({
+            name: 'open-camera'
+        }, function(ret, err) {
+
+        });
+    }
+
+    //拍照
+    function fnTakePhoto(){
+        api.execScript({
+            name: api.winName,
+            frameName: 'camera-main',
+            script: 'fnTakePhoto();'
+        });
+    }
+
+    //将照片放进数组
+    function fnPushPhoto(img){
+        eval( leftOrRight + '.push(' + img +')');
+    }
+    /*
+		  读照片事件
+	  */
+    function fnReadImgInfo(imgUrls){
+      if(cameraType == 3){
+          imgUrls = eval(leftOrRight);
+      }
+    	if ( imgUrls && imgUrls.length > 0 ){
+    		    var num = imgUrls.length;
+    		    $('.my-badge').html(num);
+    		    $('.photos-btn img').attr('src',imgUrls[num-1].url);
+    	 }else{
+           $('.my-badge').html(0);
+           $('.photos-btn img').attr('src','../../../../image/board02.png');
+       }
+    }
+
+    //保存照片
+    function fnSavePhoto(){
+        var fs = api.require('fs');
+        if(cameraType == 1){
+            if(!api.pageParam.afterRegister){//不需要补记功能
+                var pageName = 'unusual-type';
+                var pageObj = {
+                    title: '异常类型选择',
+                    frameName: pageName,
+                    frameUrl: 'widget://html/frame/today/unusual/' + pageName + '.html',
+                    leftIcons: 'icon-arrow-left,event-back',
+                    rightIcons: 'icon-convert,event-transform',
+                    events: ['fnReadyKeyBinding("event-transform","fnBackToCamera()")'],
+                    frontWin: 'today-inspect-point-main',
+                    imgUrls: imgUrls
+                };
+                fnOpenCommonWin(pageName,pageObj);
+                setTimeout(function(){
+                    api.closeWin({
+                        name: api.winName
+                    });
+                },1000)
+            }else{
+                fnOpenSaveFrame();
+            }
+        }else if (cameraType == 2){
+            fnOpenSaveFrame();
+        }else if (cameraType == 3){
+            var daily = api.pageParam.daily;
+            var pageName = 'daily-inspect-register';
+            var pageObj = {
+                daily: daily,
+                title: '日常巡查登记',
+                frameName: pageName,
+                frameUrl: './frame/today/daily/' + pageName + '.html',
+                leftIcons:'icon-arrow-left,event-back',
+                leftPhotos:leftPhotos,
+                rightPhotos:rightPhotos
+            };
+            fnOpenCommonWin(pageName, pageObj);
+            setTimeout(function(){
+                api.closeWin({
+                    name: api.winName
+                });
+            },800)
+        }else if(cameraType == 6){
+            var worksiteId = api.pageParam.worksiteId;//监护工点id
+            var pageName = 'worksite-inspect-register';
+            var pageObj = {
+                worksiteId: worksiteId,
+                title: '工点监护情况记录',
+                frameName: pageName,
+                frameUrl: './frame/worksite/register/' + pageName + '.html',
+                leftIcons:'icon-arrow-left,event-back',
+                imgUrls:imgUrls
+            };
+            fnOpenCommonWin(pageName, pageObj);
+            setTimeout(function(){
+                api.closeWin({
+                    name: api.winName
+                });
+            },800)
+        }else if(cameraType == 7){
+            fnShowProgress("正在保存");
+            var files = {};
+            if (imgUrls && imgUrls.length > 0) {
+                for (var i = 0; i < imgUrls.length; i++) {
+                    var ret = fs.existSync({
+                        path: imgUrls[i].url
+                    });
+                    if(ret.exist){
+                        files['photoFile[' + i + ']'] = imgUrls[i].url;
+                    }else{
+                        fnShowMessage('找不到图片：'+ imgUrls[i].url);
+                        return false;
+                    }
+                }
+            }
+            api.ajax({
+                url: fnGetServerAddr() + '/apicloud/worksiteTrackUnusual.do?todo=save',
+                method: 'post',
+                timeout: 6,
+                data: {
+                    values: {
+                        userId : getUserId(),
+                        worksiteId: api.pageParam.worksiteId,
+                        worksiteType: api.pageParam.worksiteType,
+                        worksiteUnusualId: api.pageParam.unusualType,
+                        worksiteProjectId: api.pageParam.worksiteProject
+                    },
+                    files: files
+                }
+            }, function (ret, err) {
+                fnHideProgress();
+                if(ret){
+                    if(ret.success){
+                        api.sendEvent({
+                            name: 'unusual-added',
+                            extra: {
+                                worksiteType: api.pageParam.worksiteType
+                            }
+                        });
+                        fnCloseToWin('worksite-inspect-unusual-register-win')
+                    }else {
+                        fnShowMessage(ret.msg || "数据异常")
+                    }
+                }else{
+                    fnShowProgress("网络异常")
+                }
+            });
+        }else if(cameraType == 8){
+            fnShowProgress("正在保存");
+            var files = {};
+            if (imgUrls && imgUrls.length > 0) {
+                for (var i = 0; i < imgUrls.length; i++) {
+                    var ret = fs.existSync({
+                        path: imgUrls[i].url
+                    });
+                    if(ret.exist){
+                        files['photoFile[' + i + ']'] = imgUrls[i].url;
+                    }else{
+                        fnShowMessage('找不到图片：'+ imgUrls[i].url);
+                        return false;
+                    }
+                }
+            }
+            api.ajax({
+                url: fnGetServerAddr() + '/apicloud/worksiteTrackUnusual.do?todo=' + api.pageParam.actionName,
+                method: 'post',
+                timeout: 6,
+                data: {
+                    values: {
+                        userId : getUserId(),
+                        id: api.pageParam.unusualId
+                    },
+                    files: files
+                }
+            }, function (ret, err) {
+                fnHideProgress();
+                if(ret){
+                    if(ret.success){
+                        fnCloseToWin('worksite-inspect-unusual-register-win')
+                    }else {
+                        fnShowMessage(ret.msg || "数据异常")
+                    }
+                }else{
+                    fnShowProgress("网络异常")
+                }
+            });
+        }else if(cameraType == 9){
+            var pageName = 'unusual-confirm-register';
+            var title = '异常确认单处理';
+            var leftIcons = 'icon-arrow-left,event-back';
+            var rightIcons = 'icon-btn-check,event-save';
+            var events = ['fnReadyKeyBinding("event-save","fnSave()")'];
+
+            var pageObj = {
+                imgUrls:imgUrls,
+                id: api.pageParam.id,
+                state:api.pageParam.state,
+                title: title,
+                frameName: pageName,
+                frameUrl: 'widget://html/frame/confirm/' + pageName + '.html',
+                leftIcons: leftIcons,
+                rightIcons: rightIcons,
+                events: events
+            };
+            fnOpenCommonWin(pageName, pageObj);
+            setTimeout(function(){
+                api.closeWin();
+            },1000)
+        }
+    }
+
+    //显示保存页面
+    function fnOpenSaveFrame(){
+          var pageParam = api.pageParam;
+          pageParam['imgUrls'] = imgUrls;
+          api.openFrame({
+        			name: 'camera-save',
+        			url: './camera-save.html',
+        			pageParam:pageParam,
+        			rect: {
+        				x:0,
+        				y:0,
+        				w:'auto',
+        				h:'auto'
+        			}
+    		  });
+    }
+
+    //显示图片
+    function fnShowImages(){
+        var urls = [];
+        if(imgUrls && imgUrls.length > 0){
+          for (var i = 0; i < imgUrls.length; i++) {
+            urls.push(imgUrls[i].url);
+          }
+          imageBrowser.openImages({
+            imageUrls: urls,
+            showList: false,
+            activeIndex: urls.length - 1
+          });
+        }
+    }
+    //跳转异常位置
+    function fnGoUnusualLocation(){
+          var pageName = 'unusual-location';
+          var events = [];
+          var pageObj = {
+              title:'异常位置',
+              frameName:pageName,
+              frameUrl:'widget://html/frame/today/unusual/'+pageName+'.html',
+              leftIcons:'icon-arrow-left,event-back',
+              bounces:true,
+          };
+          fnOpenCommonWin(pageName,pageObj);
+    }
+
+    //改变左侧右侧
+    function fnChangeCamera(lOr,_this){
+        api.execScript({
+            name: 'camera-main-win',
+            frameName: 'camera-main',
+            script: 'fnOpenMasking();'
+        });
+        leftOrRight = lOr;
+        fnReadImgInfo(leftOrRight);
+        $('.left,.right').css('color','#EEE5DE');$(_this).css('color','#EEC900');
+    }
+
+    //拍照
+    function fnReTakePhoto(){
+        api.execScript({
+            name: api.winName,
+            frameName: 'camera-main',
+            script: 'fnTakePhoto();'
+        });
+        $('#my-leftbtn').hide();
+        $('#my-rightbtn').hide();
+        setTimeout(function(){
+            $('.camera-btn').show();
+        },300)
+    }
+
+    //使用照片
+    function fnUsePhoto(){
+        api.closeWin({
+            name: 'camera-main-win'
+        });
+        if(cameraType == 4){
+            api.execScript({
+                name: api.pageParam.frontWin,
+                frameName: api.pageParam.frontFrame,
+                script: 'fnTakePhotoCallBack('+JSON.stringify(imgUrls[imgUrls.length - 1])+');'
+            });
+        }else if(cameraType == 5){
+            api.execScript({
+                name: api.pageParam.frontWin,
+                frameName: api.pageParam.frontFrame,
+                script: 'fnTakePhotoCallBack("'+imgUrls[imgUrls.length - 1].url+'");'
+            });
+        }
+    }
+    /*
+      获取数组指定的元素
+    */
+    Array.prototype.properties = function(propertyName){
+        var len = this.length;
+        var tempArr = [];
+        for (var i = 0; i < len; i++) {
+            if(this[i].hasOwnProperty(propertyName)){
+                tempArr.push(this[i][propertyName]);
+            }
+        }
+        return tempArr;
+    }
+</script>
+</html>

@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>巡查结果</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/aui.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <style>
+    .aui-card-list-header{
+        padding: 0.25rem 0.75rem 0.25rem 0.5rem;
+        min-height: 1.8rem;
+    }
+    .aui-card-list-content-padded .aui-card-list-header{
+        padding: 0.25rem 0rem 0.25rem 0.5rem;
+        font-size: 15px;
+    }
+    .aui-card-list .aui-bg-icon{
+        width: 1.05rem;
+        height: 1.05rem;
+        font-size: 0.7rem;
+        line-height: 1rem;
+        background-color: #fff;
+        border: 1px solid #0877D0;
+        position: absolute;
+        border-radius: 50%;
+        text-align: center;
+        left: .8rem;
+        top: .35rem;
+        color: #0877D0;
+    }
+    .header-text{
+        margin-left: 2rem;
+        font-size: 15px;
+        color: #0877D0;
+    }
+    .text-info{
+        padding: 0rem 0rem 0rem 1rem;
+    }
+    .my-header{
+        font-size: 15px;padding: 0.25rem .75rem 0.25rem 1rem;
+    }
+    .my-content{
+        padding-top: 0rem;padding-left: 1.5rem;font-size: 15px;
+    }
+    .my-info{
+        padding: .25rem .25rem .25rem .75rem;
+        overflow:hidden;
+        white-space:nowrap;
+        text-overflow:ellipsis
+    }
+    .time-content{
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: flex;
+        -webkit-box-orient:horizontal;
+        -webkit-flex-flow:row;
+        flex-flow:row;
+    }
+    .middle,.start,.end{
+        text-align: center;
+        /*font-size: .90rem;*/
+    }
+    .middle{
+        width: 50%;
+    }
+    .start,.end{
+        -webkit-box-flex:.5;
+        -webkit-flex:.5;
+        flex:.5;
+    }
+    .btns{
+        position: absolute;
+        right: 10px;
+    }
+    .aui-card-list-header img,
+    .aui-card-list-content img,
+    .aui-card-list-content-padded img{
+        width: .75rem;
+        height: .75rem;
+        display: inline;
+    }
+    .submit-btn{
+        display: block;
+        color: #ffffff;
+        margin: 20px 40px;
+        text-align: center;
+        border-radius: 5px;
+        height: 40px;
+        line-height: 40px;
+        background-color: #1081DA;
+    }
+    section{
+        display: none;
+    }
+</style>
+</head>
+<body>
+   <section class="aui-content-padded">
+        <div class="aui-card-list">
+            <div class="aui-card-list-header aui-border-b">
+                <div class="aui-bg-icon">
+                    1
+                </div>
+                <div class="header-text">
+                    巡查出勤
+                </div>
+            </div>
+            <div class="aui-card-list-content-padded" style="">
+                <div class="my-info">
+                    <span class="iconfont icon-alarm-clock"></span>
+                    <span>巡查日期：</span>
+                    <span id="attenDate">
+                        <img src="../../../../image/loading_more.gif" class="mui-loading"/>
+                    </span>
+                </div>
+                <div class="my-info">
+                    <span class="iconfont icon-people"></span>
+                    <span>出勤人员：</span>
+                    <span id="inspectUser">
+                        <img src="../../../../image/loading_more.gif" class="mui-loading"/>
+                    </span>
+                </div>
+                <div class="time-content">
+                    <div class="start aui-padded-10">
+                        <p>
+                            起始时间
+                        </p>
+                        <b id="startTime">
+                              <img src="../../../../image/loading_more.gif" class="mui-loading"/>
+                        </b>
+                    </div>
+                    <div class="middle aui-padded-10">
+                        <p id="contentTime">
+                            <img src="../../../../image/loading_more.gif" class="mui-loading"/>
+                        </p>
+                    </div>
+                    <div class="end aui-padded-10">
+                        <p>
+                            结束时间
+                        </p>
+                        <b id="endTime">
+                              <img src="../../../../image/loading_more.gif" class="mui-loading"/>
+                        </b>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="aui-content-padded">
+        <div class="aui-card-list">
+            <div class="aui-card-list-header aui-border-b">
+                <div class="aui-bg-icon">
+                    2
+                </div>
+                <div class="header-text">
+                    巡查情况
+                </div>
+            </div>
+            <div class="aui-card-list-content-padded aui-border-b">
+                <div class="aui-card-list-header">
+                    <div class="aui-pull-left">
+                        今日巡查点位
+                    </div>
+                    <div class="aui-pull-right aui-text-info">
+                        <span id="inspectCount">
+                            <img src="../../../../image/loading_more.gif" class="mui-loading"/>
+                        </span>
+                        处
+                    </div>
+                </div>
+                <div class="text-info" id="taskCount">
+
+                </div>
+            </div>
+            <div class="aui-card-list-footer">
+                <div class="aui-pull-right btns">
+                    <div class="aui-btn aui-btn-outlined" tapmode onclick="fnOpenLefter()">巡查进度</div>
+                    <div class="aui-btn aui-btn-outlined" tapmode onclick="fnOpenStationSign()">站点签到</div>
+                    <div class="aui-btn aui-btn-outlined" tapmode onclick="fnOpenInspectSituation()">巡查情况</div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="aui-content-padded">
+        <div class="aui-card-list">
+            <div class="aui-card-list-header my-header">
+                <div class="aui-pull-left">
+                    今日新发现异常
+                </div>
+                <div class="aui-pull-right aui-text-info">
+                    <span class="aui-loading" id="new_total_count">
+                        0
+                    </span>
+                    处
+                </div>
+            </div>
+            <div class="aui-card-list-content-padded aui-border-b my-content">
+                <div id="new_unusual_count"></div>
+                <div class="aui-text-danger" id="after_unusual_count"></div>
+            </div>
+            <div class="aui-card-list-footer">
+                <div class="aui-btn aui-btn-outlined aui-pull-right btns" tapmode onclick="fnOpenUnuaualResgister()">异常点补录</div>
+            </div>
+        </div>
+    </section>
+    <div id="footer" style="display: none;">
+        <div class="submit-btn" tapmode onclick="fnRecoverInspect();">恢复巡查</div>
+    </div>
+</body>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/db.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript">
+    var flag_1,flag_2,flag_3 = false;
+    var executeUser;
+    var inspectTime;
+    var isInit = false;
+    apiready = function(){
+        fnInitDB();
+        if(!isInit){
+          fnInitData();
+        }
+        api.addEventListener({
+            name:'viewappear'
+        }, function(ret, err){
+            if(!isInit){
+              fnInitData();
+            }
+        });
+
+        api.addEventListener({
+            name:'viewdisappear'
+        }, function(ret, err){
+            isInit = false;
+        });
+    };
+    /*
+        初始化数据
+    */
+    function fnInitData(){
+        isInit = true;
+        executeUser = getUserId();
+        inspectTime = fnGetTodayStr('-');
+        try{
+            //查询出勤情况
+            fnInitAttendance();
+
+            //查询今日巡查任务
+            fnInitTodayTask();
+
+            //查询今日新增异常点
+            fnInitNewUnusual();
+
+            //fnShowProgress('数据加载中...');
+        }catch(e){
+            alert('页面发生异常');
+            api.closeWin({
+                name: api.winName
+            });
+        }
+
+    }
+
+    //初始化出勤情况
+    function fnInitAttendance(){
+        api.ajax({
+            url: fnGetServerAddr() + '/apicloud/task.do?todo=getAttendanceForApp',
+            method: 'get',
+            data: {
+                values: {
+                    executeUser:executeUser,
+                    inspectTime:inspectTime
+                }
+            }
+        },function(ret,err){
+            flag_1 = true;
+            if(ret){
+                if(ret.status){
+                    $("#inspectUser").html(ret.inspectUser);
+                    $("#attenDate").html(ret.attenDate.substring(0,10));
+                    $("#startTime").html(ret.startTime.substring(10,16));
+                    if(ret.endTime){
+                        $("#endTime").html(ret.endTime.substring(10,16));
+                        $("#contentTime").html(fnGetDuration(ret.startTime,ret.endTime));
+                    }else{
+                        $('#endTime').html('未结束')
+                        $('#contentTime').html('');
+                    }
+                }else{
+                    $('#endTime').html('未结束');
+                    $("#inspectUser").html('');
+                    $("#attenDate").html('');
+                    $("#startTime").html('');
+                    $("#contentTime").html('');
+                }
+                if(flag_2 && flag_3){
+                    fnHideProgress();
+                    if(api.pageParam.isFinish){//是否显示恢复巡查按钮
+                        $("#footer").show();
+                    }
+                    $('section').show();
+                }
+            }else{
+                fnShowMessage('网络异常')
+            }
+        });
+    }
+
+    //初始化今日巡查任务汇总
+    function fnInitTodayTask(){
+         api.ajax({
+            url: fnGetServerAddr() + '/apicloud/task.do?todo=queryTodayInspectTask',
+            method: 'get',
+            timeout:6,
+            data: {
+                values: {
+                    executeUser:executeUser,
+                    inspectTime:inspectTime
+                }
+            }
+        },function(ret, err){
+            flag_2 = true;
+            if(ret){
+                var lineStr = '';
+                var count = 0;
+                var unInspectCount = 0;
+                for (var i = 0; i < ret.length; i++) {
+                    var line = ret[i];
+                    var stations = ret[i].stations;
+                    var dailyCount = line && line.hasOwnProperty('dailyCount') && line.dailyCount > 0 ? line.dailyCount : 0;
+                    var unusualCount = line && line.hasOwnProperty('unusualCount') && line.unusualCount > 0 ? line.unusualCount : 0;
+                    lineStr += '<div class="text-info-item">'+line.lineName +
+                                    ' 日常巡查站点 '+ dailyCount +' 处，异常点巡查 '+ unusualCount +'处'+
+                                '</div>';
+                    count += ( dailyCount + unusualCount );
+                    for (var j = 0; j < stations.length; j++) {
+                        var station = stations[j];
+                        if(!station.detailId){
+                            unInspectCount ++;
+                        }
+                        if(station.hasOwnProperty('lon') && station.hasOwnProperty("unusualList")){
+                            var unusuals = station.unusualList;
+                            for (var k = 0; k < unusuals.length; k++) {
+                                var unusual = unusuals[k];
+                                if(!unusual.trackId){
+                                    unInspectCount ++;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                //查询待补记异常点
+                var start_time = inspectTime + ' 00:00:00';
+                var end_time = inspectTime + ' 23:59:59';
+                var result = fnSelectSync('select * from sw_unusual_trcak ut where ut.unusual_info_id is not null and ut.createUser = "' + executeUser + '" and ut.createTime >= "'+start_time+'" and ut.createTime <= "' + end_time + '"');
+                lineStr += '<div class="text-info-item aui-text-danger">尚余' + unInspectCount +
+                                ' 个点位未巡查，' + (result.status ? result.data.length : 0)  + '个异常点待补记'+
+                            '</div>';
+                $('#inspectCount').html(count);
+                $('#taskCount').html(lineStr);
+
+                if(flag_1 && flag_3){
+                    fnHideProgress();
+                    if(api.pageParam.isFinish){//是否显示恢复巡查按钮
+                        $("#footer").show();
+                    }
+                    $('section').show();
+                }
+            }else{
+                fnShowMessage('网络异常')
+            }
+        });
+    }
+
+
+    //查询今日新增异常点
+    var new_unusual_count,after_unusual_count=0;
+    function fnInitNewUnusual(){
+        api.ajax({
+            url: fnGetServerAddr() + '/apicloud/unusualSituation.do?todo=queryNewUnusualSituationForApp',
+            method: 'post',
+            data: {
+                values: {
+                    userId : getUserId(),
+                    createTime : fnGetTodayStr('-')
+                }
+            }
+        },function(ret, err){
+            flag_3 = true;
+            if (ret) {
+               if(ret.status){
+                    new_unusual_count = 0;
+                    after_unusual_count = 0;
+                    var lineMap = {};
+                    for (var i = 0; i < ret.data.length; i++) {
+                        var unusual =  ret.data[i];
+                        var lineName = unusual.lineName;
+                        if(!lineMap[lineName]){
+                            var unusualLst = [unusual];
+                            lineMap[lineName] = unusualLst;
+                        }else{
+                            lineMap[lineName].push(unusual);
+                        }
+                    }
+                    var create_user = executeUser;
+                    var start_time = inspectTime + ' 00:00:00';
+                    var end_time = inspectTime + ' 23:59:59';
+                    ret = fnSelectSync('select * from sw_unusual_info ui where ui.unusual_id is null and ui.createUser = "' + executeUser + '" and ui.createTime >= "'+start_time+'" and ui.createTime <= "' + end_time + '"');
+
+                    var after_unusual = ret.data;  //今日这个用户新建异常点集合
+                    for (var i = 0; i < after_unusual.length; i++) {
+                        var unusual = after_unusual[i];
+                        var lineName = unusual.lineName;
+                        if(!lineMap[lineName]){
+                            var unusualLst = [unusual];
+                            lineMap[lineName] = unusualLst;
+                        }else{
+                            lineMap[lineName].push(unusual);
+                        }
+                        after_unusual_count ++;
+                    }
+
+                    var appendStr = '';
+                    for ( var key in lineMap){
+                        new_unusual_count += lineMap[key].length;
+                        appendStr += ( key + ' ' + lineMap[key].length) + '处   ';
+                    }
+
+                    $('#new_unusual_count').html(appendStr);
+                    $('#new_total_count').html(new_unusual_count);
+                    $('#after_unusual_count').html('尚余有 '+after_unusual_count+' 处待补录');
+
+                    if(flag_1 && flag_2){
+                        fnHideProgress();
+                        if(api.pageParam.isFinish){//是否显示恢复巡查按钮
+                            $("#footer").show();
+                        }
+                        $('section').show();
+                    }
+               }else{
+                    fnShowMessage('数据异常')
+               }
+            }else{
+                fnShowMessage('网络异常')
+            }
+        });
+    }
+    //打开左侧列表
+    function fnOpenLefter(){
+        api.openDrawerPane({
+            type: 'left'
+        });
+    }
+
+    //打开站点签到
+    function fnOpenStationSign(){
+        var pageName = 'today-inspect-result-signin';
+        var title = '站点签到';
+        var leftIcons = 'icon-arrow-left,event-back';
+        var pageObj = {
+            title: title,
+            frameName: pageName,
+            frameUrl: 'widget://html/frame/today/result/' + pageName + '.html',
+            leftIcons: leftIcons,
+            bounces: true
+        };
+        fnOpenCommonWin(pageName, pageObj);
+    }
+
+     //巡查情况
+    function fnOpenInspectSituation(){
+        var pageName = 'today-inspect-result-track';
+        var title = '巡查情况';
+        var leftIcons = 'icon-arrow-left,event-back';
+        var pageObj = {
+            title: title,
+            frameName: pageName,
+            frameUrl: 'widget://html/frame/today/result/' + pageName + '.html',
+            leftIcons: leftIcons,
+            bounces: false
+        };
+        fnOpenCommonWin(pageName, pageObj);
+    }
+
+    //异常点补录
+    function fnOpenUnuaualResgister(){
+        if ((new_unusual_count + after_unusual_count) == 0) {
+            fnShowMessage('无新增异常点');
+            return;
+        }
+        var pageName = 'today-inspect-result-register';
+        var title = '异常点补录';
+        var leftIcons = 'icon-arrow-left,event-back';
+        var pageObj = {
+            title: title,
+            frameName: pageName,
+            frameUrl: 'widget://html/frame/today/result/' + pageName + '.html',
+            leftIcons: leftIcons,
+            bounces: true,
+            isFinish: api.pageParam.isFinish
+        };
+        fnOpenCommonWin(pageName, pageObj);
+    }
+
+    //获取持续时间
+    function fnGetDuration(startTime,endTime){
+        var startTime_autt = new Date(startTime.replace(/-/g, '/'));
+        var startTimeDate = Date.parse(startTime_autt);
+        var endTime_autt = new Date(endTime.replace(/-/g, '/'));
+        var endTimeDate =  Date.parse(endTime_autt);
+        var dateCon = endTimeDate - startTimeDate
+        var leave1=dateCon%(24*3600*1000);
+        var hours=Math.floor(leave1/(3600*1000));
+        var leave2=leave1%(3600*1000);
+        var minutes=Math.floor(leave2/(60*1000));
+        return hours + "小时"+ minutes+"分钟";
+    }
+
+    //恢复巡查-更新巡查任务状态（开始巡查状态）
+    function fnRecoverInspect(){
+        fnShowProgress('正在恢复巡查');
+        var executeUser = getUserId();
+        var inspectTime = fnGetTodayStr('-');
+        api.ajax({
+            url: fnGetServerAddr () + '/apicloud/task.do?todo=updateTaskStatusForApp',
+            method: 'post',
+            data: {
+                values: {
+                    inspectSituation:1, //结束巡查状态
+                    executeUser:executeUser,
+                    inspectTime:inspectTime
+                }
+            }
+        },function(ret, err){
+            fnHideProgress();
+            if (ret) {
+                fnOpenTodayInspectPoint();
+            }
+        });
+    }
+
+    //打开今日巡查点页面
+    function fnOpenTodayInspectPoint(){
+        api.openDrawerLayout({
+            name: 'today-inspect-point-main',
+            url: 'widget://html/frame/today/inspect/today-inspect-point-main.html',
+            slidBackEnabled:false,
+            rightPane: {
+                edge: api.winWidth/3,
+                name: 'today-inspect-point-right',
+                url: 'widget://html/frame/today/inspect/today-inspect-point-right.html'
+            },
+            animation:{
+                type: 'movein',
+                subType:'from_left',
+                duration:300
+            }
+        });
+        setTimeout(function(){
+            api.closeWin({
+                name: api.winName
+            });
+        },1000)
+    }
+</script>
+</html>

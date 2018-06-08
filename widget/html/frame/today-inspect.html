@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>今日巡查</title>
+    <link rel="stylesheet" type="text/css" href="../../css/mui.min.css" />
+    <link rel="stylesheet" type="text/css" href="../../css/iconfont.css" />
+    <link rel="stylesheet" type="text/css" href="../../css/mui.picker.css" />
+    <link rel="stylesheet" type="text/css" href="../../css/mui.poppicker.css" />
+    <link rel="stylesheet" type="text/css" href="../../css/common-mui.css" />
+    <style>
+    .unusual-cell>a:not(.mui-btn){
+        position:relative;
+        display:block;
+        overflow:hidden;
+        margin:-11px -15px;
+        padding:inherit;
+        white-space:nowrap;
+        text-overflow:ellipsis;
+        color:inherit
+    }
+    .unusual-cell{
+        position:relative;
+        overflow:hidden;
+        padding:11px 15px;-webkit-touch-callout:none;
+    }
+    .unusual-cell>a>.mui-badge{
+        position:absolute;
+        top:50%;
+        right:35px;
+        -webkit-transform:translateY(-50%);
+        transform:translateY(-50%)
+    }
+    .mui-icon-trash:before {
+        color: red;
+    }
+    .mui-row {
+        min-height: 3rem;
+        padding: 5px 0px;
+    }
+    .mui-btn {
+        padding: 6px 0px 4px 12px;
+        min-width: 5.5rem;
+        margin-left: .5rem;
+        margin-bottom: .5rem
+    }
+</style>
+</head>
+<body>
+    <div class="mui-content">
+        <ul class="mui-table-view" style="margin-top:0px;">
+            <li class="mui-table-view-cell mui-color-blue">
+                <span class="mui-circle">1</span>
+                <span class="mui-circle-info">今日出勤</span>
+            </li>
+            <li class="mui-table-view-cell">
+                <label>巡查日期</label>
+                <span class="mui-pull-right mui-color-blue inspectTime"></span>
+            </li>
+            <li class="mui-table-view-cell">
+               <div class="mui-row" style="margin: 8px 0px 0px;">
+                    <span>巡查人员</span>
+                    <span class="mui-pull-right iconfont iconfont-large icon-plus-btn mui-color-gray" tapmode="mui-icon-active" onclick="fnChooseUser()"></span>
+                </div>
+                <div class="mui-row" id="attendance">
+
+                </div>
+            </li>
+            <li class="mui-table-view-cell"  tapmode onclick="fnChooseCar();">
+                <span class="mui-pull-left">巡查车辆</span>
+                <span class="mui-pull-right mui-color-blue" id="carNo">请选择车辆</span>
+            </li>
+            <li class="mui-table-view-cell">
+                <label>填表人</label>
+                <span class="mui-pull-right mui-color-blue createUser"></span>
+            </li>
+        </ul>
+        <ul class="mui-table-view mui-margin-top-20" id="taskContentUT">
+            <li class="mui-table-view-cell mui-color-blue">
+                <span class="mui-circle">2</span>
+                <span class="mui-circle-info">今日工单</span>
+            </li>
+        </ul>
+        <ul class="mui-table-view" id="taskContentDT">
+
+        </ul>
+        <ul class="mui-table-view mui-margin-top-20">
+             <li class="mui-table-view-cell mui-color-blue">
+                <a class="mui-navigate-right" onclick="fnOpenYesterday(this)">
+                    <span class="mui-circle">3</span>
+                    <span class="mui-circle-info">昨日未完成巡查点位</span>
+                    <span class="mui-badge mui-badge-danger" id="yesterdayCount">0</span>
+                </a>
+            </li>
+        </ul>
+        <div class="foot">
+          <div class="mui-common-btn" tapmode="active" onclick="fnStartInspect();">开始巡查<div>
+        </div>
+    </div>
+</body>
+<script id="attendanceTemplate" type="text/template">
+    <button type="button" class="mui-btn mui-icon mui-icon-trash mui-right" onclick="fnDeleteUser({{=it.id}},this)">{{=it.name}}</button>
+</script>
+<script id="dailyTaskTemplate" type="text/template">
+    {{~ it:data}}
+        <ul class="mui-table-view" style="margin-top:0px;">
+            <li class="mui-table-view-cell">
+                <span class="mui-pull-left mui-color-blue">{{=data.taskNo}}</span>
+                <span class="mui-pull-right mui-color-black">线路：<span class="unusualCount">{{=data.line.lineName}}</span></span>
+            </li>
+            <li class="mui-table-view-cell">
+                    <div >区间/站点：<span>{{=data.line.stationNames}}</span></div>
+            </li>
+        </ul>
+    {{~}}
+</script>
+<script id="unusualTaskTemplate" type="text/template">
+    {{~ it:data}}
+        <li class="unusual-cell">
+                <span class="mui-pull-left mui-color-blue">{{=data.taskNo}}</span>
+                <span class="mui-pull-right mui-color-black">异常点数：<span class="unusualCount">{{=data.unusualCount}}</span></span>
+        </li>
+        {{~ data.lines:line:index}}
+            <li class="unusual-cell" style="padding-left: 20px;
+                {{? index >= 1}}
+                    border-top: 1px dashed #cccccc;
+                {{?}}
+            ">
+                <a class="mui-navigate-right" onclick="fnOpenUnusualSituation({{=data.id}},{{=line.lineId}})">
+                    <div class="roadline">{{=line.lineName}}</div>
+                    <span id="station" class="mui-ellipsis" style="width: 85%;">区间/站点：{{=line.stationNames}}</span>
+                    <span class="mui-badge mui-badge-danger" style="right: 35px;position: absolute;">{{=line.counts}}</span>
+                </a>
+            </li>
+        {{~}}
+    {{~}}
+</script>
+<script type="text/javascript" src="../../script/api.js"></script>
+<script type="text/javascript" src="../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../script/common.js"></script>
+<script type="text/javascript" src="../../script/mui.picker.js"></script>
+<script type="text/javascript" src="../../script/mui.poppicker.js"></script>
+<script type="text/javascript" src="../../script/frame/today-inspect.js"></script>
+</html>

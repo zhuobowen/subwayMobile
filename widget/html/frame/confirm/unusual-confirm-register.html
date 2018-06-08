@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>异常确认单处理</title>
+    <link rel="stylesheet" type="text/css" href="../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../css/common-mui.css"/>
+    <style>
+        html,body{
+            height: 100%;
+            overflow: auto;
+        }
+        .mui-circle {
+            top: .5rem
+        }
+        .mui-line-height-25 {
+            line-height: 27px;
+        }
+        .mui-content .mui-table-view:first-child{
+            margin-top: 0px;
+        }
+
+        .mui-table-view .mui-media-object {
+            line-height: 78px;
+            max-width: 100px;
+            min-width: 100px;
+            height: 78px;
+        }
+
+        .mui-row{
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        .mui-fixed{
+            height: 35px;
+            line-height: 35px;
+        }
+
+        .mui-fixed-item{
+            height: 35px;
+            line-height: 35px;
+            text-align: center;
+            color: #0A78D0;
+            border:1px solid #0A78D0;
+        }
+
+        .mui-item-active{
+            color: #ffffff;
+            background-color: #0A78D0;
+        }
+
+
+    </style>
+</head>
+<body>
+
+</body>
+<script type="text/template" id="template">
+    <div class="mui-content">
+        <ul class="mui-table-view" id="table1">
+            <input type="hidden" id="id" value="{{=it.id}}">
+            <li class="mui-table-view-cell mui-color-blue mui-small-padding">
+                <span class="mui-circle">1</span>
+                <span class="mui-circle-info">异常点信息</span>
+            </li>
+            <li class="mui-table-view-cell mui-media mui-height-100">
+                <a href="javascript:;">
+                    <img class="mui-media-object mui-pull-left" urls="{{=it.photos}}" src="../../../image/nopicture.png">
+                    <div class="mui-media-body mui-line-height-25">
+                        <p class='mui-ellipsis'>
+                            <span class="mui-icon iconfont icon-bills"></span>
+                            异常描述：
+                            {{=it.description}}
+                        </p>
+                        <p class='mui-ellipsis'>
+                            <span class="mui-icon iconfont icon-alarm-clock"></span>
+                            创建时间：
+                            {{=it.createTime}}
+                        </p>
+                        <p class='mui-ellipsis'>
+                            <span class="mui-icon iconfont icon-localization"></span>
+                            地理位置：
+                            {{=it.location}}
+                            <span class="mui-pull-right mui-badge mui-badge-danger">{{=it.unusualLevel.name}}</span>
+                        </p>
+                    </div>
+                </a>
+            </li>
+        </ul>
+        <ul class="mui-table-view mui-margin-top-15" id="table2">
+            <li class="mui-table-view-cell mui-color-blue mui-small-padding">
+                <span class="mui-circle">2</span>
+                <span class="mui-circle-info">现场确认结果</span>
+            </li>
+            <li class="mui-table-view-cell">
+                <div class="mui-fixed">
+                    <div class="mui-fixed-item {{? api.pageParam.state == 1 }}mui-item-active{{?}}" {{? !api.pageParam.state}} onclick="fnChangeStatus(this,1)" {{?}}>
+                        非异常
+                    </div>
+                    <div class="mui-fixed-item {{? api.pageParam.state == 2 }}mui-item-active{{?}}" {{? !api.pageParam.state}} onclick="fnChangeStatus(this,2)" {{?}}>
+                        异常
+                    </div>
+                </div>
+            </li>
+        </ul>
+    </div>
+</script>
+<script type="text/javascript" src="../../../script/api.js"></script>
+<script type="text/javascript" src="../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../script/common.js"></script>
+<script type="text/javascript">
+    apiready = function(){
+        fnInitDOM();
+    };
+
+    //初始化页面信息
+    function fnInitDOM(){
+        var id = api.pageParam.id;
+        if(id){
+            api.ajax({
+                url: fnGetServerAddr() + '/subway/riskSituation.do?todo=ajaxById',
+                method: 'get',
+                data: {
+                    values: {id: id},
+                }
+            }, function (ret, err) {
+                $('body').html(fnTemplate('template',ret));
+                fnCacheImage('.mui-media-object');
+                fnInitFrame();
+            });
+        }
+    }
+
+    //初始化页面
+    function fnInitFrame(){
+        api.openFrameGroup({
+            name: 'unusual-confirm-group',
+            background: '#ffffff',
+            scrollEnabled: true,
+            rect: {
+                x: 0,
+                y: getHeaderHeight() + $api.offset($api.byId('table1')).h + $api.offset($api.byId('table2')).h + 15,
+                w: 'auto',
+                h: 'auto'
+            },
+            index: api.pageParam.state - 1,
+            bounces: false,
+            scrollEnabled:false,
+            frames:
+                [{
+                    name: 'unusual-confirm-no',
+                    url: 'widget://html/frame/confirm/register/unusual-confirm-no.html',
+                    bgColor: '#ffffff',
+                    bounces: false,
+                    pageParam:{
+                        id:api.pageParam.id,
+                        imgUrls:api.pageParam.imgUrls
+                    }
+                }, {
+                    name: 'unusual-confirm-yes',
+                    url: 'widget://html/frame/confirm/register/unusual-confirm-yes.html',
+                    bgColor: '#ffffff',
+                    bounces: false,
+                    pageParam:{
+                        id:api.pageParam.id,
+                        imgUrls:api.pageParam.imgUrls
+                    }
+                }]
+        }, function (ret, err) {
+
+        });
+    }
+
+    //改变是否是异常
+    function fnChangeStatus(ele,index){
+        if(!$(ele).hasClass('mui-item-active')){
+            $('.mui-fixed-item').removeClass('mui-item-active').eq(index).addClass('mui-item-active');
+            api.setFrameGroupIndex({
+                name: 'unusual-confirm-group',
+                index: index-1
+            });
+        }
+    }
+
+    //保存异常确认单
+    function fnSave(){
+        api.sendEvent({
+            name: 'save' + api.pageParam.state
+        });
+    }
+</script>
+</html>

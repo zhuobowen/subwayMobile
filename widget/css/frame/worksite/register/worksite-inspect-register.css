@@ -1,0 +1,87 @@
+html,
+body {
+    font-size: 14px;
+    padding-bottom: 20px;
+}
+
+.mui-circle {
+    top: .5rem
+}
+
+.mui-content>.mui-table-view:first-child{
+    margin-top: 0px;
+}
+
+.mui-table-view .mui-media-object {
+    max-width: 84px;
+    min-width: 84px;
+    height: 74px;
+}
+
+.mui-media-body .mui-badge {
+    border-radius: 2px;
+}
+
+.mui-media-image {
+    width: 74px;
+    height: 74px;
+    margin: 0px;
+    min-width: 74px;
+}
+
+.mui-segmented-control.mui-scroll-wrapper .mui-control-item {
+    padding: 0px;
+    height: 74px;
+    width: 74px;
+    position: relative;
+    margin-right: 10px;
+}
+.mui-delete-btn{
+  right: 0px;
+  width:16px;
+  height:16px;
+  position: absolute;
+
+}
+.icon-camera {
+    top:5px;
+    right:10px;
+    color: #cccccc;
+    font-size: 30px;
+    margin-top: 22px;
+    margin-left: 5px;
+    position:absolute;
+}
+.camera-active{
+  color: #666666
+}
+
+.mui-col-xs-6,
+.mui-col-sm-6,
+.mui-col-xs-12,
+.mui-col-sm-12 {
+    padding: 5px 5px;
+}
+
+.worksite-type,
+.worksite-measure {
+    border: 1px solid #dbdbdb;
+    text-align: center;
+    padding: 10px 3px;
+}
+
+.icon-checked {
+    font-size: 17px;
+    color: #009900;
+}
+
+.mui-count {
+    border-radius: 50%;
+}
+
+.active {
+    background-color: #cccccc;
+}
+.mui-scroll{
+    touch-action: none;
+}

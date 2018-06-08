@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <title>照相机主页面</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css" />
+    <style>
+        html,body {
+            height: 100%;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <img class="component my-image" height="100%" width="100%" style="display: none;">
+</body>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript" src="../../../../script/db.js"></script>
+<script type="text/javascript" src="../../../../script/camera.js"></script>
+<script type="text/javascript">
+
+    /*
+      公用照相机页面，cameraType相机类型  1、新建异常 2、异常巡查3、站点巡查4、普通照相机
+    */
+    var cameraType,cachePath,fs,imageFilter,FNPhotograph,pictureWatermark, isCameraOpened,imgUrls,marker_location,current_location;
+
+    apiready = function() {
+        fnInitData();
+        fnInitModule();
+        fnOpenCamera();
+        fnChangeLocationListener();
+    };
+
+    //位置改变后的监听事件
+    function fnChangeLocationListener(){
+        api.addEventListener({
+            name: 'location-changed'
+        }, function(ret, err) {
+            if(ret.value){
+                marker_location = ret.value;
+            }
+        });
+    }
+
+    //初始化数据
+    function fnInitData(){
+        cameraType = api.pageParam.cameraType;
+        if(cameraType == 3 || cameraType == 4 && api.pageParam.daily){
+            marker_location = {
+                lon: api.pageParam.daily.lon,
+                lat: api.pageParam.daily.lat,
+                location: api.pageParam.daily.stationName
+            }
+        }
+    }
+
+    //初始化模块
+    function fnInitModule() {
+        imgUrls = [];
+        db = api.require("db");
+        fs = api.require('fs');
+        imageFilter = api.require('imageFilter');
+        FNPhotograph = api.require('FNPhotograph');
+        cachePath = $api.getStorage('root_cachePath');
+        pictureWatermark = api.require('pictureWatermark');
+        current_location = $api.getStorage('current_location');
+    }
+    function fnInitFrame() {
+        var h = cameraType == 3 ? 235 : 205;
+        api.openFrame({ //打开顶部
+            name: 'camera-top',
+            url: './camera-top.html',
+            pageParam: api.pageParam,
+            rect: {
+                x: 0,
+                y: 20,
+                w: 'auto',
+                h: 40
+            }
+        });
+        api.openFrame({
+            name: 'camera-marker',
+            url: './camera-marker.html',
+            pageParam: api.pageParam,
+            rect: {
+                x: 0,
+                y: api.winHeight - h,
+                w: api.winWidth,
+                h: 120
+            }
+        });
+    }
+    //初始化相机
+    function fnOpenCamera() {
+        fnInitFrame();
+        //打开相机广播事件
+        api.sendEvent({
+            name: 'open-camera'
+        });
+        FNPhotograph.openCameraView({
+            rect: {
+                x: 0,
+                y: 0,
+                w: api.frameWidth + 1,
+                h: api.frameHeight
+            },
+            orientation: 'portrait',
+            fixedOn: api.frameName,
+            fixed: true
+        }, function(ret) {
+            if (ret.status) {
+                $('.my-image').hide();
+                isCameraOpened = true;
+                FNPhotograph.setFocusMode({ //自动对焦
+                    focusMode: 'continue'
+                });
+                FNPhotograph.setFocusBox({
+                    box: {
+                        width: 2,
+                        color: '#ff0',
+                        maxSize: 100,
+                        minSize: 60
+                    }
+                });
+            }
+        });
+    }
+
+    //拍照
+    function fnTakePhoto() {
+        if (isCameraOpened) { //已经打开相机
+            api.showProgress({
+                title: '水印处理中...',
+                text: '请稍后',
+                modal: false
+            });
+            FNPhotograph.takePhoto({
+                path: cachePath,
+                quality: api.systemType == 'ios' ? 'low' : 'high',
+                album: false
+            }, function(ret) {
+                fnWatermark(ret.imagePath,fnGetCurrentTime(2),9,false);    //添加水印
+                FNPhotograph.closeCameraView(function(rett) { //关闭相机
+                    if (rett) {
+                        isCameraOpened = false;
+                    } else {
+                        fnShowMessage('关闭相机异常');
+                    }
+                });
+            });
+        } else { //未打开相机
+            fnOpenCamera();
+        }
+    }
+
+    //给照片上水印
+    function fnWatermark(imagePath, text, mul, isFinish) {
+        pictureWatermark.getPictureSize({
+                path: imagePath
+            },
+            function(ret, err) {
+                if (ret) {
+                    var w = ret.w;
+                    var h = ret.h;
+                    pictureWatermark.mark({
+                        watermark: {
+                            rect: {
+                                x: 1,
+                                y: 1,
+                                w: 1,
+                                h: 1
+                            },
+                            image: 'widget://image/map/empty.png',
+                            text: text,
+                            textAttribute: {
+                                point: {
+                                    x: 0,
+                                    y: h - parseInt(h / mul) * 1.5
+                                },
+                                textSize: parseInt(h / mul),
+                                textColor: '#fff'
+                            }
+                        },
+                    }, function(rett, errr) {
+                        if (rett) {
+                            if (!isFinish) {
+                                var text02 = fnGetCurrentTime(1) + '   ' + (marker_location || current_location).location;
+                                fnWatermark(rett.path, text02, 32, true);
+                                fs.remove({ //删除原图片
+                                    path: imagePath
+                                });
+                            } else {
+                                fs.copyTo({ //水印打完后复制到指定目录
+                                    oldPath: rett.path,
+                                    newPath: cachePath
+                                }, function(rettt, errrr) {
+                                    pictureWatermark.clearCache();
+                                    fs.readDir({ //清除水印缓存
+                                        path: cachePath
+                                    }, function(ret, err) {
+                                        if (ret.status) {
+                                            var num = ret.data.length;
+                                            var imgUrl = cachePath + '/' + ret.data[num - 1];
+                                            var imgName = new Date().getTime() + '.jpg';
+                                            if (api.systemType == 'ios') {//压缩图片
+                                                imageFilter.compress({
+                                                    img: imgUrl,
+                                                    quality: 0.1,
+                                                    save: {
+                                                        album: false,
+                                                        imgPath: cachePath,
+                                                        imgName: imgName
+                                                    }
+                                                }, function(ret, err) {
+                                                    if (ret.status) {
+                                                        var ret = fs.removeSync({
+                                                            path: imgUrl
+                                                        });
+                                                        if (ret.status) {
+                                                            var imgPath = cachePath + '/' + imgName;
+                                                            fnAfterTakePhoto(imgPath);
+                                                        } else {
+                                                            fnShowMessage('图片报错');
+                                                        }
+                                                    }
+                                                });
+                                            } else {
+                                            	imageFilter.getAttr({
+												    path: imgUrl
+												},function( ret, err ){        
+												    if( ret.status ){
+												    	if(ret.size / (1024*1024) > 2){
+												    		imageFilter.compress({
+			                                                    img: imgUrl,
+			                                                    quality: 0.5,
+			                                                    save: {
+			                                                        album: false,
+			                                                        imgPath: cachePath,
+			                                                        imgName: imgName
+			                                                    }
+			                                                }, function(ret, err) {
+			                                                    if (ret.status) {
+			                                                        var ret = fs.removeSync({
+			                                                            path: imgUrl
+			                                                        });
+			                                                        if (ret.status) {
+			                                                            var imgPath = cachePath + '/' + imgName;
+			                                                            fnAfterTakePhoto(imgPath);
+			                                                        } else {
+			                                                            fnShowMessage('图片报错');
+			                                                        }
+			                                                    }
+			                                                });
+												    	}else{
+												    		fnAfterTakePhoto(imgUrl);
+												    	}
+												    }else{
+												        fnShowMessage('获取图片错误');
+												    }
+												});
+                                            }
+                                        }
+                                    });
+                                });
+                            }
+                        }
+                        if (isFinish) {
+                            api.hideProgress();
+                        }
+                    });
+                }
+            });
+        }
+
+        //显示图片预览
+        function fnAfterTakePhoto(url){
+            fnHideProgress();
+            $('.my-image').show();
+            $('.my-image').attr('src', url);//预览
+            var id = fnGetUUID();
+            var lon = $api.getStorage('current_location').lon;
+            var lat = $api.getStorage('current_location').lat;
+            var location = (marker_location || current_location).location;
+            var createTime = fnGetNowFormatDate();
+            var listMap = '[{"name":"id","val": "' + id + '"},'+
+          							  '{"name":"url","val":"' + url + '"},'+
+          							  '{"name":"lon","val":"' + lon + '"},'+
+          							  '{"name":"lat","val":"' + lat + '"},'+
+          							  '{"name":"location","val":"' + location + '"},'+
+          							  '{"name":"createTime","val":"' + createTime + '"}'+
+          							  ']';
+			      var ret = fnInsertSync(sw_photo_url,$api.strToJson(listMap));
+            if (ret && ret.status){
+                imgUrls.push({
+                    id: id,
+                    url: url,
+                    lon: lon,
+                    lat: lat,
+                    location: location,
+                    createTime: createTime
+                });
+
+                //新增拍照广播事件
+                api.sendEvent({
+                    name: 'take-photo',
+                    extra: {
+                        imgUrls:imgUrls
+                    }
+                });
+
+            }else{
+                fnShowMessage('保存照片失败')
+            }
+        }
+
+        //打开蒙版
+        function fnOpenMasking(){
+            $('.my-image').hide();
+            if(!isCameraOpened){
+                fnOpenCamera();
+            }
+            api.openFrame({
+                name: 'camera-masking',
+                url: './camera-masking.html',
+                rect: {
+                    x: 0,
+                    y: 0,
+                    w: 'auto',
+                    h: api.winHeight-115
+                },
+                bounces: false,
+                bgColor: 'rgba(227,227,227,1)',
+                vScrollBarEnabled: false,
+                hScrollBarEnabled: false,
+                animation:{
+                    type:'fade',
+                    duration:500
+                }
+            });
+            setTimeout(function(){
+                api.closeFrame({
+                    name: 'camera-masking'
+                });
+            },800);
+        }
+</script>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+	<title>管理措施及控制技术标准</title>
+	<link rel="stylesheet" type="text/css" href="../../../../css/api.css"/>
+	<link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+	<link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+	<link rel="stylesheet" type="text/css" href="../../../../css/common.css"/>
+	<style>
+	.mui-segmented-control{
+		border-radius: 0px;
+	}
+</style>
+</head>
+<body>
+	<div class="mui-content">
+		<div id="segmentedControl" class="mui-segmented-control">
+			<a class="mui-control-item mui-active" href="#item1">
+				管理措施
+			</a>
+			<a class="mui-control-item" href="#item2">
+				控制技术标准
+			</a>
+		</div>
+		<div id="item1" class="mui-control-content mui-active">
+			
+		</div>
+		<div id="item2" class="mui-control-content">
+		</div>
+	</div>
+</body>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript">
+	mui.init({
+		swipeBack:true
+	});
+	apiready = function(){
+		fnInitData();
+	};
+	//初始化数据
+	function fnInitData(){
+		var typeId = api.pageParam.typeId;
+		api.showProgress({
+		    style: 'default',
+		    animationType: 'fade',
+		    title: '努力加载中...',
+		    modal: false
+		});
+		api.ajax({
+		    url:  fnGetServerAddr() + '/subway/unusualTask.do?todo=getUnusualType',
+		    method: 'get',
+		    data: {
+		        values: { 
+		            typeId: typeId
+		        }
+		    }
+		},function(ret, err){
+			api.hideProgress();
+		    if (ret) {
+		        $('#item1').html(ret.measure || "暂无数据");
+		        $('#item2').html(ret.control || "暂无数据");
+		    }
+		});
+	}
+</script>
+</html>

@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>地图-跳转公共frame</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/common-mui.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/frame/map/page/map-common-page.css"/>
+</head>
+<body>
+    <div class="mui-content">
+        <div class="mui-scroll-wrapper mui-slider-indicator mui-segmented-control mui-segmented-control-inverted" id="lines-content">
+            <div class="mui-scroll" id="lines">
+
+            </div>
+        </div>
+        <div id="pullrefresh" class="mui-content mui-scroll-wrapper">
+            <div class="mui-scroll">
+                <div id="content">
+
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script type="text/template" id="lineTemplate">
+    {{~ it:line}}
+        <div class="mui-line mui-line-active" tapmode id="{{=line.id}}" onclick="fnChooseLine(this)">{{=line.lineName}}</div>
+    {{~}}
+</script>
+<script type="text/template" id="unusualTemplate">
+    {{~it:unusual}}
+        <ul class="mui-table-view">
+            <li class="mui-table-view-cell mui-media">
+                <img class="mui-media-object mui-pull-left" tapmode onclick="fnShowPhotos(this)" imagePath="{{=unusual.unusualPic ? unusual.unusualPic.split(',')[0] : ''}}" src="../../../../image/nopicture.png">
+                <div class="mui-media-body">
+                    <p class='mui-ellipsis'>线路区间：{{=unusual.lineName}}/{{=unusual.stationName}}</p>
+                    <p class='mui-ellipsis'>异常描述：{{=unusual.unusualDesc}}</p>
+                    <p class='mui-ellipsis'>异常点位置：{{=unusual.location}}</p>
+                    <p class='mui-ellipsis'>异常类别：{{=unusual.typeName}}</p>
+                </div>
+                <div class="mui-row">
+                    <span class="mui-badge mui-badge-danger">{{=unusual.unusualLevelName}}</span>
+                    <span class="mui-frequency">巡查频率：
+                        {{? unusual.frequency && unusual.frequencyUnit }}
+                            {{=unusual.frequency}}次/{{=unusual.frequencyUnit}}
+                        {{??}}
+                            暂无数据
+                        {{?}}
+                    </span>
+                    <span class="mui-inspect-times">本周已巡查<br/>{{=unusual.trackCount}}次</span>
+                </div>
+            </li>
+        </ul>
+    {{~}}
+</script>
+<script type="text/template" id="worksiteTemplate">
+    {{~it:worksite}}
+        <ul class="mui-table-view">
+            <li class="mui-table-view-cell mui-media">
+                <img class="mui-media-object mui-pull-left" tapmode onclick="fnShowPhotos(this)" imagePath="{{=worksite.picfile ? worksite.picfile.split(',')[0] : ''}}" src="../../../../image/nopicture.png">
+                <div class="mui-media-body">
+                    <p class='mui-ellipsis'>线路区间：{{=worksite.lineName}}/{{=worksite.stationName}}</p>
+                    <p class='mui-ellipsis'>工程名称：{{=worksite.name}}</p>
+                    <p class='mui-ellipsis'>施工单位：{{=worksite.company}}</p>
+                    <p class='mui-ellipsis'>监护重点：{{=worksite.emphases}}</p>
+                </div>
+                <div class="mui-row">
+                    <span class="mui-badge mui-badge-danger">{{=worksite.grade}}</span>
+                    <span class="mui-frequency">巡查频率：
+                            {{? worksite.frequency && worksite.frequencyUnit }}
+                                {{=worksite.frequency}}次/{{=worksite.frequencyUnit}}
+                            {{??}}
+                                暂无数据
+                            {{?}}
+                        </span>
+                    <span class="mui-inspect-times">本周已巡查<br/>{{=worksite.trackCount}}次</span>
+                </div>
+            </li>
+        </ul>
+    {{~}}
+</script>
+<script type="text/template" id="emptyTemplate">
+    <ul class="mui-table-view">
+        <li class="mui-table-view-cell" style="text-align: center">暂无数据</li>
+    </ul>
+</script>
+<script type="text/template" id="chart1Template">
+    <div id="content_1"  class="header_1">
+        <div class="title_box">
+            <h1 class="mui-title">异常问题统计</h1>
+        </div>
+        <div class="updatatime_box">
+            <span class="updatetime"></span>
+        </div>
+        <div class="time_place_total">
+            <span class="mui-pull-left mui-padding-left-10">
+                累计发现异常问题
+            </span>
+            <span class="mui-pull-right mui-padding-right-10 mui-color-blue unusualCount">
+
+            </span>
+        </div>
+        <div id="chart_1" style="width:100%;height:350px;"></div>
+    </div>
+    <div id="content_2"  class="header_2">
+        <div class="title_box">
+            <h1 class="mui-title">异常问题处置情况统计</h1>
+        </div>
+        <div class="updatatime_box">
+            <span class="updatetime"></span>
+        </div>
+        <div class="time_place_total">
+        </div>
+        <div id="chart_2" style="width:100%;height:350px;"></div>
+    </div>
+    <div id="content_3"  class="header_2">
+        <div class="title_box">
+            <h1 class="mui-title">巡查准确率统计</h1>
+        </div>
+        <div class="updatatime_box">
+            <span class="updatetime"></span>
+        </div>
+        <div class="time_place_total">
+            <span class="mui-pull-left mui-padding-left-10">
+                累计发现异常问题
+            </span>
+            <span class="mui-pull-right mui-padding-right-10 mui-color-blue unusualCount">
+
+            </span>
+        </div>
+        <div id="chart_3" style="width:100%;height:350px;"></div>
+    </div>
+</script>
+<script type="text/template" id="chart2Template">
+    <div id="content_4"  class="header_1">
+        <div class="title_box">
+            <h1 class="mui-title">异常问题统计</h1>
+        </div>
+        <div class="updatatime_box">
+            <span class="updatetime"></span>
+        </div>
+        <div class="time_place_total">
+            <span class="mui-pull-left mui-padding-left-10">
+                累计报备监护工点
+            </span>
+            <span class="mui-pull-right mui-padding-right-10 mui-color-blue allWorksiteCount">
+
+            </span>
+        </div>
+        <div id="chart_4" style="width:100%;height:350px;"></div>
+    </div>
+    <div id="content_5"  class="header_2">
+        <div class="title_box">
+            <h1 class="mui-title">监护工点状态统计</h1>
+        </div>
+        <div class="updatatime_box">
+            <span class="updatetime"></span>
+        </div>
+        <div class="time_place_total">
+            <span class="mui-pull-left mui-padding-left-10">
+                监护中工点
+            </span>
+            <span class="mui-pull-right mui-padding-right-10 mui-color-blue worksiteCount2">
+
+            </span>
+        </div>
+        <div id="chart_5" style="width:100%;height:350px;"></div>
+    </div>
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/echarts.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript">
+    var page,rows,index;
+    var apiInited = muiInited = false;
+
+    apiready = function(){
+        fnInitBasic(true);
+        apiInited = true;
+        if(muiInited){
+            fnInitData();
+        }
+    };
+
+    //初始化下拉刷新
+    mui.init({
+        pullRefresh: {
+            container: '#pullrefresh',
+            up : {
+                height:50,
+                auto:true,
+                contentrefresh : "正在加载...",
+                contentnomore:'没有更多数据了',
+                callback : fnInitData
+            }
+        }
+    });
+
+    //基础数据初始化
+    function fnInitBasic(flag){
+        page = 0;
+        rows = 10;
+        index = api.pageParam.index;
+        $('#content').empty();
+        if(flag){
+            if(api.pageParam.lines){
+                $('#lines').html(fnTemplate('lineTemplate',api.pageParam.lines));
+                mui('.mui-scroll-wrapper').scroll({
+                    deceleration: 0.0005
+                });
+            }
+        }
+    }
+
+    //初始化数据
+    function fnInitData(){
+        muiInited = true;
+        if(apiInited){
+            var lineIds = [];
+            $('.mui-line-active').each(function(index,ele){
+                lineIds.push(parseInt($(ele).attr('id')));
+            });
+            page++;
+            if(index == 1){//重点区间
+                var params = {
+                    page: page,
+                    rows: rows,
+                    lineIds: lineIds,
+                    isEmphasis: 1
+                };
+                api.ajax({
+                    url: fnGetServerAddr() + '/subway/unusualSituation.do?todo=queryUnusualSituationWeekly',
+                    method: 'get',
+                    data: {
+                        body: params
+                    }
+                }, function(ret, err) {
+                    if (ret) {
+                        if(ret.totalRows > 0){
+                            mui('#pullrefresh').pullRefresh().refresh(true);
+                            $('#content').append(fnTemplate('unusualTemplate', ret.rows));
+                            fnMuiRefresh((ret.totalRows%rows > 0 ? (parseInt(ret.totalRows/ret.pageSize) + 1) : parseInt(ret.totalRows/ret.pageSize)) === page);
+                        }else{
+                            $('#content').empty().append(fnTemplate('emptyTemplate', {}));
+                            mui('#pullrefresh').pullRefresh().disablePullupToRefresh();
+                        }
+                        api.parseTapmode();
+                    }
+                });
+            }else if(index == 2){ //异常点
+                var params = {
+                    page: page,
+                    rows: rows,
+                    lineIds: lineIds,
+                    isEmphasis: 0
+                };
+                api.ajax({
+                    url: fnGetServerAddr() + '/subway/unusualSituation.do?todo=queryUnusualSituationWeekly',
+                    method: 'get',
+                    data: {
+                        body: params
+                    }
+                }, function(ret, err) {
+                    if (ret) {
+                        if(ret.totalRows > 0){
+                            mui('#pullrefresh').pullRefresh().refresh(true);
+                            $('#content').append(fnTemplate('unusualTemplate', ret.rows));
+                            fnMuiRefresh((ret.totalRows%rows > 0 ? (parseInt(ret.totalRows/ret.pageSize) + 1) : parseInt(ret.totalRows/ret.pageSize)) === page);
+                        }else{
+                            $('#content').empty().append(fnTemplate('emptyTemplate', {}));
+                            mui('#pullrefresh').pullRefresh().disablePullupToRefresh();
+                        }
+                        api.parseTapmode();
+                    }
+                });
+            }else if(index == 4){//监护工点
+                var params = {
+                    page: page,
+                    rows: rows,
+                    lineIds: lineIds
+                };
+                api.ajax({
+                    url: fnGetServerAddr() + '/subway/worksite.do?todo=queryWorksiteWeekly',
+                    method: 'get',
+                    data: {
+                        body: params
+                    }
+                }, function(ret, err) {
+                    if (ret) {
+                        if(ret.totalRows > 0){
+                            mui('#pullrefresh').pullRefresh().refresh(true);
+                            $('#content').append(fnTemplate('worksiteTemplate', ret.rows));
+                            fnMuiRefresh((ret.totalRows%rows > 0 ? (parseInt(ret.totalRows/ret.pageSize) + 1) : parseInt(ret.totalRows/ret.pageSize)) === page);
+                        }else{
+                            $('#content').empty().append(fnTemplate('emptyTemplate', {}));
+                            mui('#pullrefresh').pullRefresh().disablePullupToRefresh();
+                        }
+                        api.parseTapmode();
+                    }
+                });
+            }else if(index == 5){//巡查情况总览
+                mui('#pullrefresh').pullRefresh().disablePullupToRefresh();
+                var params = {
+                    lineIds: lineIds
+                };
+                api.ajax({
+                    url: fnGetServerAddr() + '/subway/unusualSituation.do?todo=queryUnusualTrackByLineId',
+                    method: 'get',
+                    data: {
+                        body: params
+                    }
+                }, function(ret, err) {
+                    if (ret) {
+                        $('#content').html(fnTemplate('chart1Template',ret));
+                        fnInitEchart(ret);
+                    }
+                });
+            }else if(index == 6){//监护情况总览
+                mui('#pullrefresh').pullRefresh().disablePullupToRefresh();
+                var params = {
+                    lineIds: lineIds
+                };
+                api.ajax({
+                    url: fnGetServerAddr() + '/subway/unusualSituation.do?todo=queryUnusualTrackByLineId',
+                    method: 'get',
+                    data: {
+                        body: params
+                    }
+                }, function(ret, err) {
+                    if (ret) {
+                        $('#content').html(fnTemplate('chart2Template',ret));
+                        fnInitEchart2(ret);
+                    }
+                });
+            }
+        }
+    }
+
+
+
+    //初始化图表
+    function fnInitEchart(ret){
+        $('.updatetime').html(fnFormatDate(new Date().getTime()));
+        $('.unusualCount').html(ret.isemphasis0Count + ret.isemphasis1Count + '处');
+
+        var chart_1 = echarts.init(document.getElementById('chart_1'));
+        var chart_2 = echarts.init(document.getElementById('chart_2'));
+        var chart_3 = echarts.init(document.getElementById('chart_3'));
+        //第1个图
+        option = {
+            legend:{
+                orient: 'horizontal',
+                x: 'center',
+                y: '80%',
+                data:[(ret.isemphasis1Count || 0) + '处\n异常点',(ret.isemphasis0Count || 0) + '处\n重点路段'],
+                padding:10
+            },
+            series : [
+                {
+                    type: 'pie',
+                    radius : ['65%','75%'],
+                    center: ['50%', '40%'],
+                    data:[
+                        {value:ret.isemphasis1Count || 0, name:(ret.isemphasis1Count || 0) + '处\n异常点', itemStyle:{color:'#DDDDDD'},
+                            label: {
+                                show:false
+                            }
+                        },
+                        {value:ret.isemphasis0Count || 0, name: (ret.isemphasis0Count || 0) + '处\n重点路段', itemStyle:{color:'#41C7DB'},
+                            label: {
+                                verticalAlign:'middle',
+                                normal: {
+                                    formatter: '{d} %',
+                                    position: 'center',
+                                    textStyle: {
+                                        fontSize: 25
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    startAngle:140,
+                    hoverAnimation:false,
+                    labelLine :{
+                        show:false
+                    }
+                }
+            ]
+        };
+
+        chart_1.setOption(option);
+
+        //第2个图
+        option = {
+            legend:{
+                orient: 'horizontal',
+                x: 'center',
+                y: '80%',
+                data:[
+                    (ret.state1Count || 0) + '处\n在跟踪',
+                    (ret.state3Count || 0) + '处\n已排除',
+                    (ret.subway_worksite || 0) + '处\n已监护'
+                ],
+                padding:10
+            },
+            series : [
+                {
+                    type: 'pie',
+                    center: ['50%', '40%'],
+                    data:[
+                        {value:ret.state1Count || 0, name:(ret.state1Count || 0) + '处\n在跟踪', itemStyle:{color:'#FB6E52'},
+                            label: {
+                                show: false
+                            }
+                        },
+                        {value:ret.state3Count || 0, name: (ret.state3Count || 0) + '处\n已排除', itemStyle:{color:'#5D9CEC'},
+                            label: {
+                                show:false
+                            }
+                        },
+                        {value:ret.subway_worksite || 0, name: (ret.subway_worksite || 0) + '处\n已监护', itemStyle:{color:'#C0C0C0'},
+                            label: {
+                                show: false
+                            }
+                        }
+                    ],
+                    startAngle:140,
+                    hoverAnimation:false,
+                    labelLine :{
+                        show:false
+                    }
+                }
+            ]
+        };
+
+        chart_2.setOption(option);
+
+        //第3个图
+        option = {
+            legend:{
+                orient: 'horizontal',
+                x: 'center',
+                y: '80%',
+                data:[(ret.subwayProtectCount || 0) + '处\n巡查人员发现',(ret.patrolCount || 0) + '处\n地保办发现'],
+                padding:10
+            },
+            series : [
+                {
+                    type: 'pie',
+                    radius : ['65%','75%'],
+                    center: ['50%', '40%'],
+                    data:[
+                        {value:ret.subwayProtectCount || 0, name: (ret.subwayProtectCount || 0) + '处\n巡查人员发现', itemStyle:{color:'#41C7DB'},
+                            label: {
+                                verticalAlign:'middle',
+                                normal: {
+                                    formatter: '{d} %',
+                                    position: 'center',
+                                    textStyle: {
+                                        fontSize: 25
+                                    }
+                                }
+                            }
+                        },
+                        {value:ret.patrolCount || 0, name:(ret.patrolCount || 0) + '处\n地保办发现', itemStyle:{color:'#DDDDDD'},
+                            label: {
+                                show: false
+                            }
+                        }
+                    ],
+                    startAngle:140,
+                    hoverAnimation:false,
+                    labelLine :{
+                        show:false
+                    }
+                }
+            ]
+        };
+        chart_3.setOption(option);
+    }
+
+    //初始化图表2
+    function fnInitEchart2(ret){
+        $('.updatetime').html(fnFormatDate(new Date().getTime()));
+        $('.allWorksiteCount').html(ret.allWorksiteCount + '处');
+        $('.worksiteCount2').html((ret.worksiteNormalCount + ret.worksiteUnusualCount) + '处');
+        var chart_4 = echarts.init(document.getElementById('chart_4'));
+        var chart_5 = echarts.init(document.getElementById('chart_5'));
+
+        //第1个图
+        option = {
+            legend:{
+                orient: 'horizontal',
+                x: 'center',
+                y: '80%',
+                data:[(ret.worksiteCount2 || 0) + '处\n已结束',((ret.worksiteCount0 + ret.worksiteCount1) || 0) + '处\n监护中'],
+                padding:10
+            },
+            series : [
+                {
+                    type: 'pie',
+                    radius : ['65%','75%'],
+                    center: ['50%', '40%'],
+                    data:[
+                        {value:ret.worksiteCount0 || 0, name: ((ret.worksiteCount0 + ret.worksiteCount1) || 0) + '处\n监护中', itemStyle:{color:'#41C7DB'},
+                            label: {
+                                verticalAlign:'middle',
+                                normal: {
+                                    formatter: '{d} %',
+                                    position: 'center',
+                                    textStyle: {
+                                        fontSize: 25
+                                    }
+                                }
+                            }
+                        },
+                        {value:ret.worksiteCount2 || 0, name:(ret.worksiteCount2 || 0) + '处\n已结束', itemStyle:{color:'#DDDDDD'},label:{show:false}}
+                    ],
+                    startAngle:140,
+                    hoverAnimation:false,
+                    labelLine :{
+                        show:false
+                    }
+                }
+            ]
+        };
+
+        chart_4.setOption(option);
+
+        option = {
+            legend:{
+                orient: 'horizontal',
+                x: 'center',
+                y: '80%',
+                data:[(ret.worksiteUnusualCount || 0) + '处\n异常',(ret.worksiteNormalCount || 0) + '处\n正常'],
+                padding:10
+            },
+            series : [
+                {
+                    type: 'pie',
+                    radius : ['65%','75%'],
+                    center: ['50%', '40%'],
+                    data:[
+                        {value:ret.worksiteUnusualCount || 0, name:(ret.worksiteUnusualCount || 0) + '处\n异常', itemStyle:{color:'#DDDDDD'},
+                            label: {
+                                show:false
+                            }
+                        },
+                        {value:ret.worksiteNormalCount || 0, name: (ret.worksiteNormalCount || 0) + '处\n正常', itemStyle:{color:'#41C7DB'},
+                            label: {
+                                verticalAlign:'middle',
+                                normal: {
+                                    formatter: '{d} %',
+                                    position: 'center',
+                                    textStyle: {
+                                        fontSize: 25
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    startAngle:140,
+                    hoverAnimation:false,
+                    labelLine :{
+                        show:false
+                    }
+                }
+            ]
+        };
+
+        chart_5.setOption(option);
+    }
+
+    //设置下拉刷新
+    function fnMuiRefresh(flag){
+        fnHandleImagePath();
+        mui('#pullrefresh')
+            .pullRefresh()
+            .endPullupToRefresh((flag));
+        mui('.mui-slider').slider({});
+    }
+
+    //选择线路
+    function fnChooseLine(_this){
+        if($(_this).attr('class').indexOf('mui-line-active') > -1){ //选中状态
+            $(_this).removeClass('mui-line-active');
+        }else{
+            $(_this).addClass('mui-line-active');
+        };
+        fnInitBasic(false);
+        fnInitData();
+    }
+
+    //显示图片
+    function fnShowPhotos(_this){
+        var imageUrls = [];
+        var urls = $(_this).attr('imagePath');
+        if(urls){
+            var imageBrowser = api.require('imageBrowser');
+            var tempArr = urls.split(',');
+            for (var i = 0; i < tempArr.length ; i++){
+                if(tempArr[i]){
+                    imageUrls.push(fnGetImageUrl(tempArr[i],false));
+                }
+            }
+            imageBrowser.openImages({
+                imageUrls: imageUrls,
+                showList: false,
+                activeIndex: 0
+            });
+        }else{
+            fnShowMessage("暂无图片")
+        }
+    }
+</script>
+</html>

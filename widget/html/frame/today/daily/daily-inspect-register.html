@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+	<title>日常巡查登记</title>
+	<link rel="stylesheet" type="text/css" href="../../../../css/api.css"/>
+	<link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+	<link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+	<link rel="stylesheet" type="text/css" href="../../../../css/common.css"/>
+	<link rel="stylesheet" type="text/css" href="../../../../css/frame/today/daily/daily-inspect-register.css"/>
+</head>
+<body>
+	<div class="mui-content">
+		<ul class="mui-table-view mui-margin-top-none">
+			<li class="mui-table-view-cell">
+				<span class="mui-pull-left">当前站点/区间</span>
+				<span class="mui-pull-right" tapmode onclick="fnOpenElectronic()">
+					<span class="location mui-color-blue station"></span>
+					<span class="mui-icon iconfont icon-localization mui-color-gray"></span>
+				</span>
+			</li>
+		</ul>
+		<ul class="mui-table-view mui-margin-top-20">
+			<li class="mui-table-view-cell my-cell">
+				<span><span class="my-circle">1</span>巡检照片</span>
+			</li>
+			<li class="mui-table-view-cell">
+				<div class="mui-row" style="min-height: 80px;">
+					<div class="mui-col-sm-12 mui-col-xs-12 mui-margin-bottom-10">
+						<label>左侧照片</label>
+					</div>
+					<span id="leftImgs"></span>
+					<span class="mui-icon iconfont icon-camera" tapmode onclick="fnOpenCamera('leftImgs');"></span>
+				</div>
+			</li>
+			<li class="mui-table-view-cell">
+				<div class="mui-row" style="min-height: 80px;">
+					<div class="mui-col-sm-12 mui-col-xs-12 mui-margin-bottom-10">
+						<label>右侧照片</label>
+					</div>
+					<span id="rightImgs"></span>
+					<span class="mui-icon iconfont icon-camera" tapmode onclick="fnOpenCamera('rightImgs');"></span>
+				</div>
+			</li>
+		</ul>
+		<div class="submit-btn" tapmode="active" onclick="fnSubmit();">提交<div>
+		</div>
+	</body>
+	<script id="imgTemplate" type="text/template">
+		<span class="my-image">
+			<img class="mui-media-object mui-pull-left"  onclick="{{=it.showFunction}}" src="{{=it.imagePath}}">
+			<a class="mui-icon iconfont icon-image-delete" onclick="{{=it.delFunction}}"></a>
+			<input type="hidden" name="{{=it.picName}}" value="{{=it.id}}"/>
+		</span>
+	</script>
+	<script type="text/javascript" src="../../../../script/api.js"></script>
+	<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+	<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+	<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+	<script type="text/javascript" src="../../../../script/common.js"></script>
+	<script type="text/javascript" src="../../../../script/media.js"></script>
+	<script type="text/javascript" src="../../../../script/frame/today/daily/daily-inspect-register.js"></script>
+	</html>

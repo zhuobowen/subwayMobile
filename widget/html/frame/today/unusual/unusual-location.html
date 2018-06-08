@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>异常位置</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/common.css"/>
+    <style>
+    .icon-location:before{
+        color: #cccccc;
+        font-size: 16px;
+    }
+    .mui-content>.mui-table-view:first-child{
+        margin-top: 0px;
+    }
+    .poi-active{
+        background-color: #cccccc
+    }
+    #header{
+        padding: 5px;
+        background-color: #cccccc;
+    }
+    #searchText{
+        margin-bottom: 0px;
+        padding: 5px;
+        height: 25px;
+        font-size: 14px
+    }
+</style>
+</head>
+<body>
+    <div id="header" class="mui-row">
+        <input type="text" id="searchText" tapmode readonly="readonly" placeholder="搜索或输入位置" onclick="fnChangePage()">
+    </div>
+    <div id="main" class="mui-content">
+        <ul class="mui-table-view" id="pois">
+        </ul>
+    </div>
+<div id="container" style="display: none"></div>
+<div id="panel" style="display: none"></div>
+</body>
+<script type="text/template" id="poi">
+    {{~ it:data}}
+    <li class="mui-table-view-cell" tapmode="poi-active" onclick="fnChooseLocation('{{=data.name}}','{{=data.lon}}','{{=data.lat}}')">
+        <span class="mui-icon iconfont icon-location"></span>
+        <span>{{=data.name}}</span>
+    </li>
+    {{~}}
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript">
+    apiready = function(){
+        fnInitData();
+    };
+    //初始化数据
+    function fnInitData(){
+        var aMap = api.require('aMap');
+        var current_location = $api.getStorage('current_location');
+        if (current_location) {
+            fnShowProgress('正在获取数据')
+             aMap.searchNearby({
+                keyword: '商务住宅|道路附属设施|地名地址信息|公共设施',
+                lon: current_location.lon,
+                lat: current_location.lat,
+                radius: 1000,
+                offset: 15,
+                page: 1,
+                sortrule: 0
+            }, function(ret, err) {
+                fnHideProgress();
+                if (ret.status) {
+                    $('#pois').empty();
+                    $('#pois').append(doT.template($api.byId('poi').innerHTML)(ret.pois));
+                    api.parseTapmode();
+                }
+            });
+        }else{
+            fnShowMessage('定位失败');
+        }
+    }
+
+    //确定选择位置
+    function fnChooseLocation(poiName,lon,lat){
+        api.sendEvent({
+            name: 'location-changed',
+            extra: {
+                lon: lon,
+                lat: lat,
+                location: poiName
+            }
+        });
+        api.closeWin({
+            name: api.winName
+        });
+    }
+    //点击搜索
+    function fnChangePage(){
+        api.openFrame({
+            name: 'unusual-location-search',
+            url: './unusual-location-search.html',
+            rect: {
+                x: 0,
+                y: 0,
+                w: 'auto',
+                h: 'auto'
+            },
+            bounces: false,
+            bgColor: 'rgba(0,0,0,0)',
+            vScrollBarEnabled: true,
+            hScrollBarEnabled: true,
+            pageParam:api.pageParam
+        });
+    }
+</script>
+</html>

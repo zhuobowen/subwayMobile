@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>右侧内容</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/aui.css"/>
+    <style type="text/css">
+        html,body,.timelines{
+            background-color: #fff;
+            height: 100%;
+        }
+        #head{
+            text-align: center;
+            background-color: #0877D0;
+            color: #fff;
+            width: 100%;
+            height: 68px;
+            line-height: 68px;
+            position: absolute;top: 0px;
+        }
+        .hide{
+            display: none;
+        }
+        .aui-tab{
+            position: relative;
+            top: 68px;
+            z-index: 99999;
+        }
+        .aui-bg-danger{
+            background-color: #d81e06 !important;
+        }
+        .aui-bg-success{
+            background-color: #28ce0a !important;
+        }
+        .mui-color-white{
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <div id="head"></div>
+        <div class="aui-tab" id="tabs" style="height: 2.2rem;">
+
+        </div>
+        <span id="timelines" style="overflow: auto;position: fixed;top:108px;width: 100%;height: 82%;z-index: 0">
+
+        </span>
+    </div>
+</body>
+<script type="text/template" id="tab">
+    {{~it:line:index}}
+        <div class="aui-tab-item {{? index == 0}}aui-active{{?}}">{{=line.lineName}}</div>
+    {{~}}
+</script>
+<script type="text/template" id="timeline">
+    {{~it:line:i}}
+        <div class="aui-timeline {{? i != 0 }} hide {{?}} " id="timeline-{{=i+1}}">
+            {{~line.stations:station:index}}
+                <div class="aui-timeline-item {{?index==0}}aui-margin-t-15{{?}}">
+                    <div class="aui-timeline-item-label-icon mui-color-white
+                    {{? !station.detailId}} aui-bg-danger {{?}}
+                    {{? station.detailId}} aui-bg-success {{?}}
+                    ">
+                        {{=index+1}}
+                    </div>
+                    <div class="aui-timeline-item-inner">
+                        <div class="aui-card-list">
+                            <div class="aui-card-list-content-padded" style="padding: 0.3rem 0.45rem 0rem;">
+                                {{=station.stationName}}
+                                {{~station.unusualList:unusual}}
+                                    <div class="aui-content-padded">
+                                        {{? unusual.trackId}}
+                                            <span class="iconfont icon-location-green"></span>
+                                        {{??}}
+                                            <span class="iconfont icon-location-red"></span>
+                                        {{?}}
+                                        {{=unusual.unusualDesc}}
+                                    </div>
+                                {{~}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {{~}}
+        </div>
+    {{~}}
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/aui/aui-tab.js"></script>
+<script type="text/javascript">
+    apiready = function(){
+        api.addEventListener({
+            name:'viewappear'
+        }, function(ret, err){
+            fnAjaxInitData();
+        });
+    };
+    function fnInitData(){
+        var today_tasks = $api.getStorage('today_tasks');
+        if(today_tasks){
+            $('#head').css('height',getHeaderHeight())
+            $('#tabs').html(fnTemplate('tab',today_tasks))
+            $('#timelines').html(fnTemplate('timeline',today_tasks));
+            setTimeout(function(){
+                var tab = new auiTab({
+                    element:document.getElementById("tabs"),
+                },function(ret){
+                    $('.aui-timeline').addClass('hide');
+                    $('#timeline-' + ret.index).removeClass('hide')
+                });
+            },1200)
+        }else{
+            fnAjaxInitData();
+        }
+
+    }
+
+    //如果本地没有数据，再次请求
+    function fnAjaxInitData(){
+        $('#head').css('height',getHeaderHeight())
+        fnShowProgress('正在加载数据');
+        var executeUser = getUserId();
+        var inspectTime = fnGetTodayStr('-');
+        api.ajax({
+            url: fnGetServerAddr() + '/apicloud/task.do?todo=queryTodayInspectTask',
+            method: 'get',
+            timeout:10,
+            data: {
+                values: {
+                    executeUser:executeUser,
+                    inspectTime:inspectTime
+                }
+            }
+        },function(ret, err){
+            api.hideProgress();
+            if(ret && ret.length > 0){
+                $api.setStorage('today_tasks', ret);
+                $('#tabs').html(fnTemplate('tab',ret))
+                $('#timelines').html(fnTemplate('timeline',ret));
+
+                setTimeout(function(){
+                    var tab = new auiTab({
+                        element:document.getElementById("tabs"),
+                    },function(ret){
+                        $('.aui-timeline').addClass('hide');
+                        $('#timeline-' + ret.index).removeClass('hide')
+                    });
+                },1000)
+            }
+        })
+    }
+
+
+</script>
+</html>

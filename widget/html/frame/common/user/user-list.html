@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <title>巡查人员检索</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css" />
+    <style>
+        html,
+        body {
+            min-height: 100%;
+            background-color: #efeff4;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="mui-content">
+        <div class="mui-content-padded" style="margin: 5px;">
+            <div class="mui-input-row mui-search">
+                <input type="search" id="name" class="mui-input-clear" placeholder="请输入名称">
+            </div>
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript">
+
+    apiready = function() {
+       fnInitData();
+    };
+
+    //初始化数据
+    function fnInitData(){
+        fnShowProgress('正在加载数据')
+        if (api.pageParam.frontFrame.indexOf('today') > -1) {
+            fnInitInspectGroup();
+        } else if (api.pageParam.frontFrame.indexOf('worksite') > -1) {
+            fnInitWorksiteGroup();
+        }
+    }
+
+    //初始化巡查组信息
+    function fnInitInspectGroup(){
+        api.ajax({
+            url: $api.getStorage('serverAddr') + '/subway/inspectGroup.do?todo=queryInspectGroupMobile',
+            method: 'get',
+            data: {
+                values: {id: 0}
+            }
+        },function(ret, err){
+            fnHideProgress();
+            if (ret.success) {
+                fnOpenFrame(ret.data);
+            }
+        });
+    }
+
+    //初始化监护组信息
+    function fnInitWorksiteGroup(){
+        api.ajax({
+            url: $api.getStorage('serverAddr') + '/subway/worksiteGroup.do?todo=queryWorksiteGroupMobile',
+            method: 'get',
+            data: {
+                values: {id: 0}
+            }
+        },function(ret, err){
+            fnHideProgress();
+            if (ret.success) {
+              fnOpenFrame(ret.data);
+            }
+        });
+    }
+
+    //打开左侧右侧frame
+    function fnOpenFrame(groupList){
+        var headerHeight = api.pageParam.headerHeight + 45;
+        var element = $api.byId('name');
+        $api.addEvt(element, 'keyup', function(){
+            searchText = element.value;
+            api.execScript({
+                 name: api.winName,
+                 frameName: 'user-list-body-right',
+                 script: 'fnQueryUserByUserName("' + searchText + '");'
+            });
+        }, false);
+
+        var pageParam = api.pageParam;
+        pageParam['groupList'] = groupList;
+        //左侧列表
+        api.openFrame({
+            name: 'user-list-body-left',
+            url: './user-list-body-left.html',
+            rect: {
+                x: 0,
+                y: headerHeight,
+                w:  api.frameWidth / 3 - 20,
+                h: 'auto'
+            },
+            pageParam: pageParam,
+            bounces: false,
+            bgColor: 'rgba(0,0,0,0)',
+            vScrollBarEnabled: true,
+            hScrollBarEnabled: true
+        });
+
+        //右侧列表
+        api.openFrame({
+            name: 'user-list-body-right',
+            url: './user-list-body-right.html',
+            rect: {
+                x: api.frameWidth / 3 - 20,
+                y: headerHeight,
+                w: 'auto',
+                h: 'auto'
+            },
+            pageParam: pageParam,
+            bounces: false,
+            bgColor: 'rgba(0,0,0,0)',
+            vScrollBarEnabled: true,
+            hScrollBarEnabled: true
+        });
+    }
+
+    //保存按钮
+    function fnSave(){
+        api.execScript({
+            name: 'user-list-win',
+            frameName: 'user-list-body-right',
+            script: 'fnSave();'
+        });
+        setTimeout(function(){
+          api.closeWin({
+              name: api.winName
+          });
+        },500)
+    }
+</script>
+
+</html>

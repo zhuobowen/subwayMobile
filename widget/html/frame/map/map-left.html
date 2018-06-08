@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+  <html>
+  <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+      <title>地图左侧</title>
+      <link rel="stylesheet" type="text/css" href="../../../css/mui.min.css"/>
+      <style>
+          body{
+
+          }
+      </style>
+  </head>
+  <body>
+      <div class="mui-content">
+      </div>
+  </body>
+  <script type="text/javascript" src="../../../script/api.js"></script>
+  <script type="text/javascript" src="../../../script/zepto.min.js"></script>
+  <script type="text/javascript" src="../../../script/mui.min.js"></script>
+  <script type="text/javascript" src="../../../script/echarts.min.js"></script>
+  <script type="text/javascript" src="../../../script/common.js"></script>
+  <script type="text/javascript">
+      apiready = function(){
+        api.addEventListener({
+          name:'viewappear'
+        }, function(ret, err){
+            fnShowProgress('正在加载中')
+            fnHideProgress();
+        });
+        api.addEventListener({
+          name:'viewdisappear'
+        }, function(ret, err){
+            api.closeDrawerPane();
+        });
+      };
+
+      //改变frame
+      function fnChangeFrame(index){
+          $('.mui-content').html(index);
+      };
+  </script>
+  </html>

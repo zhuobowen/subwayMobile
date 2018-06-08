@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>异常点补录</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/common.css"/>
+    <style>
+        .mui-card-header{
+            font-size: 1.05rem;
+            padding:2px 5px;
+            min-height: 2.8rem;
+        }
+        .mui-header-text.mui-pull-right{
+            color: #cccccc;
+        }
+        .mui-info-item{
+            padding-left: 2rem;
+        }
+        .mui-text-danger{
+            color: #dd524d;
+        }
+        .mui-text-primary{
+            color: #000;
+        }
+        .icon-order-write,.mui-icon-trash{
+            font-size: 1.5rem;
+        }
+        .mui-media-body,{
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-box-orient:horizontal;
+            -webkit-flex-flow:row;
+            flex-flow:row;
+        }
+        .mui-content{
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-box-orient:column;
+            -webkit-flex-flow:column;
+            flex-flow:column;
+        }
+        .mui-header-text,.mui-info-item{
+            -webkit-box-flex:.5;
+            -webkit-flex:.5;
+            flex:.5;
+        }
+        .mui-pull-left{
+            text-align: left;
+        }
+        .mui-pull-right{
+            text-align: right;
+        }
+        .mui-image-info img{
+            height: 200px;
+            width: 100%;
+        }
+        .mui-table-view-cell{
+            border-left: 5px solid #0877D0;
+        }
+        .mui-badge-danger{
+            margin-right: 10px;
+        }
+        .empty{
+            text-align:center;color:#ccc;
+            font-size: 1.20rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="mui-content" id="mui-content">
+
+    </div>
+</body>
+<script type="text/template" id="header">
+    <ul class="mui-table-view">
+         <li class="mui-table-view-cell">
+            <div class="mui-header-text mui-pull-left">{{=it.lineName}}</div>
+            <div class="mui-header-text mui-pull-right line-count" count="{{=it.count}}">共 {{=it.count}} 处异常</div>
+         </li>
+     </ul>
+</script>
+<script type="text/template" id="content">
+    {{~it:unusual}}
+        <div class="mui-card">
+            <div class="mui-card-header">
+                <div class="mui-header-text mui-pull-left">{{=unusual.lineName}}/{{=unusual.stationName}}</div>
+                <div class="mui-header-text mui-pull-right">{{=unusual.createTime}}</div>
+            </div>
+            <div class="mui-card-content">
+                <div class="mui-image-info">
+                    <img src="../../../../image/nopicture.png" imagePath="{{=unusual.unusualPic}}" onclick="fnShowImage(this)" alt="">
+                </div>
+                {{? !unusual.isAfter}}
+                    <div class="mui-info-item mui-ellipsis">异常类别：{{=unusual.unusualTypeName}}</div>
+                    <div class="mui-info-item mui-ellipsis">异常描述：{{=unusual.unusualDesc}}</div>
+                    <div class="mui-info-item mui-ellipsis">异常位置：{{=unusual.location}}
+                        <span class="mui-pull-right mui-badge mui-badge-danger">{{=unusual.unusualLevel.name}}</span>
+                    </div>
+                {{??}}
+                    <div class="mui-info-item mui-text-danger">待补录</div>
+                    <div class="mui-info-item mui-ellipsis">异常位置：{{=unusual.location}}</div>
+                {{?}}
+            </div>
+            <div class="mui-card-footer">
+                {{? !unusual.state || unusual.state == 0}}
+                    <span class="mui-text-danger" tapmode onclick="fnDeleteUnusual(this,'{{=unusual.id}}','{{=unusual.isAfter}}')">
+                        <span class="mui-icon mui-icon-trash"></span>
+                        删除
+                    </span>
+                    <span class="mui-text-primary" tapmode onclick="fnEditUnusual(this,'{{=unusual.id}}','{{=unusual.isAfter}}')">
+                        <span class="mui-icon iconfont icon-order-write"></span>
+                        填写
+                    </span>
+                {{?}}
+            </div>
+        </div>
+    {{~}}
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/db.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript">
+    var lineMap = {};
+    var createUser,createTime,fs,isInited = false;
+    apiready = function(){
+        fnInitDB();
+        if(!isInited){
+            fnRefresh();
+        }
+        api.addEventListener({
+            name:'viewappear'
+        }, function(ret, err){
+            if(!isInited){
+                fnRefresh();
+            }
+        });
+    };
+
+    //设置下拉刷新
+    function fnRefresh(){
+        isInited = true;
+        fnRefreshHeader('fnInitData',true);
+    }
+    //初始化数据
+    function fnInitData(){
+        fs = api.require("fs");
+        createUser = getUserId();
+        createTime = fnGetTodayStr('-');
+        api.ajax({
+            url: fnGetServerAddr() + '/apicloud/unusualSituation.do?todo=queryNewUnusualSituationForApp',
+            method: 'post',
+            data: {
+                values: {
+                    userId : createUser,
+                    createTime : createTime
+                }
+            }
+        },function(ret, err){
+            api.refreshHeaderLoadDone();
+            lineMap = {};
+            if (ret) {
+               if(ret.status){
+                    //新增已上传的异常点
+                    for (var i = 0; i < ret.data.length; i++) {
+                        var unusual = ret.data[i];
+                        var annexId = '';
+                        if(unusual.unusualPic){
+                              annexId = unusual.unusualPic.split(',')[0];
+                        }
+                        var lineName = unusual.lineName;
+                        if(!lineMap[lineName]){
+                            var unusualLst = [unusual];
+                            lineMap[lineName] = unusualLst;
+                        }else{
+                            lineMap[lineName].push(unusual);
+                        }
+                    }
+
+                    //待补记的异常点
+                    var start_time = createTime + ' 00:00:00';
+                    var end_time = createTime + ' 23:59:59';
+                    var result = fnSelectSync('select * from sw_unusual_info ui where ui.unusual_id is null and ui.createUser = "' + createUser + '" and ui.createTime >= "'+start_time+'" and ui.createTime <= "' + end_time + '"');
+                    var after_unusual = result.data;
+                    for (var i = 0; i < after_unusual.length; i++) {
+                        var unusual = after_unusual[i];
+                        unusual['isAfter'] = true;
+                        var lineName = unusual.lineName;
+                        if(!lineMap[lineName]){
+                            var unusualLst = [unusual];
+                            lineMap[lineName] = unusualLst;
+                        }else{
+                            lineMap[lineName].push(unusual);
+                        }
+                    }
+
+                    var totalCount = 0;
+                    $('#mui-content').html('');
+                    for (var lineName in lineMap) {            //按线路添加异常点
+                        var lines = lineMap[lineName];
+                        var count = lineMap[lineName].length;
+                        var line = {
+                            lineName:lineName,
+                            count:count
+                        }
+                        totalCount += count;
+                        var header = doT.template($api.byId('header').innerHTML)(line);
+                        var content = doT.template($api.byId('content').innerHTML)(lines);
+                        var html = '<section>' + header + content + '</section>';
+                        $('#mui-content').append(html);
+
+                        fnHandleImagePath();//图片懒加载处理
+
+                        api.parseTapmode();
+                    }
+                    if ( !totalCount ) {
+                        $('#mui-content').html('<div class="section empty">暂无数据</div>');
+                    }
+               }else{
+                    fnShowMessage('数据异常')
+               }
+            }else{
+                fnShowMessage('网络异常');
+            }
+         })
+    }
+
+    //删除异常点
+    function fnDeleteUnusual(_this,id,isAfter){
+        api.confirm({
+            title: '确定删除这个异常点？',
+            buttons: ['确定', '取消']
+        }, function(ret, err){
+            if( ret ){
+                if(ret.buttonIndex == 1){
+                    if(isAfter && isAfter != "undefined"){//补记
+                        var urls  = fnSelectSync('select spu.url from sw_unusual_photo sup ,sw_photo_url spu where sup.photo_url_id = spu.id and unusual_info_id = "' + id + '"');
+                        ret = fnDeleteSync('delete from sw_unusual_photo sup ,sw_photo_url spu where sup.photo_url_id = spu.id and unusual_info_id = "' + id + '"'); //查找这个异常点所有照片
+                        ret = fnDeleteSync('delete from sw_unusual_photo where unusual_info_id = "' + id + '"');
+                        ret = fnDeleteSync('delete from sw_unusual_info where id = "' + id + '"');
+                        for (var i = 0; i < urls.length; i++) {
+                            if(ret.status){
+                              ret = fs.removeSync({
+                                  path: urls[i].url
+                              });
+                            }
+                        }
+                        fnShowMessage('删除成功');
+                        fnInitData();
+                    }else{ //已上传
+                        fnShowProgress('正在删除',true);
+                        api.ajax({
+                            url: fnGetServerAddr() + '/apicloud/unusualSituation.do?todo=deleteUnusualSituation',
+                            method: 'post',
+                            data: {
+                                values: {
+                                    id: id
+                                }
+                            }
+                        },function(ret, err){
+                            api.hideProgress();
+                            if (ret) {
+                                if(ret.status){
+                                    fnShowMessage('删除成功');
+                                    fnInitData();
+                                }else{
+                                    fnShowMessage(ret.msg)
+                                }
+                            }else{
+                              fnShowMessage('网络异常')
+                            }
+                        });
+                    }
+                }
+            }
+        });
+    }
+
+    //编辑异常点 isAfter:补记
+    function fnEditUnusual(_this,id,isAfter){
+        isInited = false;
+        if(isAfter && isAfter != "undefined"){
+           var ret  = fnSelectSync('select spu.* from sw_unusual_photo sup ,sw_photo_url spu where sup.photo_url_id = spu.id and unusual_info_id = "' + id + '"');
+           var imgUrls = ret.status ? ret.data : [];
+           var pageName = 'unusual-type';
+           var pageObj = {
+               title: '异常类型选择',
+               frameName: pageName,
+               frameUrl: 'widget://html/frame/today/unusual/' + pageName + '.html',
+               leftIcons: 'icon-arrow-left,event-back',
+               frontWin: 'today-inspect-point-main',
+               unusualKey:id,
+               imgUrls: imgUrls,
+               frontWin:api.winName
+           };
+           fnOpenCommonWin(pageName,pageObj);
+        }else{
+            var pageName = 'unusual-register';
+            var pageObj = {
+                id: id,
+                title:'异常点登记',
+                frameName:pageName,
+                frameUrl:'widget://html/frame/today/unusual/'+pageName+'.html',
+                leftIcons:'icon-arrow-left,event-back',
+            };
+            fnOpenCommonWin(pageName,pageObj);
+        }
+    }
+
+    //返回报告页面
+    function fnBackToResult(){
+      var title = '今日巡查结果';
+      var pageName = 'today-inspect-result-main'
+      var leftIcons = 'icon-arrow-left,event-back-to-point';
+      var pageObj = {
+          title: title,
+          frameName: pageName,
+          frameUrl: 'widget://html/frame/today/result/' + pageName + '.html',
+          leftIcons: leftIcons,
+          isFinish:api.pageParam.isFinish,
+          events:['fnReadyKeyBinding("event-back-to-point","fnOpenTodayInspectPoint()")']
+      };
+      api.openDrawerLayout({
+          name: 'today-inspect-restult-win',
+          url: 'widget://html/common-win.html',
+          animation: {
+              type: 'none'
+          },
+          slidBackEnabled:false,
+          pageParam:pageObj,
+          leftPane: {
+              edge: api.winWidth/3,
+              name: 'today-inspect-result-right',
+              url: 'widget://html/frame/today/inspect/today-inspect-point-right.html',
+              rect: {
+                  x: 0,
+                  y: 0,
+                  w: api.winWidth,
+                  h: api.winHeight
+              }
+          },
+          animation:{
+              type: 'movein',
+              subType:'from_left',
+              duration:300
+          }
+      });
+    }
+    /*
+      获取数组指定的元素
+    */
+    Array.prototype.properties = function(propertyName){
+        var len = this.length;
+        var tempArr = [];
+        for (var i = 0; i < len; i++) {
+            if(this[i].hasOwnProperty(propertyName)){
+                tempArr.push(this[i][propertyName]);
+            }
+        }
+        return tempArr;
+    }
+</script>
+</html>

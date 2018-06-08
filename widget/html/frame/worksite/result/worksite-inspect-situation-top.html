@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>巡查情况头部</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/common-mui.css"/>
+    <style>
+        html,body,.mui-content{
+            background-color: #ffffff;
+        }
+        .mui-content{
+            display: none;
+        }
+        .mui-row{
+            padding: 10px;
+            border-bottom: 1px solid #c7c7cc;
+        }
+        .mui-fixed-item{
+            height: 40px;
+            line-height: 40px;
+        }
+        .mui-active{
+            color: #0A78D0;
+            border-bottom: 2px solid #0A78D0;
+        }
+        .tab-active{
+            background-color: #c7c7cc;
+        }
+    </style>
+</head>
+<body>
+    <div class="mui-content" id="header">
+        <div class="mui-row"></div>
+        <div class="mui-fixed">
+            <div class="mui-fixed-item mui-active" key="0" tapmode="tab-active" onclick="fnChangeFrame(0)">监护工点</div>
+            <div class="mui-fixed-item" key="1" tapmode="tab-active" onclick="fnChangeFrame(1)">异常工点</div>
+        </div>
+    </div>
+</body>
+<script type="text/template" id="buttonTemplate">
+    {{~it:line:index}}
+        <button type="button" class="mui-btn {{? index == 0}} mui-btn-primary {{?}}" key="{{=line.lineId}}" tapmode onclick="fnChangeLine('{{=line.lineId}}',this)">{{=line.lineName}}</button>
+    {{~}}
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript">
+
+    apiready = function(){
+        fnInitData();
+    };
+
+    //改变线路
+    function fnChangeLine(id,_this){
+        $('button').removeClass('mui-btn-primary');
+        $(_this).addClass('mui-btn-primary');
+        var hasUnusual = $('.mui-active').eq(0).attr('key');
+        api.sendEvent({
+            name: 'line-changed',
+            extra: {lineId: id,hasUnusual:hasUnusual}
+        });
+    }
+
+    //改变tab
+    function fnChangeFrame(index){
+        $('.mui-fixed-item').removeClass('mui-active').eq(index).addClass('mui-active');
+        var lineId = $('.mui-btn-primary').eq(0).attr('key');
+        api.sendEvent({
+            name: 'status-changed',
+            extra: {lineId:lineId,hasUnusual: index}
+        });
+    }
+
+
+    //初始化
+    function fnInitData(){
+        api.ajax({
+            url: fnGetServerAddr() + '/apicloud/worksite.do?todo=getWorksiteTaskLines',
+            method: 'get',
+            data: {
+                values: {userId: getUserId()}
+            }
+        }, function (ret, err) {
+            if(ret){
+                if(ret.success){
+                    $('.mui-row').empty().html(fnTemplate('buttonTemplate',ret.data));
+                    if(ret.data && ret.data.length > 0){
+                        $('.mui-content').show();
+                        fnInitFrame(ret.data[0].lineId,0);
+                    }else{
+
+                    }
+                }else{
+                    fnShowMessage(ret.msg || "数据异常");
+                }
+            }else{
+                fnShowMessage("网络异常");
+            }
+        });
+    }
+
+    //初始化frame组
+    function fnInitFrame(lineId,hasUnusaul){
+        api.openFrame({
+            name: 'worksite-inspect-situation-main',
+            url: './worksite-inspect-situation-main.html',
+            rect: {
+                x: 0,
+                y: $api.offset($api.byId('header')).h +getHeaderHeight(),
+                w: 'auto',
+                h: 'auto'
+            },
+            pageParam: {
+                lineId: lineId,
+                hasUnusual:hasUnusaul
+            },
+            bounces: false
+        });
+    }
+
+</script>
+</html>

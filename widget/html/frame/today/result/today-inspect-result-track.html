@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>异常巡查情况</title>
+        <link rel="stylesheet" type="text/css" href="../../../../css/aui.css"/>
+        <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <style>
+        .border-left{
+            border-left: 5px solid #039be5
+        }
+        .icon-order-write:before{
+            font-size: 20px;
+        }
+        .my-btn{
+            position: absolute;right: 1.5rem;color: #000;
+        }
+        .empty{
+            text-align:center;color:#ccc;
+        }
+        /*img{
+            position:absolute;
+            clip:rect(20px 100px 50px 20px);
+        }*/
+    </style>
+</head>
+<body>
+    <div class="aui-tab" id="tab">
+        <div class="aui-tab-item aui-active">重点路段</div>
+        <div class="aui-tab-item"><div></div>异常点位</div>
+    </div>
+    <div id="tab-content"></div>
+</body>
+<script type="text/template" id="header">
+    <ul class="aui-list aui-list-in aui-margin-t-15 aui-margin-b-15 border-left">
+        <li class="aui-list-item">
+            <div class="aui-list-item-inner">
+                <div class="aui-list-item-title">{{=it.lineName}}</div>
+                <div class="aui-list-item-right">共 {{=it.totalCount}} 处异常</div>
+            </div>
+        </li>
+    </ul>
+</script>
+<script type="text/template" id="content">
+    {{~it:track}}
+        <div class="aui-card-list">
+            <div class="aui-card-list-header aui-border-b">
+               <div class="aui-pull-left">
+                    {{=track.unusual.lineName}}/{{=track.unusual.stationName}}
+                </div>
+                <div class="aui-pull-right">
+                     {{=track.inspectTime}}
+                </div>
+            </div>
+            <div class="aui-card-list-content-padded" style="line-height: 25px;">
+                <img src="../../../../image/nopicture.png" imagePath="{{=track.unusual.unusualPic}}" onclick="fnShowImage(this)" height="200px;" />
+                <div class="text-info-item  aui-margin-t-10">
+                    <div class="aui-pull-left" style="margin-right: 50px;">
+                        异常类别：{{=track.unusual.unusualTypeName}}
+                    </div>
+                    <div class="aui-badge" style="position: initial;">
+                        {{=track.unusual.unusualLevel}}
+                    </div>
+                </div>
+                <div class="text-info-item">异常描述：{{=track.unusual.unusualDesc}}</div>
+                <div class="text-info-item">异常点位置：{{=track.unusual.location}}</div>
+
+                {{? track.unusual.trackId}}
+                    <div class="text-info-item aui-text-success">
+                        巡查情况：{{=track.inspectDesc}}
+                    </div>
+                {{??}}
+                    <div class="text-info-item aui-text-danger">
+                        待补录
+                    </div>
+                {{?}}
+            </div>
+            <div class="aui-card-list-footer aui-border-t" tapmode onclick="fnOpenUnusualTrack('{{=track.unusual.trackId}}','{{=track.unusual.situationId}}','{{=track.unusual.taskId}}','{{=track.imgKey}}')">
+                <div class="my-btn"><i tapmode class="iconfont icon-order-write"></i>
+                    {{? track.unusual.trackId }}
+                        编辑
+                    {{??}}
+                        填写
+                    {{?}}
+                </div>
+            </div>
+        </div>
+    {{~}}
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/db.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/aui/aui-tab.js"></script>
+<script type="text/javascript" src="../../../../script/aui/aui-scroll.js"></script>
+<script type="text/javascript">
+    var imgMap = {},createUser,createTime,isInited = false;
+    apiready = function(){
+        fnInitDB();
+        if(!isInited){
+            fnInitData();
+        }
+        api.addEventListener({
+            name:'viewappear'
+        }, function(ret, err){
+            if(!isInited){
+                fnInitData();
+            }
+        });
+    };
+    //初始化数据
+    function fnInitData(){
+        fnShowProgress('正在加载数据');
+        isInited = true;
+        createUser = getUserId();
+        createTime = fnGetTodayStr('-');
+        var lineMap_1 = {}; //重点路段
+        var lineMap_2 = {}; //非重点路段
+        api.ajax({
+            url:fnGetServerAddr() + '/apicloud/unusualTrack.do?todo=queryNewUnusualTrackForApp',
+            method : 'get',
+            data : {
+                values : {
+                    userId : createUser,
+                    createTime :　createTime
+                }
+            }
+        },function(ret,err){
+            fnHideProgress();
+            if(ret){
+                if(ret.status){
+                    //已上传数据
+                    var data = ret.data;
+                    for (var i = 0; i < data.length; i++) {
+                        var track = data[i];
+                        var id = track.id;
+                        var unusual = track.unusualSituation;
+                        var isEmphasis = unusual.isEmphasis;
+                        var lineName = unusual.line.lineName;
+                        var lst = [];
+
+                        unusual['lineName'] = unusual.line.lineName;
+                        unusual['stationName'] = unusual.station.stationName;
+                        unusual['unusualLevel'] = unusual.unusualLevel.name;
+                        if(isEmphasis){ //重点路段
+                            if(lineMap_1[lineName]){
+                                lst = lineMap_1[lineName];
+                            }
+                            lst.push({
+                                id:id,
+                                isAfter:false,      //已登记
+                                unusual:unusual,
+                                inspectDesc:track.inspectDesc,
+                                inspectTime:track.inspectTime
+                            });
+                            lineMap_1[lineName] = lst;
+                        }else{
+                            if(lineMap_2[lineName]){
+                                lst = lineMap_2[lineName];
+                            }
+                            lst.push({
+                                id:id,
+                                isAfter:false,      //已登记
+                                unusual:unusual,
+                                inspectDesc:track.inspectDesc,
+                                inspectTime:track.inspectTime
+                            });
+                            lineMap_2[lineName] = lst;
+                        }
+                    }
+
+                    //补记
+                    var start_time = createTime + ' 00:00:00';
+                    var end_time = createTime + ' 23:59:59';
+                    var result = fnSelectSync('select * from sw_unusual_trcak ut where ut.unusual_info_id is not null and ut.createUser = "' + createUser + '" and ut.createTime >= "'+start_time+'" and ut.createTime <= "' + end_time + '"');
+                    var after_track = result.data;
+                    for (var i = 0; i < after_track.length; i++) {
+                        var track = after_track[i];
+                        var unusual,imgUrls = [];
+                        var unusualsResult = fnSelectSync('select * from sw_unusual_info ui where ui.id = "' + track.unusual_info_id + '"');
+                        var imgUrlsResult =  fnSelectSync('select spu.url from sw_track_photo stp ,sw_photo_url spu where stp.photo_url_id = spu.id and stp.unusual_track_id = "' + track.id + '"');
+
+                        if(unusualsResult && unusualsResult.data.length > 0){
+                            unusual = unusualsResult.data[0];
+                            unusual['taskId'] = track.taskId;
+                            unusual['situationId'] = unusual.unusual_id;
+                        }
+                        if(imgUrlsResult && imgUrlsResult.data.length > 0){
+                            imgUrls = imgUrlsResult.data.properties('url');
+                            unusual['unusualPic'] = imgUrls[0];
+                            imgMap[track.id] = imgUrls;
+                        }
+
+                        var lineName = unusual.lineName;
+                        var isEmphasis = unusual.isEmphasis;
+
+                        var lst = [];
+                        if(isEmphasis && isEmphasis != "0"){   //重点路段
+                            if(lineMap_1[lineName]){
+                                lst = lineMap_1[lineName];
+                            }
+                            lst.push({
+                                id:0,
+                                isAfter:true,
+                                unusual:unusual,
+                                imgKey:track.id,
+                                inspectTime:track.createTime
+                            });
+                            lineMap_1[lineName] = lst;
+                        }else{
+                            if(lineMap_2[lineName]){
+                                lst = lineMap_2[lineName];
+                            }
+                            lst.push({
+                                id:0,
+                                isAfter:true,
+                                unusual:unusual,
+                                imgKey:track.id,
+                                inspectTime:track.createTime
+                            });
+                            lineMap_2[lineName] = lst;
+                        }
+                    }
+
+                    // fnAlert(lineMap_1)
+                    // fnAlert(lineMap_2)
+                    var html_1 = '';
+                    var html_2 = '';
+
+                    var isEmpty =true;
+                    for ( var key in lineMap_1){
+                        isEmpty = false;
+                        var lst = lineMap_1[key];
+                        var header = '';
+                        if(lst && lst.length > 0){
+                            var header = {
+                                lineName:key,
+                                totalCount:lst.length
+                            }
+                            header = doT.template($api.byId('header').innerHTML)(header);
+                            var content_1 = doT.template($api.byId('content').innerHTML)(lst);
+
+                            html_1 += '<div class="section">' + header + content_1 + '</div>';
+                        }
+                    }
+                    if(isEmpty){
+                        html_1 = '<div class="section empty">暂无数据</div>';
+                    }
+
+                    isEmpty = true;
+                    for ( var key in lineMap_2){
+                        isEmpty = false;
+                        var lst = lineMap_2[key];
+                        var header = '';
+                        if(lst && lst.length > 0){
+                            var header = {
+                                lineName:key,
+                                totalCount:lst.length
+                            }
+                            header = doT.template($api.byId('header').innerHTML)(header);
+                            var content_2 = doT.template($api.byId('content').innerHTML)(lst);
+                            html_2 += '<div class="section" style="display:none;">' + header + content_2 + '</div>';
+                        }
+                    }
+                    if(isEmpty){
+                        html_2 = '<div class="section empty" style="display:none;">暂无数据</div>';
+                    }
+
+                    $('#tab-content').html(html_1 + html_2);
+                    api.parseTapmode();
+
+                    fnHandleImagePath();//图片懒加载处理
+
+                    var tab = new auiTab({
+                        element:document.getElementById("tab"),
+                    },function(ret){
+                        $('.section').hide();
+                        $('.section').eq(ret.index-1).show();
+                    });
+                }else{
+                    fnShowMessage('数据请求失败');
+                }
+            }else{
+                fnShowMessage('网络异常');
+            }
+        })
+    }
+
+
+    //打开编辑页面
+    function fnOpenUnusualTrack(trackId,situationId,taskId,trackKey){
+        isInited = false;
+        var imgUrls = [];
+        if(trackKey  && trackKey != 'undefined'){
+            imgUrls = imgMap[trackKey];
+        }
+        var title = '异常情况登记';
+        var pageName = 'unusual-track';
+        var unusual = {
+            taskId:taskId,
+            trackId:trackId,
+            situationId:situationId
+        }
+        var pageObj = {
+            title: title,
+            frameName: pageName,
+            frameUrl: 'widget://html/frame/today/unusual/'+pageName+'.html',
+            leftIcons: 'icon-arrow-left,event-back',
+            unusual:unusual,
+            frontWin:api.frameName+'-win',
+            imgUrls:imgUrls,
+            trackKey:trackKey
+        };
+        fnOpenCommonWin(pageName,pageObj);
+    }
+
+    /*
+      获取数组指定的元素
+    */
+    Array.prototype.properties = function(propertyName){
+        var len = this.length;
+        var tempArr = [];
+        for (var i = 0; i < len; i++) {
+            if(this[i].hasOwnProperty(propertyName)){
+                tempArr.push(this[i][propertyName]);
+            }
+        }
+        return tempArr;
+    }
+</script>
+</html>

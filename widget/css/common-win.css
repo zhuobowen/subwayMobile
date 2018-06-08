@@ -1,0 +1,91 @@
+html,body{
+    height: 100%;
+    width:100%;
+    background-color: #EEEEF0;
+}
+#wrap{
+    height: 100%;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-flex-flow: column;
+}
+#header{
+    text-align: center; 
+    background-color: #0877D0; 
+    color: #fff;
+    width: 100%;
+    height: 44px; 
+    line-height: 44px; 
+}
+#header .title{
+    font-size: 20px; 
+    margin: 0em; 
+    color: #fff;
+}
+#main{
+    -webkit-box-flex: 1; 
+    -webkit-flex: 1;
+}
+.con{
+    font-size: 28px; 
+    text-align: center;
+}
+
+#header{
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-box-orient:horizontal;
+    -webkit-flex-flow:row;
+    flex-flow:row;
+}
+#header .title{
+    font-size: 17px;
+}
+#header .left-btn{
+    -webkit-box-flex:.5;
+    -webkit-flex:.5;
+    flex:.5;
+
+}
+
+#header .left-btn .iconfont{
+    position: absolute;
+    left: 10px;
+    font-size: 24px;
+}
+
+#header .right-btn{
+    -webkit-box-flex:.5;
+    -webkit-flex:.5;
+    flex:.5;
+
+}
+#header .right-btn .iconfont{
+    position: absolute;
+    right: 10px;
+    font-size: 24px;
+}
+
+#headerInfo{
+    height: 30px;
+    color: #FD8E2C;
+    font-size: 14px;
+    overflow: hidden;
+    line-height: 30px;
+    padding: 0px 20px 0px 10px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    background-color: #FCF0CB;
+}
+.mui-loading{
+    top: 3px;
+    width: 16px;
+    height: 16px;
+    position: relative;
+}
+.icon-arrow-right{
+    position:absolute;
+    top:68px;
+    right:0px;
+}

@@ -1,0 +1,21 @@
+.icon-btn-add{
+    position: absolute;
+    right: 0px;
+    top: 5px;
+    color:#BCBCBC;
+}
+.icon-camera{
+    font-size: 40px;
+    color:#BCBCBC;
+    float: right;
+}
+.unusual-info{
+    margin-top: 10px;
+    padding-left: 20px;
+}
+.mui-table-view .mui-media-object{
+    width: 74px;
+    height: 74px;
+    margin: 0px;
+    min-width: 74px;
+}

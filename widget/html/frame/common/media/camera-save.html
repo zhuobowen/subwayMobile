@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>拍照保存页面</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/frame/common/media/camera-save.css"/>
+</head>
+<body>
+    <ul class="mui-table-view">
+        <li class="mui-table-view-cell mui-media" tapmode onclick="fnRegisterAfter();">
+            <a href="javascript:;">
+                <img class="mui-media-object mui-pull-left" src="../../../../image/transmit.png">
+                <div class="mui-media-body">
+                    <span class="mui-color-white">事后补记</span>
+                    <p>拍完照片后，在巡查报告中进行补<br/>录异常点信息</p>
+                </div>
+            </a>
+        </li>
+        <li class="mui-table-view-cell mui-media" tapmode onclick="fnRegisterNow();" style="margin-top:2.5rem">
+            <a href="javascript:;">
+                <img class="mui-media-object mui-pull-left" src="../../../../image/edit.png">
+                <div class="mui-media-body">
+                    <span class="mui-color-white">异常信息录入</span>
+                    <p>拍完现场照片后，录入异常点信息</p>
+                </div>
+            </a>
+        </li>
+        <img src="../../../../image/delete.png" class="close-btn" tapmode onclick="fnCloseThis()">
+    </ul>
+</body>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript" src="../../../../script/map.js"></script>
+<script type="text/javascript" src="../../../../script/db.js"></script>
+<script type="text/javascript" src="../../../../script/transform.js"></script>
+<script type="text/javascript" src="../../../../script/camera.js"></script>
+<script type="text/javascript">
+    var imgUrls,cameraType;
+    apiready = function(){
+        cameraType = api.pageParam.cameraType;
+        fnInitStyle();//初始化样式
+    };
+    //事后补记
+    function fnRegisterAfter(){
+        db = api.require("db");
+        imgUrls = api.pageParam.imgUrls;
+        var createUser = getUserId();
+        var createTime = fnGetNowFormatDate();
+        if(cameraType == 1){  //-- 新建异常照相机
+            if( imgUrls && imgUrls.length > 0) {//取最后一张照片
+                var num = imgUrls.length;
+                var current_location = {
+                    lon: imgUrls[num-1].lon,
+                    lat: imgUrls[num-1].lat
+                }
+                var unusual_info_id = fnGetUUID();
+                var current_station = fnGetCurrentStation(current_location,false);
+                var listMap = '[{"name":"id","val": "' + unusual_info_id + '"},'+
+              							  '{"name":"lineId","val":"' + current_station.lineId + '"},'+
+              							  '{"name":"lineName","val":"' + current_station.lineName + '"},'+
+              							  '{"name":"stationId","val":"' + current_station.stationId + '"},'+
+              							  '{"name":"stationName","val":"' + current_station.stationName + '"},'+
+              							  '{"name":"unusualPic","val":"' + imgUrls[num-1].url + '"},'+
+              							  '{"name":"location","val":"' + imgUrls[num-1].location + '"},'+
+              							  '{"name":"createUser","val":"' + createUser + ' "},'+
+              							  '{"name":"createTime","val":"' + createTime + '"}'+
+              							  ']';
+    			      var ret = fnInsertSync(sw_unusual_info,$api.strToJson(listMap));
+                for (var i = 0; i < imgUrls.length; i++) {
+                    if( ret ){
+                      var img = imgUrls[i];
+                      var listMap = '[{"name":"unusual_info_id","val": "' + unusual_info_id + '"},'+
+                    							  '{"name":"photo_url_id","val":"' + img.id + '"}'+
+                    							  ']';
+          			      ret = fnInsertSync(sw_unusual_photo,$api.strToJson(listMap));
+                    }
+                }
+            }
+        }else if(cameraType == 2){//异常巡查补录
+            var unusual = api.pageParam.unusual;
+            if( imgUrls && imgUrls.length > 0) {//取最后一张照片
+              //保存异常点信息表
+              var unusual_info_id = fnGetUUID();
+              var listMap = '[{"name":"id","val": "' + unusual_info_id + '"},'+
+                                '{"name":"lineId","val":"' + unusual.lineId + '"},'+
+                                '{"name":"lineName","val":"' + unusual.lineName + '"},'+
+                                '{"name":"stationId","val":"' + unusual.stationId + '"},'+
+                                '{"name":"stationName","val":"' + unusual.stationName + '"},'+
+                                '{"name":"unusual_id","val":"' + unusual.situationId + '"},'+
+                                '{"name":"unusualDesc","val":"' + unusual.unusualDesc + '"},'+
+                                '{"name":"unusualPic","val":"' + unusual.unusualPic + '"},'+
+                                '{"name":"unusualTypeName","val":"' + unusual.unusualTypeName + '"},'+
+                                '{"name":"unusualLevel","val":"' + unusual.unusualLevel + '"},'+
+                                '{"name":"location","val":"' + unusual.location + '"},'+
+                                '{"name":"isEmphasis","val":"' + unusual.isEmphasis + ' "}'+
+                            ']';
+              var ret = fnInsertSync(sw_unusual_info,$api.strToJson(listMap));
+
+              //保存异常点跟踪记录表
+              var unusual_track_id = fnGetUUID();
+              listMap = '[{"name":"id","val": "' + unusual_track_id + '"},'+
+                                '{"name":"taskId","val":"' + unusual.taskId + '"},'+
+                                '{"name":"createUser","val":"' + createUser + '"},'+
+                                '{"name":"createTime","val":"' + createTime + '"},'+
+                                '{"name":"unusual_info_id","val":"' + unusual_info_id + '"}'+
+                            ']';
+              ret = fnInsertSync(sw_unusual_trcak,$api.strToJson(listMap));
+
+              //保存异常点跟踪记录-照片表
+              for (var i = 0; i < imgUrls.length; i++) {
+                  if( ret ){
+                    var img = imgUrls[i];
+                    var listMap = '[{"name":"unusual_track_id","val": "' + unusual_track_id + '"},'+
+                                      '{"name":"photo_url_id","val":"' + img.id + '"}'+
+                                  ']';
+                    ret = fnInsertSync(sw_track_photo,$api.strToJson(listMap));
+                  }
+              }
+            }
+        }
+        api.closeWin({
+            name: api.winName
+        });
+    }
+
+    //现场登记
+    function fnRegisterNow(){
+        if(cameraType == 1){  //新增异常点现场登记
+            var pageName = 'unusual-type';
+            var pageObj = {
+                title: '异常类型选择',
+                frameName: pageName,
+                frameUrl: 'widget://html/frame/today/unusual/' + pageName + '.html',
+                leftIcons: 'icon-arrow-left,event-back',
+                rightIcons: 'icon-convert,event-transform',
+                events: ['fnReadyKeyBinding("event-transform","fnBackToCamera()")'],
+                frontWin: 'today-inspect-point-main',
+                imgUrls: api.pageParam.imgUrls
+            };
+            fnOpenCommonWin(pageName,pageObj);
+            setTimeout(function(){
+                api.closeWin({
+                    name: api.winName
+                });
+            },1000)
+        }else if(cameraType == 2){//异常巡查现场登记
+            var pageName = 'unusual-track';
+            var pageObj = {
+                title: '异常情况登记',
+                frameName: pageName,
+                frameUrl: 'widget://html/frame/today/unusual/' + pageName + '.html',
+                leftIcons: 'icon-arrow-left,event-back-to-point',
+                events: ['fnReadyKeyBinding("event-back-to-point","fnBackToInspectPoint()")'],
+                frontWin: 'today-inspect-point-main',
+                unusual:api.pageParam.unusual,
+                imgUrls: api.pageParam.imgUrls.properties('url')
+            };
+            fnOpenCommonWin(pageName,pageObj);
+        }
+    }
+
+    //关闭当前frame
+    function fnCloseThis(){
+        api.closeFrame({
+            name: api.frameName
+        });
+    }
+
+    //初始化样式
+    function fnInitStyle(){
+        api.parseTapmode();
+        $('body').css('padding-top',api.frameHeight / 3);
+        $('.mui-table-view-cell').css('padding-left',api.frameWidth / 8);
+    }
+
+    /*
+      获取数组指定的元素
+    */
+    Array.prototype.properties = function(propertyName){
+        var len = this.length;
+        var tempArr = [];
+        for (var i = 0; i < len; i++) {
+            if(this[i].hasOwnProperty(propertyName)){
+                tempArr.push(this[i][propertyName]);
+            }
+        }
+        return tempArr;
+    }
+</script>
+</html>

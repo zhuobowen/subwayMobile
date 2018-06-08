@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <title>工点异常问题监护</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../css/common-mui.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../css/frame/worksite/register/worksite-inspect-unusual-register.css" />
+</head>
+
+<body>
+    <div class="mui-content worksite-projects">
+
+    </div>
+</body>
+<script type="text/template" id="projectTemplate">
+    {{~it:project}}
+        <ul class="mui-table-view mui-margin-top-15">
+            <li class="mui-table-view-cell mui-small-cell">
+                <div class="mui-row">
+                    <b>{{=project.projectName}}</b>
+                </div>
+                <div class="mui-row mui-color-gray">
+                    <span class="mui-icon iconfont icon-reminder"></span>
+                    {{=project.projectWorksiteKeynote}}
+                </div>
+                <span class="mui-icon iconfont icon-increase" tapmode onclick="fnOpenWorksiteUnusualType('{{=project.id}}');"></span>
+            </li>
+            {{? project.unusuals.length > 0}}
+                {{~project.unusuals:unusual}}
+                    <li class="mui-table-view-cell mui-padding-top-10 mui-padding-bottom-10">
+                        <div class="mui-slider-right mui-disabled">
+                            {{? unusual.status == 1}}
+                                <a class="mui-btn mui-badge-danger" tapmode onclick="fnDeleteUnusual(this,'{{=unusual.id}}')">删除</a>
+                            {{?? unusual.status > 1}}
+                                <a class="mui-btn mui-badge-warning" tapmode onclick="fnViewUnusual('{{=unusual.photos}}','{{=unusual.status}}')">查看</a>
+                                <a class="mui-btn mui-badge-primary" tapmode onclick="fnChangeUnusualStatus('{{=unusual.id}}')">监护</a>
+                            {{?}}
+                        </div>
+                        <div class="mui-slider-handle mui-media">
+                            <img class="mui-media-object mui-pull-left" photots="{{=unusual.photos}}" src="{{=unusual.photos ? fnGetImageUrl(unusual.photos.split(',')[0],true,200,200) : '../../../../image/nopicture.png'}}">
+                            <div class="mui-media-body">
+                                <p class='mui-ellipsis'>{{=unusual.situation}}</p>
+                                <span class="mui-badge {{=statusMap[unusual.status].className}}">{{=statusMap[unusual.status].text}}</span>
+                            </div>
+                        </div>
+                    </li>
+                {{~}}
+            {{??}}
+                <li class="mui-table-view-cell mui-padding-top-10 mui-padding-bottom-10">
+                    <div class="mui-no-problem mui-color-green">无异常</div>
+                </li>
+            {{?}}
+        </ul>
+    {{~}}
+</script>
+<script type="text/template" id="noProblemTemplate">
+    <li class="mui-table-view-cell mui-padding-top-10 mui-padding-bottom-10">
+        <div class="mui-no-problem mui-color-green">无异常</div>
+    </li>
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript">
+    var worksiteId,worksiteType,isInited = false;
+
+    var statusMap = {
+        1: {className:'mui-badge-danger',text:'待确认'},
+        2: {className:'mui-badge-success',text:'已确认'},
+        3: {className:'mui-badge-success',text:'非异常'},
+        4: {className:'mui-badge-danger',text:'申请排除'},
+        5: {className:'mui-badge-success',text:'已排除'},
+        6: {className:'mui-badge-danger',text:'继续跟踪'},
+        10: {className:'mui-badge-danger',text:'已删除'}
+    };
+
+    apiready = function() {
+        if(!isInited){
+            fnInitData();
+        }
+        // 监听页面显示，初始化数据
+        api.addEventListener({
+            name: 'viewappear'
+        }, function(ret, err) {
+            if(!isInited){
+                fnInitData();
+            }
+        });
+
+    };
+
+    //初始化数据
+    function fnInitData() {
+        worksiteId = api.pageParam.worksiteId;
+        worksiteType = api.pageParam.worksiteType;
+        api.ajax({
+            url: fnGetServerAddr() + '/apicloud/worksiteTrackUnusual.do?todo=queryWorksiteTrackUnusualByWorksiteType',
+            method: 'get',
+            data: {
+                values: {
+                    worksiteId:worksiteId,
+                    worksiteType: worksiteType
+                }
+            }
+        }, function(ret, err) {
+            if(ret){
+                if(ret.success){
+                    isInited = true;
+                    $('.worksite-projects').html(fnTemplate('projectTemplate',ret.data));
+                    api.parseTapmode();
+                }else{
+                    fnShowMessage(ret.msg || "数据异常");
+                }
+            }else{
+                fnShowMessage("网络异常")
+            }
+        });
+    }
+
+    //删除异常问题
+    function fnDeleteUnusual(_this,id){
+        api.confirm({
+            title: '确定删除这个异常问题？',
+            buttons: ['确定', '取消']
+        }, function(ret, err) {
+            if (ret && ret.buttonIndex == 1) {
+                api.ajax({
+                    url: fnGetServerAddr() + '/apicloud/worksiteTrackUnusual.do?todo=delete',
+                    method: 'post',
+                    timeout: 6,
+                    data: {
+                        values: {
+                            id: id,
+                            userId: getUserId()
+                        }
+                    }
+                }, function (ret, err) {
+                    if(ret){
+                        if(ret.success){
+                            var parent = $(_this).parents('ul');
+                            $(_this).parents('li').remove();
+                            if(parent.find('li').length == 1){
+                                parent.append(fnTemplate('noProblemTemplate',{}));
+                            }
+                            api.sendEvent({
+                                name: 'unusual-deleted',
+                                extra: {
+                                    worksiteType: api.pageParam.worksiteType
+                                }
+                            });
+                        }else{
+                            fnShowMessage(ret.msg || "数据异常")
+                        }
+                    }else{
+                        fnShowMessage("网络异常")
+                    }
+                });
+            }
+        });
+    }
+
+    //查看异常点
+    function fnViewUnusual(photos,status){
+        api.openFrame({
+            name: 'worksite-unusual-view',
+            url: 'widget://html/frame/worksite/view/worksite-unusual-view.html',
+            rect: {
+                x: 0,
+                y: 0,
+                w: api.winWidth,
+                h: api.winHeight
+            },
+            pageParam: {
+                status: status,
+                photos: photos
+            },
+            bounces: false
+        });
+    }
+
+    //监护按钮
+    function fnChangeUnusualStatus(unusualId){
+        isInited = false;
+        api.openFrame({
+            name: 'worksite-inspect-unusual-register-status',
+            url:  './worksite-inspect-unusual-register-status.html',
+            rect: {
+                x: 0,
+                y: 0,
+                w: api.winWidth,
+                h: api.winHeight
+            },
+            pageParam: {
+                unusualId: unusualId
+            },
+            bounces: false
+        });
+    }
+
+    //选择监护异常情况
+    function fnOpenWorksiteUnusualType(worksiteProject) {
+        isInited = false;
+        var pageName = 'worksite-inspect-unusual-type';
+        var pageObj = {
+            title: '选择监护异常情况',
+            frameName: pageName,
+            worksiteType:worksiteType,
+            worksiteProject: worksiteProject,
+            worksiteId:api.pageParam.worksiteId,
+            frameUrl: './frame/worksite/register/' + pageName + '.html',
+            leftIcons: 'icon-arrow-left,event-back'
+        };
+        fnOpenCommonWin(pageName, pageObj);
+    }
+</script>
+
+</html>

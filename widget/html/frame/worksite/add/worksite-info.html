@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <title>监控工点信息</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/common.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.picker.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.poppicker.css"/>
+    <style>
+    .mui-col-xs-3 {
+        height: 40px;
+        line-height: 40px;
+    }
+    input[type=text] {
+        margin-bottom: 0px;
+    }
+    .form-textarea {
+        margin-top: 10px;
+        margin-bottom: 0px;
+    }
+    .my-control{
+        font-size: 15px;
+        font-weight: 400;
+        position: relative;
+        display: table;
+        overflow: hidden;
+        width: 100%;
+        table-layout: fixed;
+        border: 1px solid #007aff;
+        border-radius: 3px;
+        background-color: transparent;
+        -webkit-touch-callout: none;
+    }
+    .my-item{
+        line-height: 38px;
+        display: table-cell;
+        overflow: hidden;
+        width: 1%;
+        -webkit-transition: background-color .1s linear;
+        transition: background-color .1s linear;
+        text-align: center;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        color: #007aff;
+        border-color: #007aff;
+        border-left: 1px solid #007aff;
+    }
+    .my-control .my-item.mui-active{
+        color: #fff;
+        background-color: #007aff
+    }
+    .mui-image{
+        line-height: 74px;
+        max-width: 100px;
+        height: 74px;
+        margin:0px 5px 0px 5px; 
+    }
+</style>
+</head>
+
+<body>
+    <div class="mui-content">
+        <form id="myform">
+            <input type="hidden" name="lineId"/>
+            <input type="hidden" name="stationId"/>
+            <input type="hidden" name="grade"/>
+            <input type="hidden" name="area"/>
+            <input type="hidden" name="girth"/>
+            <input type="hidden" name="latLng"/>
+            <input type="hidden" name="createUser"/>
+            <ul class="mui-table-view" style="margin-top: 0px;">
+                <li class="mui-table-view-cell my-cell">
+                    <span><span class="my-circle">1</span>工点信息</span>
+                </li>
+                <li class="mui-table-view-cell">
+                    <div class="mui-row">
+                        <div class="mui-col-sm-3 mui-col-xs-3">
+                            <label>工点名称</label>
+                        </div>
+                        <div class="mui-col-sm-9 mui-col-xs-9">
+                            <input type="text" name="name" class="form-control">
+                        </div>
+                    </div>
+                </li>
+                <li class="mui-table-view-cell">
+                    <div class="mui-row">
+                        <div class="mui-col-sm-3 mui-col-xs-3">
+                            <label>施工单位</label>
+                        </div>
+                        <div class="mui-col-sm-9 mui-col-xs-9">
+                            <input type="text" name="company" class="form-control">
+                        </div>
+                    </div>
+                </li>
+                <li class="mui-table-view-cell">
+                    <div class="mui-row">
+                        <div class="mui-col-sm-3 mui-col-xs-3">
+                            <label>联系人</label>
+                        </div>
+                        <div class="mui-col-sm-9 mui-col-xs-9">
+                            <input type="text" name="userName" class="form-control">
+                        </div>
+                    </div>
+                </li>
+                <li class="mui-table-view-cell">
+                    <div class="mui-row">
+                        <div class="mui-col-sm-4 mui-col-xs-4">
+                            <label>轨道交通区域</label>
+                        </div>
+                        <div class="mui-col-sm-8 mui-col-xs-8 mui-color-blue" style="text-align:right">
+                            <span id="line-station-span" onclick="fnChangeLineStation()">请选择</span>
+                        </div>
+                    </div>
+                </li>
+                <li class="mui-table-view-cell">
+                    <div class="mui-row">
+                        <div class="mui-col-sm-3 mui-col-xs-3">
+                            <label>影响等级</label>
+                        </div>
+                        <div class="mui-col-sm-9 mui-col-xs-9">
+                            <div id="segmentedControl" class="my-control">
+                                <a class="my-item" style="border-left: none;" onclick="fnChangeGrade(this)">特级</a>
+                                <a class="my-item" onclick="fnChangeGrade(this)">一级</a>
+                                <a class="my-item" onclick="fnChangeGrade(this)">二级</a>
+                                <a class="my-item" onclick="fnChangeGrade(this)">三级</a>
+                                <a class="my-item" onclick="fnChangeGrade(this)">四级</a>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="mui-table-view-cell">
+                    <div class="mui-row">
+                        <div class="mui-col-sm-12 mui-col-xs-12">
+                            <label>监护重点</label>
+                        </div>
+                        <div class="mui-col-sm-12 mui-col-xs-12">
+                            <textarea name="emphases" class="form-textarea form-control" placeholder="请输入监护重点"></textarea>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+            <ul class="mui-table-view mui-margin-top-20">
+                <li class="mui-table-view-cell my-cell">
+                    <span><span class="my-circle">2</span>监护项目描述</span>
+                </li>
+                <li class="mui-table-view-cell">
+                    <div class="mui-row">
+                        <label>维护及支护结构</label>
+                        <div class="mui-col-sm-12 mui-col-xs-12">
+                            <textarea class="form-textarea form-control" placeholder="请输入内容" name="support"></textarea>
+                        </div>
+                    </div>
+                </li>
+                <li class="mui-table-view-cell">
+                    <div class="mui-row">
+                        <label>土方及降水</label>
+                        <div class="mui-col-sm-12 mui-col-xs-12">
+                            <textarea class="form-textarea form-control" placeholder="请输入内容" name="rainfall"></textarea>
+                        </div>
+                    </div>
+                </li>
+                <li class="mui-table-view-cell">
+                    <div class="mui-row">
+                        <label>周边环境</label>
+                        <div class="mui-col-sm-12 mui-col-xs-12">
+                            <textarea class="form-textarea form-control" placeholder="请输入内容" name="environment"></textarea>
+                        </div>
+                    </div>
+                </li>
+                <li class="mui-table-view-cell">
+                    <div class="mui-row">
+                        <label>工期影响</label>
+                        <div class="mui-col-sm-12 mui-col-xs-12">
+                            <textarea class="form-textarea form-control" placeholder="请输入内容" name="timeLimit"></textarea>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+            <ul class="mui-table-view mui-margin-top-20">
+                <li class="mui-table-view-cell my-cell">
+                    <span><span class="my-circle">3</span>现场照片及视频</span>
+                </li>
+                <li class="mui-table-view-cell mui-media">
+                    <label class="mui-margin-bottom-10">现场图片</label>
+                    <div class="mui-row">
+                        <span id="picfiles"></span>
+                        <span class="image-up" id="image-up" onclick="fnSelectPicOpe('picfiles');"></span>
+                    </div>
+                </li>
+                <li class="mui-table-view-cell mui-media">
+                    <label class="mui-margin-bottom-10">现场小视频</label>
+                    <div class="mui-row">
+                        <span id="videofiles"></span>
+                        <span class="image-up" id="video-up" onclick="fnStartVideoRecord('videofiles');"></span>
+                    </div>
+                </li>
+            </ul>
+        </form>
+    </div>
+</body>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript" src="../../../../script/media.js"></script>
+<script type="text/javascript" src="../../../../script/mui.picker.js"></script>
+<script type="text/javascript" src="../../../../script/mui.poppicker.js"></script>
+<script type="text/javascript" src="../../../../script/frame/worksite/add/worksite-info.js"></script>
+</html>

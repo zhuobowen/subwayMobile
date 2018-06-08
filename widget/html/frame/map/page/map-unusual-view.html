@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>异常情况跟踪</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/common-mui.css"/>
+    <style>
+        .mui-circle {
+            top: .5rem
+        }
+        .mui-table-view .mui-media-object {
+            max-width: 100px;
+            min-width: 100px;
+            height: 100px;
+        }
+        .mui-media-image{
+            max-width: 100px;
+            min-width: 100px;
+            height: 140px;
+        }
+        .iconinfo{
+            padding-left: 10px;
+            line-height: 35px;
+        }
+        .mui-slider-indicator .mui-number{width: auto;}
+        .mui-slider-indicator {padding-left:15px;text-align: left; position: static;background-color: #fff;}
+    </style>
+</head>
+<body>
+    <ul class="mui-table-view" id="situation">
+        <li class="mui-table-view-cell mui-color-blue mui-small-padding">
+            <span class="mui-circle">1</span>
+            <span class="mui-circle-info">异常点信息</span>
+        </li>
+    </ul>
+    <ul class="mui-table-view mui-margin-top-15" id="tracks">
+        <li class="mui-table-view-cell mui-color-blue mui-small-padding">
+            <span class="mui-circle">1</span>
+            <span class="mui-circle-info">异常进展</span>
+        </li>
+    </ul>
+</body>
+<script type="text/template" id="situationTemplate">
+    <li class="mui-table-view-cell mui-media mui-active">
+        <div class="mui-row">
+            <img class="mui-media-object mui-pull-left" onclick="fnShowCacheImage(this)" urls="{{=it.unusualPic}}" src="../../../../image/nopicture.png">
+            <div class="mui-media-body">
+                <div class='mui-ellipsis mui-color-gray'>线路站点：{{=it.line.lineName}}/{{=it.station.stationName}}</div>
+                <div class='mui-ellipsis mui-color-gray'>异常类别:{{=it.type.typeName}}</div>
+                <div class="mui-ellipsis mui-color-gray">异常描述：{{=it.unusualDesc}}</div>
+                <div class="mui-ellipsis mui-color-gray">发现时间：{{=it.createTime}}</div>
+                <div class="mui-ellipsis mui-color-gray">异常状态：{{=stateMap[it.state]}}
+                    <span class="mui-badge mui-badge-danger mui-pull-right">{{=it.unusualLevel.name}}</span>
+                </div>
+            </div>
+        </div>
+    </li>
+</script>
+<script type="text/template" id="trackTemplate">
+    {{? it.length && it.length > 0}}
+        <div id="slider" class="mui-slider">
+            <div class="mui-slider-indicator">
+                <div class="mui-number">
+                    第<span>1</span> / {{=it.length}}次巡查
+                </div>
+            </div>
+            <div class="mui-slider-group">
+                {{~it:track}}
+                <div class="mui-slider-item mui-slider-item-duplicate">
+                    <ul class="mui-table-view">
+                        <li class="mui-table-view-cell mui-media">
+                            <img class="mui-media-image mui-pull-left"  onclick="fnShowCacheImage(this)" urls="{{=track.proofPic}}" src="../../../../image/nopicture.png">
+                            <div class="mui-media-body">
+                                <div class="iconinfo">
+                                    <span class="mui-icon iconfont icon-clock"></span>
+                                    <span class="createtime">巡查时间：{{=track.inspectTime}}</span>
+                                </div>
+                                <div class="iconinfo">
+                                    <span class="mui-icon iconfont icon-bills"></span>
+                                    <span class="description">巡查人员：{{=track.inspectUser}}</span>
+                                </div>
+                                <div class="iconinfo">
+                                    <span class="mui-icon iconfont icon-localization"></span>
+                                    <span class="location">填表人员：{{=track.writeUser}}</span>
+                                </div>
+                                <div class="iconinfo">
+                                    <span class="mui-icon iconfont icon-people"></span>
+                                    <span class="location">巡查情况：{{=track.inspectDesc}}</span>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                {{~}}
+            </div>
+        </div>
+    {{??}}
+        <li class="mui-table-view-cell mui-row">
+            <div style="text-align:center;">暂无跟踪记录</div>
+        </li>
+    {{?}}
+</script>
+<script type="text/template" id="emptyTemplate">
+    <li class="mui-table-view-cell mui-row">
+        <div style="text-align:center;">暂无数据</div>
+    </li>
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript">
+    var stateMap = {
+        0:'新增',
+        1:'在跟踪',
+        2:'待确认',
+        3:'已排除'
+    };
+
+    apiready = function(){
+        fnInitData();
+    };
+
+    function fnInitData(){
+        fnShowProgress('正在获取数据');
+        $('body').hide();
+        api.ajax({
+            url: fnGetServerAddr() + '/subway/unusualSituation.do?todo=getUnusualSituation',
+            method: 'get',
+            dataType: 'json',
+            data: {
+                values: {situationId: api.pageParam.id}
+            }
+        }, function (ret, err) {
+            fnHideProgress();
+            if(ret){
+                $('#situation').append(fnTemplate('situationTemplate',ret.situation));
+                $('#tracks').append(fnTemplate('trackTemplate',ret.tracks));
+                fnCacheImage('.mui-media-object');
+                fnCacheImage('.mui-media-image');
+                mui("#slider").slider({
+                    interval: 0
+                });
+                mui('.mui-scroll-wrapper').scroll({
+                    deceleration: 0.0005
+                });
+                $('body').show();
+            }else{
+                fnShowMessage("网络异常")
+            }
+        });
+    }
+</script>
+</html>

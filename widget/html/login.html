@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>登录页面</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css"/>
+    <link rel="stylesheet" type="text/css" href="../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../css/login.css"/>
+    <style>
+        html,body{
+            background-color: #ffffff;
+        }
+        #app .aui-row{
+            width: 100%;
+            margin: 30% auto;
+            text-align: center;
+        }
+        #app .aui-row .login-logo{
+            width: 4rem;
+            margin: 0px auto 1.5rem;
+        }
+        #app .aui-row .login-title{
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="#" tapmode onclick="fnGoLoginSetting()"><span class="iconfont icon-setting"></span></a>
+        <div id="app">
+            <div class="aui-row">
+                <img class="login-logo" src="../image/login-logo.png" alt="">
+                <font class="login-title">厦门地铁保护信息管理平台</font>
+            </div>
+        </div>
+    </header>
+    <div class="content">
+        <div class="form">
+            <div class="input-wrap">
+                <i class="userInfo user"></i>
+                <input type="text" placeholder="用户名" id="username" value=""/>
+            </div>
+            <div class="input-wrap">
+                <i class="userInfo password"></i>
+                <input type="password" placeholder="密码" id="password" value=""/>
+            </div>
+        </div>
+        <footer class="footer">
+            <div class="yellow" id="login_btn" tapmode onclick="fnLogin();">登录</div>
+        </footer>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/zepto.min.js"></script>
+<script type="text/javascript" src="../script/common.js"></script>
+<script type="text/javascript" src="../script/db.js"></script>
+<script type="text/javascript" src="../script/login.js"></script>
+</html>

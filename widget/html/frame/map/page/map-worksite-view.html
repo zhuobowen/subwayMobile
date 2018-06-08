@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>工点监护跟踪</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/common-mui.css"/>
+    <style>
+        body{
+            color: #000;
+        }
+        .mui-circle{
+            top: 0.5rem;
+        }
+        .mui-segmented-control{
+            border:none;
+            background-color: #ccc;
+            border-radius: 0px;
+        }
+        .mui-segmented-control .mui-control-item.mui-active{
+            background-color: transparent;
+            border-bottom: 2px solid #0A78D0;
+            color: #000;
+        }
+        .mui-segmented-control .mui-control-item{
+            border-left: 1px solid #000;
+            color: #000;
+            border-bottom: 1px solid #000;
+        }
+        .mui-table-view .mui-media-object {
+            max-width: 84px;
+            min-width: 84px;
+            height: 74px;
+            position: relative;
+            top:10px;
+        }
+        .mui-col-xs-6,
+        .mui-col-sm-6{
+            padding: 5px 5px;
+        }
+
+        .worksite-type{
+            border: 1px solid #0A78D0;
+            text-align: center;
+            padding: 10px 3px;
+        }
+        .mui-media-image{
+            max-width: 80px;
+            min-width: 80px;
+            height: 74px;
+        }
+        .iconinfo{
+            padding-left: 10px;
+            line-height: 25px;
+        }
+        .mui-slider-indicator .mui-number{width: auto;}
+        .mui-slider-indicator {padding-left:15px;text-align: left; position: static;background-color: #fff;}
+    </style>
+</head>
+<body>
+    <div class="mui-content">
+        <div id="segmentedControl" class="mui-segmented-control">
+            <a class="mui-control-item mui-active" href="#item1">
+                工点基本信息
+            </a>
+            <a class="mui-control-item" href="#item2">
+                工点监护记录
+            </a>
+            <a class="mui-control-item" href="#item3">
+                现场位置查看
+            </a>
+        </div>
+        <div id="item1" class="mui-control-content mui-active">
+
+        </div>
+        <div id="item2" class="mui-control-content">
+
+        </div>
+        <div id="item3" class="mui-control-content">
+
+        </div>
+    </div>
+</body>
+<script type="text/template" id="worksiteTemplate">
+    <ul class="mui-table-view">
+        <li class="mui-table-view-cell mui-color-blue mui-small-padding">
+            <span class="mui-circle">1</span>
+            <span class="mui-circle-info">工点信息</span>
+        </li>
+        <li class="mui-table-view-cell mui-media mui-active">
+            <div class="mui-row mui-margin-bottom-5">
+                <span class="mui-pull-left">{{=it.worksite.name}}</span>
+                <span class="mui-pull-right">{{=it.worksite.createTime}}</span>
+            </div>
+            <div class="mui-row">
+                <img class="mui-media-object mui-pull-left" onclick="fnShowCacheImage(this)" urls="{{=it.worksite.picFile}}" src="../../../../image/nopicture.png">
+                <div class="mui-media-body" style="line-height:25px;">
+                    <div class='mui-ellipsis'>轨道交通区域：{{=it.worksite.region}}</div>
+                    <div class='mui-ellipsis'>施工单位：{{=it.worksite.company}}</div>
+                    <div class='mui-ellipsis'>监护重点：{{=it.worksite.emphases}}</div>
+                    <div class='mui-ellipsis'>联系人：{{=it.worksite.userName}}
+                        <span class="mui-badge mui-badge-danger mui-pull-right">{{=it.worksite.grade}}</span>
+                    </div>
+                </div>
+            </div>
+        </li>
+    </ul>
+    <ul class="mui-table-view mui-margin-top-15">
+        <li class="mui-table-view-cell mui-color-blue mui-small-padding">
+            <span class="mui-circle">2</span>
+            <span class="mui-circle-info">监护项目描述</span>
+        </li>
+        <li class="mui-table-view-cell mui-row worksite-types mui-text-center">
+            {{?it.worksite.worksiteTypes}}
+                {{~it.worksite.worksiteTypes.split(','):typeId}}
+                    {{? typeId}}
+                        <div class="mui-col-xs-6 mui-col-sm-6">
+                            <div class="worksite-type">
+                                {{=worksiteTypes[typeId]}}
+                            </div>
+                        </div>
+                    {{?}}
+                {{~}}
+            {{??}}
+                暂无数据
+            {{?}}
+        </li>
+    </ul>
+
+    <ul class="mui-table-view mui-margin-top-15">
+        <li class="mui-table-view-cell mui-color-blue mui-small-padding">
+            <span class="mui-circle">3</span>
+            <span class="mui-circle-info">工点位置参数</span>
+        </li>
+        <li class="mui-table-view-cell">
+            <div class="mui-pull-left mui-color-gray">工点监护面积</div>
+            <div class="mui-pull-right mui-color-blue">{{=it.worksite.area || 0.00}}㎡</div>
+        </li>
+        <li class="mui-table-view-cell">
+            <div class="mui-pull-left mui-color-gray">工点监护周长</div>
+            <div class="mui-pull-right mui-color-blue">{{=it.worksite.girth || 0.00}}m</div>
+        </li>
+    </ul>
+</script>
+<script type="text/template" id="trackTemplate">
+    {{? it.rows.length && it.rows.length > 0}}
+    <div id="slider" class="mui-slider">
+        <div class="mui-slider-indicator">
+            <div class="mui-number">
+                第<span>1</span> / {{=it.rows.length}}巡视检查记录
+            </div>
+        </div>
+        <div class="mui-slider-group">
+            {{~it.rows:track}}
+                <div class="mui-slider-item mui-slider-item-duplicate">
+                    <ul class="mui-table-view">
+                        <li class="mui-table-view-cell mui-color-blue mui-small-padding">
+                            <span class="mui-circle">1</span>
+                            <span class="mui-circle-info">出勤情况</span>
+                        </li>
+                        <li class="mui-table-view-cell mui-media">
+                            <img class="mui-media-image mui-pull-left"  onclick="fnShowCacheImage(this)" urls="{{=track.proofPic}}" src="../../../../image/nopicture.png">
+                            <div class="mui-media-body">
+                                <div class="iconinfo">
+                                    <span class="mui-icon iconfont icon-clock"></span>
+                                    <span class="createtime">监护人员：{{=track.monitoreUser}}</span>
+                                </div>
+                                <div class="iconinfo">
+                                    <span class="mui-icon iconfont icon-bills"></span>
+                                    <span class="description">监护日期：{{=track.monitoreDate}}</span>
+                                </div>
+                                <div class="iconinfo">
+                                    <span class="mui-icon iconfont icon-localization"></span>
+                                    <span class="location">填表人员：{{=track.monitoreUser}}</span>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+
+                    <ul class="mui-table-view mui-margin-top-15">
+                        <li class="mui-table-view-cell mui-color-blue mui-small-padding">
+                            <span class="mui-circle">2</span>
+                            <span class="mui-circle-info">现场监护记录</span>
+                        </li>
+                        <li class="mui-table-view-cell mui-row worksite-types mui-text-center">
+                            {{? track.worksiteTypes}}
+                                {{~track.worksiteTypes.split(','):typeId}}
+                                    <div class="mui-col-xs-6 mui-col-sm-6">
+                                        <div class="worksite-type">
+                                            {{=worksiteTypes[typeId]}}
+                                        </div>
+                                    </div>
+                                {{~}}
+                            {{??}}
+                                暂无数据
+                            {{?}}
+                        </li>
+                    </ul>
+                    <ul class="mui-table-view mui-margin-top-15">
+                        <li class="mui-table-view-cell mui-color-blue mui-small-padding">
+                            <span class="mui-circle">3</span>
+                            <span class="mui-circle-info">应对措施</span>
+                        </li>
+                        <li class="mui-table-view-cell">
+                            {{=track.measure || '无应对措施'}}
+                        </li>
+                    </ul>
+                </div>
+            {{~}}
+        </div>
+    </div>
+    {{??}}
+    <li class="mui-table-view-cell mui-row" style="list-style: none;">
+        <div style="text-align:center;">暂无跟踪记录</div>
+    </li>
+    {{?}}
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript">
+    var latLng = '';
+    var aMap;
+    var isMapOpened = false;
+    var worksiteTypes = {
+        1: '基坑类',
+        2: '隧道类',
+        3: '管线类',
+        4: '桩基、钻探、打井类',
+        5: '爆破类',
+        50: '其他类'
+    };
+
+    apiready = function(){
+        aMap = api.require('aMap');
+        mui(".mui-segmented-control").on('tap','a',function(){
+            var href = this.getAttribute("href");
+            if($(this).hasClass('mui-active')){
+                return;
+            }
+            if(href == '#item3'){
+                if(isMapOpened){
+                    aMap.show();
+                }else{
+                    fnOpenMap();
+                }
+            }else{
+                aMap.hide();
+            }
+        })
+        fnInitData();
+    };
+
+    //初始化数据
+    function fnInitData(){
+        api.ajax({
+            url: fnGetServerAddr() + '/subway/worksite.do?todo=findWorksite',
+            method: 'get',
+            dataType: 'json',
+            data: {
+                values: {id: api.pageParam.id}
+            }
+        }, function (ret, err){
+            if(ret){
+                latLng = ret.worksite.latLng;
+                $('#item1').html(fnTemplate('worksiteTemplate',ret));
+                fnCacheImage('.mui-media-object');
+                api.ajax({
+                    url: fnGetServerAddr() + '/subway/worksite.do?todo=queryWorksiteRecode',
+                    method: 'get',
+                    timeout: 30,
+                    data: {
+                        values: {
+                            page: 1,
+                            rows: 65535,
+                            worksiteId: api.pageParam.id
+                        }
+                    }
+                }, function (ret, err) {
+                    fnHideProgress();
+                    if(ret){
+                        $('#item2').html(fnTemplate('trackTemplate',ret));
+                        fnCacheImage('.mui-media-image');
+                        mui("#slider").slider({
+                            interval: 0
+                        });
+                    }else{
+                        fnShowMessage("网络异常")
+                    }
+                });
+            }else{
+                fnShowMessage("网络异常")
+            }
+        });
+    }
+
+
+    //打开地图
+    function fnOpenMap(){
+        if(latLng){
+            var points = [];
+            var lonSum = latSum = 0;
+            var lngLats = latLng ? latLng.split(';') : [];
+            for (var m = 0; m < lngLats.length; m++) {
+                var lon = Number(lngLats[m].split(',')[0]);
+                var lat = Number(lngLats[m].split(',')[1]);
+                points.push({
+                    lon: lon,
+                    lat: lat
+                });
+                lonSum += lon;
+                latSum += lat;
+            }
+            aMap.open({
+                rect: {
+                    x: 0,
+                    y: getHeaderHeight() + 40,
+                    w: api.winWidth,
+                    h: api.winHeight
+                },
+                showUserLocation: true,
+                zoomLevel: 17,
+                center: {
+                    lon: lonSum / points.length,
+                    lat: latSum / points.length
+                },
+            }, function(ret, err) {
+                if (ret.status) {
+                    isMapOpened = true;
+                    aMap.addPolygon({
+                        id: Math.random(),
+                        styles: {
+                            borderColor: '#0A78D0',
+                            borderWidth: api.systemType == 'ios' ? 1 : 8,
+                            lineDash: false,
+                            fillColor: 'rgba(0, 0, 0, 0)'
+                        },
+                        points: points
+                    });
+                }
+            });
+        }
+    }
+</script>
+</html>

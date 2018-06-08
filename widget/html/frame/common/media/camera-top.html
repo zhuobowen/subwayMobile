@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>照相机顶部</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <style>
+        html, body {
+            background-color: transparent;
+        }
+        .icon-convert{
+            font-size: 30px;
+            top: 5px;
+            right: 10px;
+            color: #cccccc;
+            position: absolute;
+        }
+        .cancel-btn{
+            top: 5px;
+            left: 10px;
+            color: #cccccc;
+            font-weight: 580;
+            font-size:1.2rem;
+            position: absolute;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <span class="component cancel-btn" onclick="fnCloseCameraWin()">取消</span>
+        <span class="component mui-icon iconfont icon-convert convert-btn" onclick="fnOpenFrame()"></span>
+    </div>
+</body>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript" src="../../../../script/camera.js"></script>
+<script type="text/javascript">
+    var cameraType,imgUrls;
+    apiready = function(){
+        cameraType = api.pageParam.cameraType;
+        addTakePhotoListener();
+        addOpenCameraListener();
+        if(cameraType == 7){
+            $('.convert-btn').hide();
+        }
+    };
+
+    //添加拍照事件监听
+    function addTakePhotoListener(){
+        api.addEventListener({
+            name: 'take-photo'
+        }, function(ret, err) {
+            imgUrls = ret.value.imgUrls;
+            $('.convert-btn').hide();
+        });
+    }
+
+    //添加打开相机监听
+    function addOpenCameraListener(){
+      api.addEventListener({
+          name: 'open-camera'
+      }, function(ret, err) {
+      });
+    }
+
+    //关闭窗口
+    function fnCloseCameraWin(){
+        api.closeWin({
+            name: api.winName
+        });
+    }
+
+    function fnOpenFrame(){
+        if ( cameraType == 1 ) {
+          var pageName = 'unusual-type';
+          var pageObj = {
+              title: '异常类型选择',
+              frameName: pageName,
+              frameUrl: 'widget://html/frame/today/unusual/' + pageName + '.html',
+              leftIcons: 'icon-arrow-left,event-back',
+              rightIcons: 'icon-convert,event-transform',
+              events: ['fnReadyKeyBinding("event-transform","fnBackToCamera()")'],
+              frontWin: 'today-inspect-point-main'
+          };
+          fnOpenCommonWin(pageName,pageObj);
+        }else if ( cameraType == 2 ) {
+            var pageName = 'unusual-track';
+            var pageObj = {
+                title: '异常情况登记',
+                frameName: pageName,
+                frameUrl: 'widget://html/frame/today/unusual/' + pageName + '.html',
+                leftIcons: 'icon-arrow-left,event-back-to-point',
+                events: ['fnReadyKeyBinding("event-back-to-point","fnBackToInspectPoint()")'],
+                frontWin: 'today-inspect-point-main',
+                unusual:api.pageParam.unusual
+            };
+            fnOpenCommonWin(pageName,pageObj);
+        }else if ( cameraType == 3 ) {
+            var daily = api.pageParam.daily;
+            var pageName = 'daily-inspect-register';
+            var pageObj = {
+                daily: daily,
+                title: '日常巡查登记',
+                frameName: pageName,
+                frameUrl: './frame/today/daily/' + pageName + '.html',
+                leftIcons:'icon-arrow-left,event-back'
+            };
+            fnOpenCommonWin(pageName, pageObj);
+        }else if ( cameraType == 6 ) {
+            var pageName = 'worksite-inspect-register';
+            var pageObj = {
+                worksiteId: api.pageParam.worksiteId,
+                title: '工点监护情况记录',
+                frameName: pageName,
+                frameUrl: './frame/worksite/register/' + pageName + '.html',
+                leftIcons:'icon-arrow-left,event-back'
+            };
+            fnOpenCommonWin(pageName, pageObj);
+            setTimeout(function(){
+                api.closeWin();
+            },1000)
+        }else if(cameraType == 9){
+            var pageName = 'unusual-confirm-register';
+            var title = '异常确认单处理';
+            var leftIcons = 'icon-arrow-left,event-back';
+            var rightIcons = 'icon-btn-check,event-save';
+            var events = ['fnReadyKeyBinding("event-save","fnSave()")'];
+            var pageObj = {
+                id: api.pageParam.id,
+                state:api.pageParam.state,
+                title: title,
+                frameName: pageName,
+                frameUrl: 'widget://html/frame/confirm/' + pageName + '.html',
+                leftIcons: leftIcons,
+                rightIcons: rightIcons,
+                events: events
+            };
+            fnOpenCommonWin(pageName, pageObj);
+            setTimeout(function(){
+                api.closeWin();
+            },1000)
+        }
+    }
+
+</script>
+</html>

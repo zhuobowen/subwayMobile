@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>title</title>
+    <link rel="stylesheet" type="text/css" href="../../../css/api.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../css/common.css" />
+    <style>
+        html,body{
+            background-color: transparent;
+            font-size: 12px;
+            margin: 0px;padding:0px;
+        }
+        .mui-card{
+            height: 3rem;
+            width: 3rem;
+            margin: 0px;
+            background-color: #fff;
+        }
+        .iconfont{
+            font-size: 1.5rem;
+            color: #333333;
+        }
+        .icon-question,.icon-train{
+            position: relative;
+            left: 0.80rem;
+            top: .2rem
+        }
+        .text{
+            font-size: 1rem;
+            position: relative;
+            top: -0.3rem;
+            left: 0.5rem;
+        }
+        .icon-pin:before{
+            position: relative;
+            top: 3px;
+            left: 1px;
+            margin-left: 8px;
+            font-weight: bolder;
+            color: #0A78D0;
+        }
+        .icon-disabled{
+            background-color: #cccccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="mui-card" tapmode="icon-active" isShow="false" onclick="fnShowLine()">
+        <span class="mui-icon iconfont icon-train"></span>
+        <span class="text legend" tapmode="mui-active">线路</span>
+    </div>
+    <div class="mui-card" tapmode="icon-active" isShow="false" onclick="fnUnusualRegister()" style="margin-top: .5rem">
+        <span class="mui-icon iconfont icon-question"></span>
+        <span class="text legend mui-color-red" tapmode="mui-active">异常</span>
+    </div>
+    <div class="mui-card" tapmode="icon-active" isShow="false" onclick="fnDistance(this)" style="margin-top: .5rem">
+        <span class="mui-icon iconfont icon-pin"></span>
+        <span class="text legend mui-color-blue" tapmode="mui-active">测距</span>
+    </div>
+</body>
+<script type="text/javascript" src="../../../script/api.js"></script>
+<script type="text/javascript" src="../../../script/zepto.min.js"></script>
+<script type="text/javascript">
+    apiready = function(){
+        
+    };
+
+    //显示路线
+    function fnShowLine(){
+        var map_line_opened = $api.getStorage('map_line_opened');
+        if(!map_line_opened){
+            api.openFrame({
+                name: 'map-line',
+                url: 'widget://html/frame/map/map-line.html',
+                rect: {
+                    x: 0,
+                    y: 0,
+                    w: 'auto',
+                    h: 'auto'
+                },
+                pageParam: {
+                    name: 'test'
+                },
+                bounces: false,
+                bgColor: 'rgba(0,0,0,0)',
+                vScrollBarEnabled: false,
+                hScrollBarEnabled: false
+            });
+        } else {
+            api.setFrameAttr({
+                name: api.frameName,
+                hidden:false
+            });
+            $api.setStorage('map_line_opened', true);
+        }
+    }
+
+    //打开异常点登记页面
+    function fnUnusualRegister(){
+        $api.setStorage('frontWin', 'subway-protect-inspect-win');
+        var pageObj = {};
+        var cameraType = 1;
+        api.openWin({
+            name: 'camera-main-win',
+            url: 'widget://html/frame/common/media/camera-win.html',
+            slidBackEnabled:false,
+            pageParam: {
+                pageObj:pageObj,
+                cameraType:cameraType,
+                afterRegister: false
+            }
+        });
+    }
+
+    //测距
+    function fnDistance(_this){
+        if(!$(_this).hasClass('icon-disabled')){
+            $(_this).addClass('icon-disabled');
+            api.sendEvent({
+                name: 'ranging',
+                extra: {show: true}
+            });
+        }else{
+            $(_this).removeClass('icon-disabled');
+            api.sendEvent({
+                name: 'ranging',
+                extra: {show: false}
+            });
+        }
+    }
+</script>
+</html>

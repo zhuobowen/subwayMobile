@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>地保工作巡视地图页面</title>
+    <style>
+        body{
+            
+        }
+    </style>
+</head>
+<body>
+    
+</body>
+<script type="text/javascript" src="../../../script/api.js"></script>
+<script type="text/javascript" src="../../../script/map.js"></script>
+<script type="text/javascript" src="../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../script/transform.js"></script>
+<script type="text/javascript" src="../../../script/common.js"></script>
+<script type="text/javascript">
+    var lst_1 = [];
+    var lst_2 = [];
+    var ids = [];
+    var ids2 = [];
+    var unusualMap = {};
+    var isMaped,isDataed = false; //isMaped：地图是否打开， isDataed：数据是否请求成功
+    var billboard_bg = 'widget://image/map/2.png';
+
+    apiready = function(){
+        fnInitMap();
+        fnOpenMap({
+            x: 0,
+            y: 0,
+            w: api.frameWidth,
+            h: api.frameHeight
+        });
+        fnInitData();
+    };
+
+    function fnOpenMapCallBack(){
+
+        fnInitPoints();
+
+        isMaped = true;
+        if(isDataed){
+            fnAddAnnotations();
+        }
+
+        //监听线路改变
+        api.addEventListener({
+            name: 'line-changed'
+        }, function(ret, err) {
+            fnInitPoints();
+            aMap.removeAnnotations({
+                ids: ids
+            });
+            aMap.removeAnnotations({
+                ids: ids2
+            });
+            id = 0;
+            lst_1 = [];
+            lst_2 = [];
+            unusualMap = {};
+            fnInitData(ret.value.lineIds);
+        });
+
+        // 监听页面显示，显示地图模块并初始化数据
+        api.addEventListener({
+            name: 'viewappear'
+        }, function(ret, err) {
+            aMap.show();
+        });
+
+        //监听页面关闭，关闭地图模块
+        api.addEventListener({
+            name: 'viewdisappear'
+        }, function(ret, err) {
+            aMap.hide();
+        });
+
+        //测距监听
+        api.addEventListener({
+            name: 'ranging'
+        }, function(ret, err) {
+            if(ret.value.show){ //开始测距
+                fnStartRanging();
+            }else{ //结束测距
+                fnFinishRanging()//结束测距
+            }
+        });
+
+    }
+
+    function fnInitData(lineIds){
+        api.ajax({
+            url: fnGetServerAddr() + '/subway/unusualSituation.do?todo=querySituationProtectInspect',
+            method: 'get',
+            data: {
+                body: {lineIds: lineIds || []}
+            }
+        }, function (ret) {
+            if(ret){
+                if(ret.success){
+                    var cl = fnGetCurrentLocation();
+                    isDataed = true;
+                    var min = parseFloat(fnDistance(
+                                cl.lat,
+                                cl.lon,
+                                Number(ret.data[0].lat),
+                                Number(ret.data[1].lon)
+                            )/1000).toFixed(2);
+                    var index = 0;
+                    for (var i = 0 ; i < ret.data.length; i++){
+                        var obj = ret.data[i];
+                        ids.push(obj.id);
+                        obj['distance'] = parseFloat(fnDistance(
+                                cl.lat,
+                                cl.lon,
+                                Number(obj.lat),
+                                Number(obj.lon)
+                            )/1000)
+                            .toFixed(2);
+
+                        if (obj.distance < min){
+                            min = obj.distance;
+                            index = i;
+                        }
+
+                        if(obj.isEmphasis){//重点路段
+                            lst_2.push(obj);
+                        }else{
+                            lst_1.push(obj);
+                        }
+                        unusualMap[obj.id] = obj;
+                    }
+                    fnChangeFooter(ret.data[index]);
+                    if(isMaped){
+                        fnAddAnnotations();
+                    }
+                }else{
+                    fnShowMessage(ret.msg || "数据异常")
+                }
+            }else{
+                fnShowMessage("网络异常")
+            }
+        });
+    }
+
+    //添加标注
+    function fnAddAnnotations(){
+
+        aMap.addAnnotations({
+            annotations: lst_1,
+            icons: ['widget://image/map/location-orange-large.png'],
+            draggable: false
+        }, function(ret) {
+            if(ret.eventType == 'click'){
+                fnChangeFooter(unusualMap[ret.id]);
+            }
+        });
+
+        aMap.addAnnotations({
+            annotations: lst_2,
+            icons: ['widget://image/map/location-red-large.png'],
+            draggable: false
+        }, function(ret) {
+            if(ret.eventType == 'click'){
+                fnChangeFooter(unusualMap[ret.id]);
+            }
+        });
+
+        //添加布告牌
+        for(var i = 0 ; i < lst_1.length ; i++){
+            fnAddBillboard(lst_1[i]);
+        }
+
+        for(var i = 0 ; i < lst_2.length ; i++){
+            fnAddBillboard(lst_2[i]);
+        }
+    }
+    var id = 0;
+
+    function fnAddBillboard(obj,type){
+        var illus = obj.unusualPic ? fnGetImageUrl(obj.unusualPic.split(',')[0],200,200) : fnGetServerAddr() + '/images/nopicture.png';
+        id++;
+        ids2.push(id);
+        unusualMap[id] = obj;
+        aMap.addBillboard({
+            id: id,
+            draggable: false,
+            coords: {
+                lon: obj.lon,
+                lat: obj.lat
+            },
+            bgImg:billboard_bg,
+            content: {
+                illus:illus
+            },
+            styles: {
+                size: {
+                    width: 50,
+                    height: 80
+                },
+                illusRect: {
+                    x: 3,
+                    y: 3,
+                    w: 44,
+                    h: 44
+                },
+                marginT: 100
+            }
+        }, function(ret) {
+            if (ret) {
+                if(ret.eventType == 'click'){
+                    fnChangeFooter(unusualMap[ret.id]);
+                }
+            }
+        });
+    }
+
+    //改变底部
+    function fnChangeFooter(unusual){
+        fnSetCenter(unusual);
+        api.sendEvent({
+            name: 'change-unusual',
+            extra: {unusual: unusual}
+        });
+    }
+
+    var pinId = 0 , circleId = 0 , lineId = 0;
+
+    //测距
+    function fnStartRanging(){
+        id++;
+        pinId = id;
+        var cur_location = fnGetCurrentLocation();
+        aMap.addAnnotations({
+            annotations: [{
+                id: pinId,
+                lon: cur_location.lon - 0.0005,
+                lat: cur_location.lat - 0.0005
+            }],
+            icons: ['widget://image/map/pin.png'],
+            draggable: true,
+            timeInterval: 2.0
+        }, function(ret) {
+            if (ret.eventType == 'drag' && ret.dragState == 'ending') {
+                aMap.getAnnotationCoords({
+                    id: ret.id
+                }, function(rett) {
+                    if (rett) {
+                        var distance = fnDistance(cur_location.lat,cur_location.lon,rett.lat,rett.lon);
+                        aMap.removeOverlay({
+                            ids: [circleId,lineId]
+                        });
+                        circleId = Math.random();
+                        lineId = Math.random();
+                        aMap.addCircle({
+                            id: circleId,
+                            center: {
+                                lon: cur_location.lon,
+                                lat: cur_location.lat,
+                            },
+                            radius: distance,
+                            styles: {
+                                borderColor: '#cccccc',
+                                borderWidth: 3,
+                                lineDash: true,
+                                fillColor: 'rgba(153, 255, 204, 0.2 )'
+                            }
+                        });
+                        aMap.addLine({
+                            id: lineId,
+                            styles: {
+                                type: 'arrow',
+                                borderColor: '#FF0000',
+                                borderWidth: 5,
+                                lineDash: false
+                            },
+                            points: [{
+                                lon: cur_location.lon, lat: cur_location.lat
+                            },{
+                                lon: rett.lon, lat: rett.lat
+                            }]
+                        });
+                        aMap.closeBubble({
+                            id: ret.id
+                        });
+                        aMap.setWebBubble({
+                            id:ret.id,
+                            size : {
+                                width:Number(distance).toFixed(2).toString().length * 20,
+                                height:32
+                            },
+                            bg:'#ffffff',
+                            data:'<div style="font-size:12px;text-align:center;">'+'距离是' + Number(distance).toFixed(2) + '米</div>'
+                        });
+                        /*aMap.setBubble({
+                            id: ret.id,
+                            content: {
+                                title: '距离是' + Number(distance).toFixed(2) + '米',
+                            },
+                            styles: {
+                                titleColor: '#000',
+                                titleSize: 16,
+                                subTitleColor: '#999',
+                                subTitleSize: 12,
+                                illusAlign: 'left'
+                            }
+                        }, function(retttt) {
+                            if (retttt) {
+                                aMap.closeBubble({
+                                    id: ret.id
+                                });
+                            }
+                        });*/
+                        aMap.popupBubble({
+                            id: ret.id
+                        }, function(ret){
+
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    //结束测距
+    function fnFinishRanging(){
+        aMap.removeAnnotations({
+            ids: [pinId]
+        });
+        aMap.removeOverlay({
+            ids: [circleId,lineId]
+        });
+    }
+
+    //返回数组最小值
+    Array.prototype.min = function() {
+        var min = this[0].distance;
+        var len = this.length;
+        var index = 0;
+        for (var i = 1; i < len; i++){
+            if (this[i].distance < min){
+                min = this[i].distance;
+                index = i;
+            }
+        }
+        return this[index];
+    }
+</script>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>主页面</title>
+    <link rel="stylesheet" type="text/css" href="../css/mui.min.css" />
+    <link rel="stylesheet" type="text/css" href="../css/common.css" />
+    <link rel="stylesheet" type="text/css" href="../css/iconfont.css" />
+    <link rel="stylesheet" type="text/css" href="../css/main.css" />
+</head>
+
+<body>
+    <div class="mui-content">
+        <div id="topDiv">
+            <img alt="" class="portrait" src="../image/male_new.png">
+            <p id="user_name">未登录</p>
+        </div>
+
+        <ul class="mui-table-view mui-grid-view mui-grid-9">
+            <li class="mui-table-view-cell mui-media mui-col-xs-6 mui-col-sm-6" tapmode onclick="fnTodayInspect();">
+                <div class="mui-row mui-badge-row" style="">
+                    <img src="../image/jrrcxc.png" class="main-image" alt="">
+                    <span class="mui-badge mui-badge-danger taskCount" id="todayInspectCount">0</span>
+                </div>
+                <div class="mui-row mui-row-text">
+                  今日巡查
+                </div>
+            </li>
+            <li class="mui-table-view-cell mui-media mui-col-xs-6 mui-col-sm-6" tapmode onclick="fnProtectInspect();">
+                <div class="mui-row mui-badge-row" style="">
+                    <img src="../image/cjjggd.png" class="main-image" alt="">
+                </div>
+                <div class="mui-row mui-row-text">
+                    地保巡视
+                </div>
+            </li>
+            <li class="mui-table-view-cell mui-media mui-col-xs-6 mui-col-sm-6" tapmode onclick="fnWorksiteInspect('worksite-inspect','今日监护工点','')">
+                <div class="mui-row mui-badge-row">
+                    <img src="../image/jrgdjh.png" class="main-image" alt="">
+                    <span class="mui-badge mui-badge-danger taskCount" id="worksiteCount">0</span>
+                </div>
+                <div class="mui-row mui-row-text">
+                  今日工点监护
+                </div>
+            </li>
+            <li class="mui-table-view-cell mui-media mui-col-xs-6 mui-col-sm-6" tapmode onclick="fnConfirmInspect();">
+                <div class="mui-row mui-badge-row">
+                    <img src="../image/jrycxc.png" class="main-image" alt="">
+                </div>
+                <div class="mui-row mui-row-text">
+                    异常确认单现场确认
+                </div>
+            </li>
+            <li class="mui-table-view-cell mui-media mui-col-xs-6 mui-col-sm-6" tapmode onclick="fnOpenElectronicMap();">
+                <div class="mui-row">
+                    <img src="../image/dzdt.png" class="main-image" alt="">
+                </div>
+                <div class="mui-row mui-row-text">
+                  电子地图
+                </div>
+            </li>
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/mui.min.js"></script>
+<script type="text/javascript" src="../script/zepto.min.js"></script>
+<script type="text/javascript" src="../script/common.js"></script>
+<script type="text/javascript" src="../script/main.js"></script>
+</html>

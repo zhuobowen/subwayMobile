@@ -1,0 +1,23 @@
+html,body{
+    background-color: rgba(0,0,0,0.5);
+    height: 100%;
+}
+.mui-table-view,.mui-table-view-cell,.mui-media{
+    background-color: rgba(0,0,0,0);
+}
+.mui-table-view-cell:after,.mui-table-view:before,.mui-table-view:after{
+    background-color: transparent;
+}
+.mui-table-view-cell:nth-of-type(2){
+  margin-top: 2.5rem;
+}
+.title{
+    color: #fff;
+}
+.mui-color-white{
+  color: #fff; 
+}
+.close-btn{
+   display: block;
+   margin: 100px auto;
+}

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>异常问题监护情况</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/common-mui.css"/>
+    <style>
+        body{
+            height: 100%;
+            overflow: hidden;
+        }
+        .header{
+            height: 80px;
+            width: 100%;
+            z-index: 9999;
+            color: #ffffff;
+            font-size: 25px;
+            position: fixed;
+            padding-top: 30px;
+            text-align: center;
+            font-weight: bolder;
+            background-color: rgba(277,277,277,0.3);
+        }
+        .footer {
+            width: 100%;
+            bottom: 0px;
+            height: 80px;
+            z-index: 9999;
+            position: fixed;
+            font-size: 17px;
+            padding-top: 5px;
+            text-align: center;
+        }
+        .icon-delete:before{
+            font-size: 30px;
+        }
+        .my-img{
+            position: absolute;top: 50%; transform: translateY(60%);
+        }
+    </style>
+</head>
+<body>
+    <div class="content" style="position:relative;">
+        <div class="header">
+            异常问题监护情况
+        </div>
+        <div style="">
+            <div class="mui-slider">
+                <div class="mui-slider-group" id="photos">
+                    <div class="mui-slider-item"><a href="#"><img src="../../../../image/1.jpg"/></a></div>
+                </div>
+            </div>
+        </div>
+        <div class="footer">
+            <div class="mui-row">
+                <span id="status"></span>
+            </div>
+            <div class="mui-row">
+                <span class="mui-icon iconfont icon-delete" onclick="fnCloseFrame()"></span>
+            </div>
+        </div>
+    </div>
+</body>
+<script type="text/template" id="imgTemplate">
+    {{~it.photos.split(','):photo}}
+        {{? photo }}
+            <div class="mui-slider-item"><a href="#"><img src="{{=fnGetImageUrl(photo,true,500,500)}}"/></a></div>
+        {{?}}
+    {{~}}
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript">
+    apiready = function(){
+        fnInitData();
+    };
+
+    var statusMap = {
+        1: {className:'mui-color-red',text:'待确认'},
+        2: {className:'mui-color-green',text:'已确认'},
+        3: {className:'mui-color-green',text:'非异常'},
+        4: {className:'mui-color-red',text:'申请排除'},
+        5: {className:'mui-color-green',text:'已排除'},
+        6: {className:'mui-color-red',text:'继续跟踪'},
+        10: {className:'mui-color-red',text:'已删除'}
+    };
+
+    //初始化数据
+    function fnInitData(){
+        $('#photos').html(fnTemplate('imgTemplate',{
+            photos:api.pageParam.photos
+        }));
+
+        $('#status').html(statusMap[api.pageParam.status].text).addClass(statusMap[api.pageParam.status].className);
+    }
+    //关闭窗口
+    function fnCloseFrame(){
+        api.closeFrame({
+            name: api.frameName
+        });
+    }
+</script>
+</html>

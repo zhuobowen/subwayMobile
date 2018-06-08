@@ -1,0 +1,102 @@
+html, body {
+    height: 100%;
+    font-size: 14px;
+}
+
+.mui-table-view-cell:after {
+    left: 0px;
+}
+
+.weather-content {
+    height: 6.5rem;
+    flex-flow: row;
+    display: flex;
+    display: -webkit-box;
+    display: -webkit-flex;
+    -webkit-flex-flow: row;
+    -webkit-box-orient: horizontal;
+    background-color: #3498DB;
+}
+
+.weather-item {
+    flex: .5;
+    -webkit-flex: .5;
+    -webkit-box-flex: .5;
+    text-align: center;
+    color: #ffffff;
+}
+
+.weather-item .iconfont {
+    display: block;
+    font-size: 3rem;
+    margin: .5rem auto;
+}
+
+.weather-active:before, .weather-item-active {
+    color: #FFCC00;
+}
+
+#users {
+    min-height: 4.5rem;
+}
+
+.user {
+    margin: 5px;
+    padding: 5px 10px;
+    border-radius: 2px;
+    border: 1px solid #cccccc;
+}
+
+.user .icon-fork {
+    position: relative;
+    top: 1px;
+    left: 8px;
+}
+
+.mui-navigate-right:after {
+    position: relative;
+    float: right;
+    top: 10px;
+    left: 10px;
+}
+
+.mui-row {
+    min-height: 3rem;
+    padding: 5px 0px;
+}
+
+.mui-btn {
+    padding: 6px 0px 4px 12px;
+    min-width: 5.5rem;
+    margin-left: .5rem;
+    margin-bottom: .5rem
+}
+
+.mui-icon-trash:before {
+    color: red;
+}
+.icon-arrow-right{
+  top:2px;
+  color: #ddd;
+  margin-left: 10px;
+  position:relative;
+}
+.mui-right-10{
+  position: absolute;
+  right: -10px;
+}
+.mui-padding-left-15{
+    padding-left: 15px;
+}
+.title-cell.mui-table-view-cell:after{
+  background-color: rgba(0, 0, 0, 0);
+}
+.line-cell.mui-table-view-cell{
+  padding: 11px 15px 15px 25px;
+}
+.line-cell.mui-table-view-cell:after{
+  background-color: rgba(0, 0, 0, 0);
+}
+.line-cell .mui-navigate-right .mui-badge{
+    top:45%;
+}

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>异常情况登记</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/common.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/iconfont.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/frame/today/unusual/unusual-track.css"/>
+</head>
+<body>
+    <div class="mui-content" style="display: none;">
+        <form id="myform">
+            <input type="hidden" name="isdealed" value="0" />
+            <input type="hidden" name="isdiscovered" value="0" /><!--是否发现异常-->
+            <input type="hidden" name="proofRecordId">
+            <ul class="mui-table-view mui-margin-top-20" id="unusual">
+                <li class="mui-table-view-cell my-cell">
+                    <span><span class="my-circle">1</span>异常点信息</span>
+                </li>
+            </ul>
+            <ul class="mui-table-view mui-margin-top-20">
+                <li class="mui-table-view-cell my-cell">
+                    <span><span class="my-circle">2</span>巡查情况</span>
+                </li>
+                <li class="mui-table-view-cell">
+                    <label class="mui-margin-bottom-10">本次监护照片</label>
+                    <div class="mui-row" id="unusual_img">
+                      <div id="proofPics"></div>
+                      <span class="image-up" id="image-up" onclick="fnOpenCamera('proofPics');"></span>
+                  </div>
+              </li>
+              <li class="mui-table-view-cell">
+                    <label class="mui-margin-bottom-10">本次巡查情况</label>
+                    <div class="mui-row">
+                        <div class="mui-col-sm-6 mui-col-xs-6">
+                            <span class="situation situation-active" tapmode onclick="fnChangeSituationStyle(this,0)">
+                                <span class="mui-icon iconfont icon-right my-icon"></span>
+                                无发现异常情况
+                            </span>
+                        </div>
+                        <div class="mui-col-sm-6 mui-col-xs-6">
+                            <span class="situation" tapmode onclick="fnChangeSituationStyle(this,1)">
+                                <span class="mui-icon iconfont icon-caution my-icon"></span>
+                                发现异常情况
+                            </span>
+                        </div>
+                    </div>
+                </li>
+                <li class="mui-table-view-cell">
+                    <label class="mui-margin-bottom-10">巡查情况（文字）</label>
+                    <div class="mui-row">
+                          <textarea rows="1" cols="30" placeholder="请输入巡查情况" name="inspectDesc" class="validatebox" msg="请输入异常内容" style="font-size: 14px;">无发现异常情况</textarea>
+                          <!-- <span class="mui-btn mui-btn-link mui-icon mui-icon-mic" tapmode onclick="fnAddAudio(this,'inspectDesc')" style="font-size: 20px;position: absolute; right: 20px;top:45px;"></span> -->
+                    </div>
+                </li>
+                  <li class="mui-table-view-cell">
+                    <label class="mui-margin-bottom-10">现场小视频</label>
+                    <div class="mui-row">
+                     <span id="proofVideos"></span>
+                     <span class="image-up" id="video-up" onclick="fnGetVideo('proofVideos','../../../../image/video-btn.png');"></span>
+                 </div>
+                </li>
+            </ul>
+            <ul class="mui-table-view mui-margin-top-20">
+                <li class="mui-table-view-cell my-cell">
+                    <span><span class="my-circle">3</span>处理计划</span>
+                </li>
+                <li class="mui-table-view-cell">
+                    <label>下一步执行计划</label>
+                    <div class="mui-row">
+                        <div class="mui-col-sm-6 mui-col-xs-6">
+                            <span class="plan plan-active" tapmode onclick="fnChangePlanStyle(this,0)">
+                                继续跟踪异常
+                            </span>
+                        </div>
+                        <div class="mui-col-sm-6 mui-col-xs-6">
+                            <span class="plan"  tapmode onclick="fnChangePlanStyle(this,1)">
+                                关闭异常跟踪
+                            </span>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </form>
+        <div class="submit-btn" onclick="fnSubmit();" tapmode="active" >提交</div>
+    </div>
+    <div id="audioRecord" style="display: none;">
+        <div id="audioTime_div" style="color:white;text-align:center;padding-top: 3px;">
+            <span id="span_min">00</span>:<span id="span_sec">00</span>
+        </div>
+        <div class="audio-main"></div>
+        <div style="color: white;text-align: center;">请说话</div>
+    </div>
+</body>
+<script type="text/template" id="template">
+  <li class="mui-table-view-cell mui-media">
+    <div class="mui-media-body road-info">
+        <div>
+            <input type="hidden" name="unusualSituationId" value="{{=it.id}}" />
+            <input type="hidden" name="unusualTaskId" value="{{=it.taskId}}"/>
+            <span class="roadline mui-pull-left">线路：{{=it.line.lineName}}</span>
+            <span class="station mui-pull-right">区间/站点：{{=it.station.stationName}}</span>
+        </div>
+    </div>
+    <img class="mui-media-object mui-pull-left" src="{{=it.unusualPic}}" onclick="fnShowImage(this)">
+    <div class="mui-media-body unusual-info">
+        <div class="mui-ellipsis" style="width: 90%;"> 异常类别：{{=it.unusualType.typeName}}<span class="mui-badge mui-badge-danger">{{=it.unusualLevel.levelName}}</span></div>
+        <div class="mui-ellipsis"> 异常描述：{{=it.unusualDesc}}</div>
+        <div class="mui-ellipsis" tapmode onclick="fnOpenElectronic('{{=it.position}}')">
+            <span class="mui-icon iconfont icon-location"></span> &nbsp;&nbsp;{{=it.location}}
+        </div>
+    </div>
+</li>
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/media.js"></script>
+<script type="text/javascript" src="../../../../script/db.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript" src="../../../../script/frame/today/unusual/unusual-track.js"></script>
+</html>

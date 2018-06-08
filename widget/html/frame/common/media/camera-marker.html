@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>照相机水印frame页面</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/api.css"/>
+    <style>
+         html,body{
+            height: 120px;
+            overflow: hidden;
+            background-color: transparent;
+        }
+        .content{
+            width: 100%;
+            bottom: 0px;
+            position: absolute;
+        }
+        .marker-component{
+            color: #ffffff;
+            line-height: 3rem;
+        }
+        .marker-component.time{
+            font-size: 4.5rem;
+            font-weight: 550;
+        }
+        .date-location{
+            width: 95%;
+            font-size: 1.25rem;
+            font-weight: 550;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow:ellipsis;
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <div class="marker-component time"></div>
+        <div class="marker-component date-location" tapmode onclick="fnGoUnusualLocation()"></div>
+    </div>
+</body>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript" src="../../../../script/camera.js"></script>
+<script type="text/javascript">
+    var marker_location;
+    apiready = function(){
+        fnInitData();
+        addTakePhotoListener();
+        addOpenCameraListener();
+        fnChangeLocationListener();
+    };
+
+    //初始化数据
+    function fnInitData(){
+        if(api.pageParam.cameraType == 3 || api.pageParam.cameraType == 4 && api.pageParam.daily){
+            marker_location = {
+                lon: api.pageParam.daily.lon,
+                lat: api.pageParam.daily.lat,
+                location: api.pageParam.daily.stationName
+            }
+        }
+        $('.time').html( fnGetCurrentTime(2) );
+        $('.date-location').html( fnGetCurrentTime(1) + '  ' + (marker_location || $api.getStorage('current_location')).location );
+    }
+
+    //添加拍照事件监听
+    function addTakePhotoListener(){
+        api.addEventListener({
+            name: 'take-photo'
+        }, function(ret, err) {
+            $('.content').hide();
+        });
+    }
+
+    //添加打开相机监听
+    function addOpenCameraListener(){
+        api.addEventListener({
+            name: 'open-camera'
+        }, function(ret, err) {
+            fnInitData();
+           $('.content').show();
+        });
+    }
+
+    //位置改变后的监听事件
+    function fnChangeLocationListener(){
+        api.addEventListener({
+            name: 'location-changed'
+        }, function(ret, err) {
+            if(ret.value){
+              marker_location = ret.value;
+              fnInitData();
+            }
+        });
+    }
+
+    //跳转异常位置选择
+    function fnGoUnusualLocation(){
+        var pageName = 'unusual-location';
+        var events = [];
+        var pageObj = {
+            title:'异常位置',
+            frameName:pageName,
+            frameUrl:'widget://html/frame/today/unusual/'+pageName+'.html',
+            leftIcons:'icon-arrow-left,event-back',
+            bounces:true,
+        };
+        fnOpenCommonWin(pageName,pageObj);
+    }
+</script>
+</html>

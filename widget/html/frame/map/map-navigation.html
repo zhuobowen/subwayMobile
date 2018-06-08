@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>导航按钮</title>
+    <link rel="stylesheet" type="text/css" href="../../../css/api.css" />
+    <link rel="stylesheet" type="text/css" href="../../../css/mui.min.css" />
+    <link rel="stylesheet" type="text/css" href="../../../css/iconfont.css" />
+    <style>
+        html,body{
+            background-color: transparent;
+        }
+        .my-left {
+            border-radius: 50%;
+            color: #fff;
+            display: -moz-box;
+            -moz-box-pack: center;
+            -moz-box-align: center;
+            display: -webkit-box;
+            -webkit-box-pack: center;
+            -webkit-box-align: center;
+            height: 60px;
+            width: 60px;
+            text-align: center;
+            margin-right: 10px;
+            position: absolute;
+            z-index: 10000;
+            background-color: #0877D0;
+        }
+        .icon-compass{
+            font-size: 30px;
+            position: relative;
+            top: -10px;
+            left: 15px;
+        }
+        .title{
+            white-space: normal;
+            width: 40px;
+            font-size: 12px;
+            position: relative;
+            top: 10px;
+            right: 20px;
+        }
+    </style>
+</head>
+<body>
+    <input type="hidden" id="lon" name="lon">
+    <input type="hidden" id="lat" name="lat">
+    <a style="display:-webkit-box;" tapmode onclick="fnChooseMap()">
+        <div style="-webkit-box-flex:1.0;">
+            <div class="my-left">
+                <span class="mui-icon iconfont icon-compass"></span>
+                <div class="title">到这去</div>
+            </div>
+        </div>
+    </a>
+</body>
+<script type="text/javascript" src="../../../script/api.js"></script>
+<script type="text/javascript" src="../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../script/common.js"></script>
+<script type="text/javascript">
+    var cur_location,navigation,count = 0;
+    var buttons = [];
+    var funcs = [];
+    var allMap = [{
+        mapName:'aMap',
+        realName:'高德地图',
+        func:'fnAMapNavigation()'
+    },{
+        mapName:'bMap',
+        realName:'百度地图',
+        func:'fnBMapNavigation()'
+    },{
+        mapName:'gMap',
+        realName:'谷歌地图',
+        func:'fnGMapNavigation()'
+    }]
+    apiready = function(){
+        api.parseTapmode();
+        // navigation = api.require('navigator');
+        cur_location = $api.getStorage('current_location');
+    };
+
+    //改变异常点位信息
+    function fnChangePosition(lon,lat){
+        $('#lon').val(lon);
+        $('#lat').val(lat);
+    }
+
+    //获取目的地经纬度
+    function fnGetDestination(){
+        var lon = $('#lon').val();
+        var lat = $('#lat').val();
+        if( !lon  || !lat){
+            fnShowMessage('定位错误');
+            return;
+        }
+        var point = {
+            lon: lon,
+            lat: lat
+        }
+        return point;
+    }
+
+    //到这去
+    function fnChooseMap(){
+        fnShowMessage('努力开发中');
+        return;
+        for (var i = 0; i < allMap.length; i++) {
+            fnIsInstall(allMap[i]);
+        }
+    }
+
+    //判断是否安装地图
+    function fnIsInstall(map){
+        navigation.installed({
+            target: map.mapName
+        }, function(ret, err) {
+            count++;
+            if (ret.status) {
+                buttons.push(map.realName);
+                funcs.push(map.func);
+            }
+            if(count == 3){
+                api.actionSheet({
+                    title: '选择地图',
+                    cancelTitle: '取消',
+                    buttons: buttons
+                }, function(ret, err) {
+                    var index = ret.buttonIndex;
+                    if(index != 4){
+                        eval(funcs[index-1]);
+                    }
+                    count = 0;
+                    buttons = [];
+                    funcs = [];
+                });
+            }
+        });
+    }
+
+    //百度地图导航
+    function fnBMapNavigation(){
+        var point = fnGetDestination();
+        navigation.bMapNavigation({
+            start: { // 起点信息.
+                lon: cur_location.lon, // 经度.
+                lat: cur_location.lat, // 纬度.
+                name: ''
+            },
+            end: { // 终点信息.
+                lon: point.lon, // 经度
+                lat: point.lat, // 纬度
+                name: ''
+            },
+            mode: 'driving'
+        });
+    }
+
+    //高德地图导航
+    function fnAMapNavigation(){
+        var point = fnGetDestination();
+        navigation.aMapNavigation({
+            end: {
+                lon: point.lon,
+                lat: point.lat
+            },
+            dev: 0,
+            strategy: 'fast'
+        });
+    }
+
+    //谷歌地图导航
+    function fnGMapNavigation(){
+        var point = fnGetDestination();
+        navigation.gMapNavigation({
+            start: {
+                lon: cur_location.lon,
+                lat: cur_location.lat
+            },
+            end: {
+                lon: point.lon,
+                lat: point.lat
+            },
+            mode: 'driving'
+        });
+    }
+</script>
+</html>

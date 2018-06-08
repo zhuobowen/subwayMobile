@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+  <html>
+  <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+      <title>今日工点监护</title>
+      <link rel="stylesheet" type="text/css" href="../../css/mui.min.css"/>
+      <link rel="stylesheet" type="text/css" href="../../css/iconfont.css"/>
+      <link rel="stylesheet" type="text/css" href="../../css/common-mui.css"/>
+      <link rel="stylesheet" type="text/css" href="../../css/mui.picker.css"/>
+      <link rel="stylesheet" type="text/css" href="../../css/mui.poppicker.css"/>
+      <link rel="stylesheet" type="text/css" href="../../css/frame/worksite/worksite-inspect.css"/>
+  </head>
+  <body>
+      <div class="mui-content">
+        <ul class="mui-table-view" style="margin-top:0px;">
+          <li class="mui-table-view-cell weather-content" style="padding: 5px 0px;">
+              <div class="weather-item weather-item-active" tapmode onclick="fnChangeWeather(1)">
+                  <span class="mui-icon iconfont icon-sunny weather-active"></span>
+                  <b>晴天</b>
+              </div>
+              <div class="weather-item" tapmode onclick="fnChangeWeather(2)">
+                  <span class="mui-icon iconfont icon-rain"></span>
+                  <b>雨、多云</b>
+              </div>
+              <div class="weather-item" tapmode onclick="fnChangeWeather(3)">
+                  <span class="mui-icon iconfont icon-typhoon"></span>
+                  <b>台风</b>
+              </div>
+            </li>
+            <li class="mui-table-view-cell mui-color-blue">
+                <span class="mui-circle">1</span>
+                <span class="mui-circle-info">今日出勤</span>
+            </li>
+            <li class="mui-table-view-cell">
+                <label>监护日期</label>
+                <span class="mui-pull-right mui-color-blue inspectTime"></span>
+            </li>
+            <li class="mui-table-view-cell">
+               <div class="mui-row" style="margin: 8px 0px 0px;">
+                    <span>监护人员</span>
+                    <span class="mui-pull-right iconfont iconfont-large icon-plus-btn mui-color-gray" tapmode="mui-icon-active" onclick="fnChooseUser()"></span>
+                </div>
+                <div class="mui-row attendances">
+                </div>
+            </li>
+            <!--<li class="mui-table-view-cell"  tapmode onclick="fnChooseCar();">
+                <span class="mui-pull-left">巡查车辆</span>
+                <span class="mui-pull-right mui-color-blue" id="carNo">请选择车辆</span>
+            </li>-->
+          </ul>
+          <ul class="mui-table-view mui-margin-top-15 worksiteTask">
+              <li class="mui-table-view-cell mui-color-blue">
+                  <span class="mui-circle">2</span>
+                  <span class="mui-circle-info">今日监护工单</span>
+              </li>
+          </ul>
+          <ul class="mui-table-view mui-margin-top-15">
+            <li class="mui-table-view-cell mui-color-blue">
+                <a class="mui-navigate-right mui-color-black" onclick="fnOpenYesterday()">
+                    <span class="mui-circle">3</span>
+                    <span class="mui-circle-info">上次未完成监护点位</span>
+                    <span class="mui-badge mui-badge-danger mui-right-10" id="unfinishCount">0</span>
+                </a>
+            </li>
+          </ul>
+          <div class="foot">
+              <div class="mui-common-btn" tapmode="common-btn-active" onclick="fnStartInspect()">开始监护</div>
+          </div>
+      </div>
+  </body>
+  <script type="text/template" id="worksiteTaskTemplate">
+      {{~it:task:index}}
+          <li class="mui-table-view-cell" style="padding:0px 15px;">
+          <li class="mui-table-view-cell title-cell">
+              <div class="mui-pull-left mui-color-blue">{{=task.taskNo}}</div>
+              <div class="mui-pull-right">监护工点数：{{=task.taskWorksiteCount}}</div>
+          </li>
+          {{~task.lines:line}}
+              <li class="mui-table-view-cell line-cell">
+                  <a class="mui-navigate-right" tapmode onclick="fnOpenWorksiteForInspect('{{=task.taskId}}','{{=line.lineId}}')">
+                      <span class="mui-badge mui-badge-danger">{{=line.worksiteCount}}</span>
+                      {{=line.lineName}}
+                  </a>
+              </li>
+          {{~}}
+          </li>
+      {{~}}
+  </script>
+  <script type="text/javascript" src="../../script/api.js"></script>
+  <script type="text/javascript" src="../../script/mui.min.js"></script>
+  <script type="text/javascript" src="../../script/zepto.min.js"></script>
+  <script type="text/javascript" src="../../script/doT.min.js"></script>
+  <script type="text/javascript" src="../../script/mui.picker.js"></script>
+  <script type="text/javascript" src="../../script/mui.poppicker.js"></script>
+  <script type="text/javascript" src="../../script/common.js"></script>
+  <script type="text/javascript">
+      var attendances = []; //监护人员
+      var userId;
+      var weather = 1;
+      var carId;
+      var carList;
+      apiready = function(){
+          api.parseTapmode();
+          fnInitData();//初始化数据
+      };
+
+      //初始化数据
+      function fnInitData(){
+          fnShowProgress("正在获取任务",false);
+          $('.inspectTime').html(fnGetTodayStr('-'));
+          userId = getUserId();
+          api.ajax({
+              url: fnGetServerAddr() + '/apicloud/worksite.do?todo=beforeStartWorksiteTask',
+              method: 'get',
+              timeout: 6,
+              data: {
+                  values: {userId: userId}
+              }
+          }, function (ret, err) {
+                fnHideProgress();
+                if(ret){
+                    if(ret.success){
+                        $('#unfinishCount').html(ret.unfinishCount);
+                        $('.worksiteTask').append(fnTemplate('worksiteTaskTemplate',ret.tasks));
+                        api.parseTapmode();
+                    }else{
+                        fnShowMessage(ret.msg || '数据异常');
+                    }
+                }else{
+                    fnShowMessage("网络异常");
+                }
+          });
+          api.ajax({
+              url: fnGetServerAddr() + '/subway/car.do?todo=ajaxQueryEnabledCar',
+              method: 'get',
+              timeout: 30
+          }, function (ret, err) {
+              if(ret){
+                  carList = ret;
+              }else{
+                  fnShowMessage("网络异常")
+              }
+          });
+      }
+
+      //改变天气
+      function fnChangeWeather(index){
+          weather = index;
+          $('.weather-item .iconfont').removeClass('weather-active');
+          $('.weather-item').removeClass('weather-item-active').eq(index-1).addClass('weather-item-active').find('.iconfont').addClass('weather-active');
+      }
+
+      //选择监护人员
+      function fnChooseUser(){
+          var pageName = 'user-list';
+          var title = '监护人员选择';
+          var leftIcons = 'icon-arrow-left,event-back';
+          var rightIcons = 'icon-btn-check';
+          var pageObj = {
+              title: title,
+              frameName: pageName,
+              frameUrl: './frame/common/user/' + pageName + '.html',
+              leftIcons: leftIcons,
+              rightIcons: rightIcons,
+              attendances:attendances,
+              frontFrame: api.frameName,
+              events: ['fnReadyKeyBinding("icon-btn-check","fnSave()")']
+          };
+          fnOpenCommonWin(pageName, pageObj);
+      }
+
+      //初始化监护人员
+      function fnInitAttendanceUser(users) {
+          $('.attendances').empty();
+          attendances = $api.strToJson(users);
+          for (var i = 0; i < attendances.length; i++) {
+              $('.attendances').append('<button type="button" class="mui-btn mui-icon mui-icon-trash mui-right" onclick="fnDeleteUser('+attendances[i].id+',this)">'+attendances[i].name+'</button>');
+          }
+      }
+
+      //删除监护人员
+      function fnDeleteUser(id, _this) {
+          if (attendances) {
+              for (var i = 0; i < attendances.length; i++) {
+                  if (id == attendances[i].id) {
+                      attendances.splice(i, 1);
+                  }
+              }
+          }
+          $(_this).remove();
+      }
+
+      //选择巡查车辆
+      function fnChooseCar(){
+          if(carList){
+              var picker = new mui.PopPicker();
+              var data = [];
+              for (var i = 0; i < carList.length ; i++){
+                  var car = carList[i];
+                  data.push({
+                      value: car.id,
+                      text: car.carNo
+                  })
+              }
+              picker.setData(data);
+              picker.show(function (item) {
+                  carId = item[0].value;
+                  $('#carNo').html(item[0].text);
+              })
+          }else{
+              api.ajax({
+                  url: fnGetServerAddr() + '/subway/car.do?todo=ajaxQueryEnabledCar',
+                  method: 'get',
+                  timeout: 30
+              }, function (ret, err) {
+                  if(ret){
+                      carList = ret;
+                      var picker = new mui.PopPicker();
+                      var data = [];
+                      for (var i = 0; i < carList.length ; i++){
+                          var car = carList[i];
+                          data.push({
+                              value: car.id,
+                              text: car.carNo
+                          })
+                      }
+                      picker.setData(data);
+                      picker.show(function (item) {
+                          carId = item[0].value;
+                          $('#carNo').html(item[0].text);
+                      })
+                  }else{
+                      fnShowMessage("网络异常")
+                  }
+              });
+          }
+      }
+
+      //按线路查询监护工单列表
+      function fnOpenWorksiteForInspect(taskId,lineId){
+          var pageName = 'worksite-for-inspect';
+          var title = '待监护工点';
+          var leftIcons = 'icon-arrow-left,event-back';
+          var pageObj = {
+              title: title,
+              frameName: pageName,
+              frameUrl: 'widget://html/frame/worksite/view/' + pageName + '.html',
+              leftIcons: leftIcons,
+              taskId: taskId,
+              lineId: lineId
+          };
+          fnOpenCommonWin(pageName, pageObj);
+      }
+
+      //打开今日巡查点页面
+      function fnOpenWorksiteInspectPoint(){
+          api.openDrawerLayout({
+              name: 'workstie-inspect-point-main',
+              url: 'widget://html/frame/worksite/inspect/worksite-inspect-point-main.html',
+              slidBackEnabled:false,
+              reload:true,
+              rightPane: {
+                  edge: api.winWidth/5,
+                  name: 'today-inspect-point-right',
+                  url: 'widget://html/frame/worksite/inspect/worksite-inspect-point-right.html',
+                  rect: {
+                      x: 0,
+                      y: 0,
+                      w: api.winWidth,
+                      h: api.winHeight
+                  }
+              },
+              animation:{
+                  type: 'movein',
+                  subType:'from_right',
+                  duration:300
+              }
+          });
+          //延时关闭本窗口
+          setTimeout(function(){
+              api.closeWin({
+                  name: api.winName
+              });
+          },1000)
+      }
+
+      //上次未监护
+      function fnOpenYesterday(){
+          var count = $('#unfinishCount').html();
+          if(!count || count == '0'){
+              fnShowMessage("无监护点位");
+              return;
+          }
+          var pageName = 'worksite-yesterday-inspect';
+          var title = '上次未巡查点位';
+          var leftIcons = 'icon-arrow-left,event-back';
+          var pageObj = {
+              title: title,
+              frameName: pageName,
+              frameUrl: 'widget://html/frame/worksite/view/' + pageName + '.html',
+              leftIcons: leftIcons
+          };
+          fnOpenCommonWin(pageName, pageObj);
+      }
+
+      //开始监护
+      function fnStartInspect(){
+          if(attendances.length == 0){
+              fnShowMessage("请选择监护人员");
+              return;
+          }
+          fnShowProgress("正在保存出勤记录",true);
+
+          var inspectUserNames = [];
+          for (var i = 0; i <attendances.length; i++){
+              inspectUserNames.push(attendances[i].name);
+          }
+          api.ajax({
+              url: fnGetServerAddr() + '/apicloud/worksite.do?todo=startWorksiteTask',
+              method: 'post',
+              timeout: 30,
+              data: {
+                  values: {
+                      userId: userId,
+                      weather: weather,
+                      inspectUserNames: inspectUserNames.join(',')
+                  }
+              }
+          }, function (ret, err) {
+              fnHideProgress();
+              if(ret){
+                  if(ret.success){
+                      fnOpenWorksiteInspectPoint();
+                  }else {
+                      fnShowMessage(ret.msg || "数据异常")
+                  }
+              }else{
+                  fnShowMessage("网络异常")
+              }
+          });
+      }
+  </script>
+  </html>

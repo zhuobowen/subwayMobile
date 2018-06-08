@@ -1,0 +1,59 @@
+.mui-small-cell {
+    padding: 5px 10px;
+}
+.mui-content>.mui-table-view:first-child{
+    margin-top: 0px;
+}
+.mui-badge {
+    font-size: 12px;
+    line-height: 1;
+    display: inline-block;
+    padding: 3px 6px;
+    border-radius: 5px;
+    background-color: #ffffff;
+}
+
+.mui-badge-danger {
+    color: #FA0202;
+    border: 1px solid #FA0202;
+}
+
+.mui-badge-success {
+    color: #009900;
+    border: 1px solid #009900;
+}
+
+.mui-color-gray {
+    font-size: 12px;
+}
+
+.mui-padding-top-10 {
+    min-height: 64px;
+}
+
+.mui-no-problem {
+    font-size: 17px;
+    text-align: center;
+    line-height: 38px;
+}
+
+.mui-table-view .mui-media-object {
+    width: 52px;
+    height: 52px;
+    margin: 0px;
+    min-width: 52px;
+}
+
+.mui-media-body {
+    line-height: 27px;
+}
+
+.icon-increase {
+    top: 15px;
+    right: 10px;
+    position: absolute;
+}
+
+.mui-slider-handle {
+    touch-action: none;
+}

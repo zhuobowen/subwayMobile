@@ -1,0 +1,89 @@
+.mui-table-view .mui-media-object{
+    width: 74px;
+    height: 74px;
+    margin: 0px;
+    min-width: 74px;
+}
+.road-info{
+    margin-bottom: 10px;
+}
+.unusual-info{
+    line-height: 24px;
+}
+.mui-badge-danger{
+    position: absolute;
+    right: 10px;
+    bottom: 17px;
+}
+.form-control{
+    margin-top: 10px;
+}
+.plan{
+    display: block;
+    color: #1081DA;
+    width: 100%;
+    text-align: center;
+    height: 40px;
+    line-height: 40px;
+    margin: 10px 0px;
+    border: 1px solid #1081DA;
+    width: 95%;
+}
+.situation{
+    display: block;
+    color: #1081DA;
+    width: 100%;
+    text-align: center;
+    height: 40px;
+    line-height: 40px;
+    margin: 10px 0px;
+    border: 1px solid #1081DA;
+    width: 95%;
+}
+.plan-active{
+    background-color: #1081DA;
+    color: #ffffff;
+}
+.situation-active{
+    background-color: #1081DA;
+    color: #ffffff;
+}
+.reset{display: none;position: absolute;right: 10px;}
+textarea{
+  border:none;
+  width: 90%;
+  margin-bottom:0px;
+}
+.my-icon{
+    position: relative;
+    right: 10px;
+    font-size: 16px;
+}
+.icon-location:before{
+    color: #cccccc;
+}
+#audioRecord{
+    position: absolute;
+    border-radius: 10px;
+    width: 100px;
+    height:100px;
+    opacity:0.8;
+    background-color: #333333;
+
+}
+.audio-main{
+    /* Firefox */
+    display:flex;
+    -moz-box-pack:center;
+    -moz-box-align:center;          
+    /* Safari, Chrome, and Opera */
+    display:flex;
+    -webkit-box-pack:center;
+    -webkit-box-align:center;           
+    /* W3C */
+    display:flex;
+    box-pack:center;
+    box-align:center;
+    width:100px;            
+    height:50px;
+}

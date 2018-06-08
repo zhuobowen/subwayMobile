@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>上次未巡查工点</title>
+    <link rel="stylesheet" type="text/css" href="../../../../css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../../css/common-mui.css"/>
+    <style>
+        body,html{
+            height: 100%;
+            overflow: auto;
+        }
+        .mui-table-view .mui-media-object {
+            min-width: 120px;
+            height: 120px;
+        }
+        .mui-unusual{
+            right: 5px;
+            height: 38px;
+            color: #dd524d;
+            line-height: 30px;
+            position: absolute;
+            border-radius: 40px;
+            border: 1px solid #dd524d;
+            background-color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <div class="mui-content">
+
+    </div>
+</body>
+<script type="text/template" id="worksiteTemplate">
+    {{~it:line}}
+        <ul class="mui-table-view mui-margin-top-15">
+            <li class="mui-table-view-cell">
+                <span class="mui-pull-left">线路：{{=line.lineName}}</span>
+                <span class="mui-pull-right mui-color-blue">监护工点{{=line.worksiteCount}}处，异常监护工点{{=line.unusualCount}}处</span>
+            </li>
+            {{~line.stations:station}}
+                {{~station.worksites:worksite}}
+                    <li class="mui-table-view-cell mui-media mui-active">
+                        <div class="mui-row">
+                            <img class="mui-media-object mui-pull-left" onclick="fnShowPhotos('{{=worksite.picfile}}')" src="{{=worksite.picfile ? fnGetImageUrl(worksite.picfile.split(',')[0],true,200,200) : '../../../../image/nopicture.png'}}">
+                            <div class="mui-media-body" style="line-height:25px;">
+                                <div class='mui-ellipsis mui-color-gray'>工程名称：{{=worksite.name}}
+                                    {{? worksite.unusualCount && worksite.unusualCount > 0}}
+                                    <span class="mui-badge mui-badge-danger mui-pull-right mui-unusual">异常</span>
+                                    {{?}}
+                                </div>
+                                <div class="mui-ellipsis mui-color-gray">发现时间：{{=worksite.createTime}}</div>
+                                <div class="mui-ellipsis mui-color-gray">施工单位：{{=worksite.company}}</div>
+                                <div class="mui-ellipsis mui-color-gray">
+                                    监护重点：{{=worksite.emphases}}
+                                    <span class="mui-badge mui-badge-danger mui-pull-right">{{=worksite.grade}}</span>
+                                </div>
+                                <div class="mui-ellipsis mui-color-gray">
+                                    工点类别：
+                                    {{~worksite.worksiteTypes.split(','):typeId:index}}
+                                        {{? typeId}}
+                                            {{=projectTypeMap[typeId]}}
+                                            {{? index != worksite.worksiteTypes.split(',').length -1}}
+                                                、
+                                            {{?}}
+                                        {{?}}
+                                    {{~}}
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                {{~}}
+            {{~}}
+        </ul>
+    {{~}}
+</script>
+<script type="text/javascript" src="../../../../script/api.js"></script>
+<script type="text/javascript" src="../../../../script/mui.min.js"></script>
+<script type="text/javascript" src="../../../../script/zepto.min.js"></script>
+<script type="text/javascript" src="../../../../script/doT.min.js"></script>
+<script type="text/javascript" src="../../../../script/common.js"></script>
+<script type="text/javascript">
+
+    var projectTypeMap = {
+        1: '基坑类',
+        2: '隧道类',
+        3: '管线类',
+        4: '桩基、钻探、打井类',
+        5: '爆破类',
+        50: '其他类'
+    };
+
+    apiready = function(){
+        fnInitData();
+    };
+
+    //初始化数据
+    function fnInitData(){
+        fnShowProgress("正在加载数据")
+        api.ajax({
+            url: fnGetServerAddr() + '/apicloud/worksite.do?todo=getWorksiteTaskDataUnfinishedLastTime',
+            method: 'get',
+            data: {
+                values: {
+                    userId: getUserId()
+                }
+            }
+        }, function (ret, err) {
+            fnHideProgress();
+            if(ret){
+                if(ret.success){
+                    $('.mui-content').empty().html(fnTemplate('worksiteTemplate',ret.lines));
+                }else{
+                    fnShowMessage(ret.msg || "数据异常");
+                }
+            }else{
+                fnShowMessage("数据异常");
+            }
+        });
+    }
+
+    //查看照片
+    function fnShowPhotos(photoIds){
+        var imgUrls = [];
+        var imageBrowser = api.require('imageBrowser');
+        if(!photoIds || "null" == photoIds){
+            fnShowMessage("暂无图片");
+            return;
+        }else{
+            var tempArr = photoIds.split(',');
+            for (var i = 0 ; i < tempArr.length; i++){
+                if(tempArr[i]){
+                    imgUrls.push(fnGetImageUrl(tempArr[i],false))
+                }
+            }
+        }
+        imageBrowser.openImages({
+            imageUrls: imgUrls,
+            showList: false,
+            activeIndex: 0
+        });
+    }
+</script>
+</html>
